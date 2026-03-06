@@ -1,0 +1,6 @@
+python-telegram-bot==21.3
+python-dotenv==1.0.1
+requests>=2.31.0
+groq>=0.4.0
+apscheduler>=3.10.4
+httpx>=0.25.0
