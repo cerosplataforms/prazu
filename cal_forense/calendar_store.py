@@ -19,6 +19,7 @@ Mapeamento de tipos v2 → legado (para resolver/Telegram):
   suspensao          → suspensao_tj
 """
 
+import re
 import sqlite3
 import hashlib
 import logging
@@ -119,15 +120,28 @@ class CalendarStore:
         return self._explicar_v1(data, uf, comarca)
 
     def _explicar_v2(self, data, uf, comarca):
+        """
+        Retorna razões para uma data não ser útil.
+        Lógica de filtro por tribunal:
+          - nacionais sem tribunal_id (genéricos) → 1 registro
+          - tribunal da UF solicitada (e.uf = uf) → apenas o TJ local
+          - municipais da comarca solicitada
+        """
+        import unicodedata
+
+        # Nacional genérico (tribunal_id IS NULL)
+        filters = ["(e.abrangencia = 'nacional' AND e.tribunal_id IS NULL AND e.tipo != 'recesso')"]
         params = [data]
-        filters = ["(e.abrangencia = 'nacional')"]
+
         if uf:
+            # TJ da UF: eventos estaduais/tribunal vinculados à UF (exceto recesso — tratado pelo resolver)
             filters.append(
-                "(e.abrangencia IN ('estadual','tribunal') AND e.uf = ?)")
+                "(e.abrangencia IN ('estadual','tribunal') AND e.uf = ? AND e.tipo != 'recesso')")
             params.append(uf)
+
         if comarca and uf:
             filters.append(
-                "(e.abrangencia = 'municipal' AND e.uf = ? AND l.nome = ?)")
+                "(e.abrangencia = 'municipal' AND (e.uf = ? OR e.uf IS NULL) AND l.nome = ?)")
             params.append(uf)
             params.append(comarca)
 
@@ -149,7 +163,25 @@ class CalendarStore:
                     WHEN 'recesso' THEN 7
                 END
         """
-        return [self._row_to_dict(r) for r in self.conn.execute(sql, params)]
+        rows = [self._row_to_dict(r) for r in self.conn.execute(sql, params)]
+
+        # Deduplica por (descricao base normalizada, tipo legado)
+        def _base_desc(s):
+            s = s.strip().lower()
+            s = re.sub(r'\s*\(.*?\)', '', s)
+            s = re.sub(r'[\s-]+', ' ', s).strip()
+            s = unicodedata.normalize('NFD', s)
+            s = ''.join(c for c in s if unicodedata.category(c) != 'Mn')
+            return s
+
+        seen = {}
+        deduped = []
+        for r in rows:
+            key = (_base_desc(r['descricao']), r['tipo'])
+            if key not in seen:
+                seen[key] = True
+                deduped.append(r)
+        return deduped
 
     def _explicar_v1(self, data, uf, comarca):
         params = [data]
