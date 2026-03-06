@@ -1057,7 +1057,7 @@ PRAZOS_POR_TIPO = {
 }
 
 
-def _calcular_prazos_djen(comunicacoes, comarca, uf=""):
+def _calcular_prazos_djen(comunicacoes, comarca_padrao, uf_padrao=""):
     hoje = date.today()
     resultados = []
     for c in comunicacoes:
@@ -1078,7 +1078,14 @@ def _calcular_prazos_djen(comunicacoes, comarca, uf=""):
             c["prazo_info"] = None
             resultados.append(c)
             continue
-        resultado = calcular_prazo_completo(data_disp, dias, uf=uf, comarca_processo=comarca)
+
+        # Usa comarca do processo (extraída do orgao/CNJ), com fallback na comarca do advogado
+        uf_proc = extrair_uf_do_cnj(c.get("numero_processo", "")) or uf_padrao
+        comarca_proc = extrair_comarca_da_vara(c.get("orgao", "")) or comarca_padrao
+        c["comarca_processo"] = comarca_proc  # guarda para exibir no /djen
+        c["uf_processo"] = uf_proc
+
+        resultado = calcular_prazo_completo(data_disp, dias, uf=uf_proc, comarca_processo=comarca_proc)
         venc = datetime.strptime(resultado["data_vencimento"], "%Y-%m-%d").date()
         dias_restantes = (venc - hoje).days
         if dias_restantes < 0:

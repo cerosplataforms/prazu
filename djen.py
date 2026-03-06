@@ -182,6 +182,12 @@ def formatar_comunicacoes_telegram(comunicacoes: list[dict], limite: int = 5) ->
                 msg += f" - {c['orgao'][:50]}"
             msg += "\n"
 
+        # Comarca usada no cálculo do prazo
+        comarca_proc = c.get("comarca_processo", "")
+        uf_proc = c.get("uf_processo", "")
+        if comarca_proc:
+            msg += f"   📍 {comarca_proc}/{uf_proc}\n"
+
         if data:
             msg += f"   Disp: {data}\n"
 
@@ -190,6 +196,21 @@ def formatar_comunicacoes_telegram(comunicacoes: list[dict], limite: int = 5) ->
 
         if c.get("classe"):
             msg += f"   {c['classe'][:60]}\n"
+
+        # Prazo calculado
+        pi = c.get("prazo_info")
+        if pi:
+            venc = pi.get("data_vencimento", "")
+            if venc and "-" in venc:
+                try:
+                    venc = datetime.strptime(venc, "%Y-%m-%d").strftime("%d/%m/%Y")
+                except ValueError:
+                    pass
+            emoji = pi.get("emoji", "📅")
+            status = pi.get("status", "")
+            msg += f"   {emoji} Prazo: *{venc}* — {status}\n"
+            if not comarca_proc:
+                msg += f"   ⚠️ _Comarca não identificada — usando padrão_\n"
 
         if c.get("link"):
             msg += f"   [Ver no PJe]({c['link']})\n"
