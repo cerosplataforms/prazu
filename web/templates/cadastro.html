@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Criar conta — Prazu</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=Lora:ital,wght@0,600;1,600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --navy-deep:   #0A0F1C;
+      --navy-base:   #111B33;
+      --navy-mid:    #1a2a4a;
+      --navy-border: #1e2d4d;
+      --blue:        #2563EB;
+      --blue-bright: #3B82F6;
+      --blue-dim:    rgba(59,130,246,0.12);
+      --green:       #22c55e;
+      --green-dark:  #16a34a;
+      --white:       #F8FAFF;
+      --muted:       #7a8aaa;
+      --error:       #f87171;
+    }
+    html { scroll-behavior: smooth; }
+    body {
+      background: var(--navy-deep);
+      color: var(--white);
+      font-family: 'Sora', sans-serif;
+      font-weight: 300;
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+    }
+
+    /* LADO ESQUERDO — painel de confiança */
+    .left-panel {
+      background: var(--navy-base);
+      border-right: 1px solid var(--navy-border);
+      padding: 3rem;
+      display: flex; flex-direction: column; justify-content: space-between;
+      position: sticky; top: 0; height: 100vh;
+    }
+    .panel-logo {
+      font-family: 'Sora', sans-serif; font-weight: 800;
+      font-size: 1.6rem; color: var(--blue); text-decoration: none;
+      letter-spacing: -0.03em;
+    }
+    .panel-hero { flex: 1; display: flex; flex-direction: column; justify-content: center; }
+    .panel-hero h2 {
+      font-family: 'Lora', serif; font-size: 2rem; font-weight: 600;
+      line-height: 1.2; letter-spacing: -0.02em; margin-bottom: 1rem;
+    }
+    .panel-hero h2 em { font-style: italic; color: var(--blue-bright); }
+    .panel-hero p { font-size: 0.88rem; color: var(--muted); line-height: 1.8; max-width: 36ch; }
+
+    .trust-items { display: flex; flex-direction: column; gap: 1rem; margin-top: 2.5rem; }
+    .trust-item {
+      display: flex; align-items: flex-start; gap: 0.75rem;
+      font-size: 0.82rem; color: var(--muted);
+    }
+    .trust-icon {
+      width: 32px; height: 32px; border-radius: 8px;
+      background: var(--blue-dim); color: var(--blue-bright);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.9rem; flex-shrink: 0; margin-top: 0.1rem;
+    }
+    .trust-item strong { display: block; color: var(--white); font-weight: 500; margin-bottom: 0.15rem; font-size: 0.85rem; }
+
+    .panel-footer { font-size: 0.75rem; color: var(--muted); }
+    .panel-footer a { color: var(--muted); }
+
+    /* LADO DIREITO — formulário */
+    .right-panel {
+      padding: 3rem;
+      display: flex; flex-direction: column; justify-content: center;
+      min-height: 100vh;
+    }
+    .form-wrap { max-width: 420px; width: 100%; margin: 0 auto; }
+
+    /* PROGRESS BAR */
+    .progress-wrap { margin-bottom: 2.5rem; }
+    .progress-label {
+      display: flex; justify-content: space-between; align-items: center;
+      font-size: 0.75rem; color: var(--muted); margin-bottom: 0.75rem;
+    }
+    .progress-label span { color: var(--white); font-weight: 500; }
+    .progress-track {
+      height: 3px; background: var(--navy-border); border-radius: 99px; overflow: hidden;
+    }
+    .progress-bar {
+      height: 100%; background: var(--green); border-radius: 99px;
+      transition: width 0.5s ease;
+    }
+    .progress-steps { display: flex; gap: 0.4rem; margin-top: 0.75rem; }
+    .p-step {
+      flex: 1; height: 3px; border-radius: 2px;
+      background: var(--navy-border); transition: background 0.3s;
+    }
+    .p-step.done { background: var(--green); }
+    .p-step.active { background: var(--blue-bright); }
+
+    h1 {
+      font-family: 'Lora', serif; font-size: 1.75rem; font-weight: 600;
+      letter-spacing: -0.02em; line-height: 1.2; margin-bottom: 0.5rem;
+    }
+    h1 em { font-style: italic; color: var(--blue-bright); }
+    .form-sub { font-size: 0.85rem; color: var(--muted); margin-bottom: 2rem; line-height: 1.6; }
+
+    /* STEPS */
+    .step-panel { display: none; animation: slideIn 0.3s ease; }
+    .step-panel.active { display: block; }
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateX(16px); }
+      to   { opacity: 1; transform: none; }
+    }
+
+    /* CAMPOS */
+    .field { margin-bottom: 1.25rem; }
+    .field label {
+      display: block; font-size: 0.8rem; font-weight: 500;
+      color: var(--muted); margin-bottom: 0.45rem; letter-spacing: 0.02em;
+    }
+    .field input, .field select {
+      width: 100%; background: var(--navy-base);
+      border: 1px solid var(--navy-border); border-radius: 8px;
+      color: var(--white); font-family: 'Sora', sans-serif;
+      font-size: 0.92rem; font-weight: 400;
+      padding: 0.75rem 1rem;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      outline: none; appearance: none;
+    }
+    .field input:focus, .field select:focus {
+      border-color: var(--blue); box-shadow: 0 0 0 3px rgba(37,99,235,0.15);
+    }
+    .field input.error { border-color: var(--error); }
+    .field input::placeholder { color: var(--muted); }
+    .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+    .field-hint { font-size: 0.73rem; color: var(--muted); margin-top: 0.35rem; }
+    .field-error { font-size: 0.73rem; color: var(--error); margin-top: 0.35rem; display: none; }
+    .field-error.show { display: block; }
+
+    /* TOGGLE SENHA */
+    .input-wrap { position: relative; }
+    .toggle-senha {
+      position: absolute; right: 0.9rem; top: 50%; transform: translateY(-50%);
+      background: none; border: none; cursor: pointer; color: var(--muted);
+      padding: 0; font-size: 1rem; line-height: 1;
+    }
+    .toggle-senha:hover { color: var(--white); }
+
+    /* BOTÃO PRINCIPAL */
+    .btn-submit {
+      width: 100%; background: var(--green); color: #fff;
+      padding: 0.9rem; border: none; border-radius: 8px;
+      font-family: 'Sora', sans-serif; font-size: 0.95rem; font-weight: 600;
+      cursor: pointer; margin-top: 0.5rem;
+      transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
+    }
+    .btn-submit:hover:not(:disabled) {
+      background: var(--green-dark); transform: translateY(-1px);
+      box-shadow: 0 6px 20px rgba(34,197,94,0.3);
+    }
+    .btn-submit:disabled { opacity: 0.6; cursor: not-allowed; }
+    .btn-submit.loading::after {
+      content: ' ⏳'; font-size: 0.85rem;
+    }
+
+    .btn-back {
+      width: 100%; background: transparent; color: var(--muted);
+      padding: 0.75rem; border: 1px solid var(--navy-border); border-radius: 8px;
+      font-family: 'Sora', sans-serif; font-size: 0.85rem; font-weight: 400;
+      cursor: pointer; margin-top: 0.5rem;
+      transition: border-color 0.2s, color 0.2s;
+    }
+    .btn-back:hover { border-color: var(--muted); color: var(--white); }
+
+    .form-footer {
+      text-align: center; margin-top: 1.75rem;
+      font-size: 0.8rem; color: var(--muted);
+    }
+    .form-footer a { color: var(--blue-bright); text-decoration: none; }
+    .form-footer a:hover { text-decoration: underline; }
+
+    /* ERRO GLOBAL */
+    .alert-error {
+      background: rgba(248,113,113,0.1); border: 1px solid rgba(248,113,113,0.3);
+      color: var(--error); border-radius: 8px; padding: 0.75rem 1rem;
+      font-size: 0.82rem; margin-bottom: 1.25rem; display: none;
+    }
+    .alert-error.show { display: block; }
+
+    /* SUCESSO */
+    .success-wrap {
+      text-align: center; display: none; padding: 2rem 0;
+    }
+    .success-wrap.show { display: block; }
+    .success-icon {
+      width: 72px; height: 72px; background: rgba(34,197,94,0.15);
+      border-radius: 50%; display: flex; align-items: center; justify-content: center;
+      font-size: 2rem; margin: 0 auto 1.5rem;
+      animation: pop 0.5s ease;
+    }
+    @keyframes pop {
+      0%   { transform: scale(0); }
+      70%  { transform: scale(1.15); }
+      100% { transform: scale(1); }
+    }
+    .success-wrap h2 { font-family: 'Lora', serif; font-size: 1.5rem; margin-bottom: 0.75rem; }
+    .success-wrap p { color: var(--muted); font-size: 0.88rem; line-height: 1.7; margin-bottom: 1.75rem; }
+
+    /* RESPONSIVE */
+    @media (max-width: 768px) {
+      body { grid-template-columns: 1fr; }
+      .left-panel { display: none; }
+      .right-panel { padding: 2rem 1.5rem; justify-content: flex-start; padding-top: 3rem; }
+      .field-row { grid-template-columns: 1fr; }
+      h1 { font-size: 1.5rem; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- PAINEL ESQUERDO -->
+<div class="left-panel">
+  <a href="/" class="panel-logo">prazu</a>
+
+  <div class="panel-hero">
+    <h2>7 dias grátis.<br><em>Sem cartão.</em></h2>
+    <p>Crie sua conta em menos de 2 minutos e comece a receber seus prazos no WhatsApp ainda hoje.</p>
+
+    <div class="trust-items">
+      <div class="trust-item">
+        <div class="trust-icon">⚖️</div>
+        <div>
+          <strong>2.374 comarcas cobertas</strong>
+          Feriados municipais, estaduais e recesso forense — calculados pelo CPC.
+        </div>
+      </div>
+      <div class="trust-item">
+        <div class="trust-icon">📲</div>
+        <div>
+          <strong>Aviso todo dia no WhatsApp</strong>
+          Antes das 7h você já sabe o que vence hoje e nos próximos dias.
+        </div>
+      </div>
+      <div class="trust-item">
+        <div class="trust-icon">🔒</div>
+        <div>
+          <strong>Sem cartão de crédito</strong>
+          7 dias completamente grátis. Cancela quando quiser, em 1 clique.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel-footer">
+    Já tem conta? <a href="/login">Fazer login</a>
+  </div>
+</div>
+
+<!-- PAINEL DIREITO — FORMULÁRIO -->
+<div class="right-panel">
+  <div class="form-wrap">
+
+    <!-- PROGRESS -->
+    <div class="progress-wrap">
+      <div class="progress-label">
+        <span id="step-label">Passo 1 de 3</span>
+        <span id="step-name">Seus dados</span>
+      </div>
+      <div class="progress-steps">
+        <div class="p-step active" id="ps1"></div>
+        <div class="p-step" id="ps2"></div>
+        <div class="p-step" id="ps3"></div>
+      </div>
+    </div>
+
+    <div class="alert-error" id="alert-error"></div>
+
+    <!-- ==================== STEP 1: DADOS PESSOAIS ==================== -->
+    <div class="step-panel active" id="step1">
+      <h1>Vamos começar <em>rápido.</em></h1>
+      <p class="form-sub">Seus dados básicos para criar a conta.</p>
+
+      <div class="field">
+        <label>Nome completo</label>
+        <input type="text" id="nome" placeholder="Dr. João da Silva" autocomplete="name">
+        <div class="field-error" id="err-nome">Por favor, informe seu nome completo.</div>
+      </div>
+      <div class="field">
+        <label>E-mail profissional</label>
+        <input type="email" id="email" placeholder="joao@escritorio.adv.br" autocomplete="email">
+        <div class="field-error" id="err-email">E-mail inválido.</div>
+      </div>
+      <div class="field">
+        <label>Senha</label>
+        <div class="input-wrap">
+          <input type="password" id="senha" placeholder="Mínimo 6 caracteres" autocomplete="new-password">
+          <button type="button" class="toggle-senha" onclick="toggleSenha('senha', this)">👁</button>
+        </div>
+        <div class="field-error" id="err-senha">Mínimo 6 caracteres.</div>
+      </div>
+
+      <button class="btn-submit" onclick="irPara(2)">Continuar →</button>
+
+      <div class="form-footer">
+        Já tem conta? <a href="/login">Fazer login</a>
+      </div>
+    </div>
+
+    <!-- ==================== STEP 2: OAB + WHATSAPP ==================== -->
+    <div class="step-panel" id="step2">
+      <h1>Sua <em>OAB</em></h1>
+      <p class="form-sub">A Prazu usa sua OAB para buscar as publicações no DJEN automaticamente.</p>
+
+      <div class="field-row">
+        <div class="field">
+          <label>Número OAB</label>
+          <input type="text" id="oab-num" placeholder="12345" inputmode="numeric">
+          <div class="field-error" id="err-oab">Número inválido.</div>
+        </div>
+        <div class="field">
+          <label>Estado</label>
+          <select id="oab-uf">
+            <option value="">UF</option>
+            <option>AC</option><option>AL</option><option>AM</option><option>AP</option>
+            <option>BA</option><option>CE</option><option>DF</option><option>ES</option>
+            <option>GO</option><option>MA</option><option>MG</option><option>MS</option>
+            <option>MT</option><option>PA</option><option>PB</option><option>PE</option>
+            <option>PI</option><option>PR</option><option>RJ</option><option>RN</option>
+            <option>RO</option><option>RR</option><option>RS</option><option>SC</option>
+            <option>SE</option><option>SP</option><option>TO</option>
+          </select>
+          <div class="field-error" id="err-uf">Selecione o estado.</div>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>WhatsApp <span style="color:var(--muted);font-weight:300">(opcional — para receber os avisos)</span></label>
+        <input type="tel" id="whatsapp" placeholder="(11) 99999-9999" inputmode="numeric">
+        <div class="field-hint">Com DDD, sem espaços. Você pode adicionar depois.</div>
+      </div>
+
+      <button class="btn-submit" onclick="irPara(3)">Continuar →</button>
+      <button class="btn-back" onclick="irPara(1)">← Voltar</button>
+    </div>
+
+    <!-- ==================== STEP 3: CONFIRMAÇÃO ==================== -->
+    <div class="step-panel" id="step3">
+      <h1>Tudo <em>certo?</em></h1>
+      <p class="form-sub">Confira seus dados antes de criar a conta.</p>
+
+      <div style="background:var(--navy-base);border:1px solid var(--navy-border);border-radius:10px;padding:1.25rem;margin-bottom:1.5rem;">
+        <div id="confirm-nome" style="font-weight:500;margin-bottom:0.25rem;"></div>
+        <div id="confirm-email" style="font-size:0.82rem;color:var(--muted);margin-bottom:0.25rem;"></div>
+        <div id="confirm-oab" style="font-size:0.82rem;color:var(--blue-bright);margin-bottom:0.25rem;"></div>
+        <div id="confirm-wpp" style="font-size:0.82rem;color:var(--muted);"></div>
+      </div>
+
+      <div style="font-size:0.78rem;color:var(--muted);line-height:1.7;margin-bottom:1.5rem;">
+        Ao criar sua conta você concorda com os <a href="/termos" style="color:var(--blue-bright)">Termos de Uso</a> e a <a href="/privacidade" style="color:var(--blue-bright)">Política de Privacidade</a>.
+        Seu trial de 7 dias começa agora, sem cobranças.
+      </div>
+
+      <button class="btn-submit" id="btn-criar" onclick="criarConta()">
+        ✅ Criar minha conta grátis
+      </button>
+      <button class="btn-back" onclick="irPara(2)">← Voltar</button>
+    </div>
+
+    <!-- ==================== SUCESSO ==================== -->
+    <div class="success-wrap" id="success">
+      <div class="success-icon">🎉</div>
+      <h2>Conta criada!</h2>
+      <p>
+        Bem-vindo(a) à Prazu, <span id="success-nome" style="color:var(--white);font-weight:500"></span>!<br><br>
+        Já estamos buscando seus processos no DJEN.<br>
+        Redirecionando para seu painel...
+      </p>
+      <a href="/dashboard" style="display:block;background:var(--green);color:#fff;padding:0.9rem;border-radius:8px;text-align:center;text-decoration:none;font-weight:600;font-size:0.95rem;">
+        Ir para o painel agora →
+      </a>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  const WPP_LINK = 'https://wa.me/5511974543508?text=Ol%C3%A1%20queria%20saber%20mais%20detalhes%20da%20prazu.%20Como%20funciona%3F';
+  let currentStep = 1;
+
+  function updateProgress(step) {
+    const labels = ['', 'Seus dados', 'Sua OAB', 'Confirmação'];
+    document.getElementById('step-label').textContent = `Passo ${step} de 3`;
+    document.getElementById('step-name').textContent = labels[step];
+    for (let i = 1; i <= 3; i++) {
+      const el = document.getElementById(`ps${i}`);
+      el.className = 'p-step' + (i < step ? ' done' : i === step ? ' active' : '');
+    }
+  }
+
+  function mostrarStep(n) {
+    document.querySelectorAll('.step-panel').forEach(el => el.classList.remove('active'));
+    document.getElementById(`step${n}`).classList.add('active');
+    updateProgress(n);
+    currentStep = n;
+  }
+
+  function erros(campo, id, cond) {
+    const el = document.getElementById(id);
+    const input = document.getElementById(campo);
+    if (!cond) {
+      el.classList.add('show');
+      if (input) input.classList.add('error');
+      return false;
+    }
+    el.classList.remove('show');
+    if (input) input.classList.remove('error');
+    return true;
+  }
+
+  function irPara(n) {
+    esconderAlerta();
+    if (n === 2) {
+      const nome = document.getElementById('nome').value.trim();
+      const email = document.getElementById('email').value.trim();
+      const senha = document.getElementById('senha').value;
+      const ok1 = erros('nome', 'err-nome', nome.length >= 3);
+      const ok2 = erros('email', 'err-email', /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email));
+      const ok3 = erros('senha', 'err-senha', senha.length >= 6);
+      if (!ok1 || !ok2 || !ok3) return;
+    }
+    if (n === 3) {
+      const num = document.getElementById('oab-num').value.trim();
+      const uf = document.getElementById('oab-uf').value;
+      const ok1 = erros('oab-num', 'err-oab', /^\d{3,7}$/.test(num));
+      const ok2 = erros('oab-uf', 'err-uf', uf !== '');
+      if (!ok1 || !ok2) return;
+
+      // Preenche confirmação
+      const wpp = document.getElementById('whatsapp').value.trim();
+      document.getElementById('confirm-nome').textContent = document.getElementById('nome').value.trim();
+      document.getElementById('confirm-email').textContent = document.getElementById('email').value.trim();
+      document.getElementById('confirm-oab').textContent = `OAB ${num}/${uf}`;
+      document.getElementById('confirm-wpp').textContent = wpp ? `WhatsApp: ${wpp}` : 'WhatsApp não informado';
+    }
+    mostrarStep(n);
+  }
+
+  function toggleSenha(id, btn) {
+    const inp = document.getElementById(id);
+    if (inp.type === 'password') { inp.type = 'text'; btn.textContent = '🙈'; }
+    else { inp.type = 'password'; btn.textContent = '👁'; }
+  }
+
+  function esconderAlerta() {
+    const al = document.getElementById('alert-error');
+    al.classList.remove('show'); al.textContent = '';
+  }
+  function mostrarAlerta(msg) {
+    const al = document.getElementById('alert-error');
+    al.textContent = msg; al.classList.add('show');
+  }
+
+  async function criarConta() {
+    const btn = document.getElementById('btn-criar');
+    btn.disabled = true; btn.classList.add('loading');
+    btn.textContent = 'Criando sua conta...';
+    esconderAlerta();
+
+    const wppRaw = document.getElementById('whatsapp').value.replace(/\D/g, '');
+    const payload = {
+      nome:          document.getElementById('nome').value.trim(),
+      email:         document.getElementById('email').value.trim(),
+      senha:         document.getElementById('senha').value,
+      oab_numero:    document.getElementById('oab-num').value.trim(),
+      oab_seccional: document.getElementById('oab-uf').value,
+      whatsapp:      wppRaw.length >= 10 ? wppRaw : null,
+    };
+
+    try {
+      const res = await fetch('/api/auth/cadastro', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+        credentials: 'same-origin',  // garante que o cookie seja salvo
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        // Mensagens amigáveis por tipo de erro
+        let msg = data.detail || 'Erro ao criar conta. Tente novamente.';
+        if (res.status === 409) {
+          if (msg.toLowerCase().includes('oab'))
+            msg = 'Essa OAB já está cadastrada. Você pode fazer login ou recuperar sua conta.';
+          else
+            msg = 'Esse e-mail já está cadastrado. Tente fazer login ou recuperar sua senha.';
+        }
+        mostrarAlerta(msg);
+        btn.disabled = false; btn.classList.remove('loading');
+        btn.textContent = '✅ Criar minha conta grátis';
+        return;
+      }
+
+      // Sucesso — mostra tela de sucesso e redireciona em 2s
+      document.getElementById('success-nome').textContent = payload.nome.split(' ')[0];
+      document.querySelectorAll('.step-panel').forEach(el => el.classList.remove('active'));
+      document.querySelector('.progress-wrap').style.display = 'none';
+      document.getElementById('success').classList.add('show');
+
+      // Redireciona para o dashboard (cookie já foi setado pelo servidor na resposta)
+      setTimeout(() => { window.location.href = '/dashboard'; }, 2200);
+
+    } catch (e) {
+      mostrarAlerta('Erro de conexão. Verifique sua internet e tente novamente.');
+      btn.disabled = false; btn.classList.remove('loading');
+      btn.textContent = '✅ Criar minha conta grátis';
+    }
+  }
+
+  // Avança com Enter
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      if (currentStep === 1) irPara(2);
+      else if (currentStep === 2) irPara(3);
+      else if (currentStep === 3) criarConta();
+    }
+  });
+</script>
+</body>
+</html>

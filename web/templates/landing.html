@@ -1,0 +1,889 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Prazu — Nunca mais perca um prazo</title>
+  <meta name="description" content="A Prazu monitora seus prazos processuais e te avisa todo dia no WhatsApp. Feriados forenses de 2.374 comarcas. 7 dias grátis.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=Lora:ital,wght@0,400;0,600;1,400;1,600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --navy-deep:   #0A0F1C;
+      --navy-base:   #111B33;
+      --navy-mid:    #1a2a4a;
+      --navy-border: #1e2d4d;
+      --blue:        #2563EB;
+      --blue-bright: #3B82F6;
+      --blue-glow:   rgba(37,99,235,0.18);
+      --blue-dim:    rgba(59,130,246,0.12);
+      --white:       #F8FAFF;
+      --muted:       #7a8aaa;
+      --muted-mid:   #3a4a6a;
+    }
+
+    html { scroll-behavior: smooth; }
+    body {
+      background: var(--navy-deep);
+      color: var(--white);
+      font-family: 'Sora', sans-serif;
+      font-weight: 300;
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: '';
+      position: fixed; inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
+      pointer-events: none; z-index: 0;
+    }
+
+    /* NAV */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 1.25rem 5%;
+      transition: background 0.3s, border-color 0.3s;
+      border-bottom: 1px solid transparent;
+    }
+    nav.scrolled {
+      background: rgba(10,15,28,0.94);
+      backdrop-filter: blur(16px);
+      border-color: var(--navy-border);
+    }
+
+    .logo-mark {
+      font-family: 'Sora', sans-serif;
+      font-weight: 800; font-size: 1.6rem;
+      color: var(--blue); text-decoration: none;
+      letter-spacing: -0.03em;
+    }
+
+    .nav-links { display: flex; gap: 2rem; align-items: center; list-style: none; }
+    .nav-links a {
+      color: var(--muted); text-decoration: none;
+      font-size: 0.85rem; font-weight: 400;
+      transition: color 0.2s;
+    }
+    .nav-links a:hover { color: var(--white); }
+    .btn-nav {
+      background: var(--blue) !important; color: #fff !important;
+      padding: 0.55rem 1.4rem; border-radius: 6px; font-weight: 500 !important;
+      transition: background 0.2s !important;
+    }
+    .btn-nav:hover { background: var(--blue-bright) !important; }
+
+    /* HERO */
+    .hero {
+      position: relative; min-height: 100vh;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      text-align: center; padding: 9rem 5% 5rem; overflow: hidden;
+    }
+    .hero-bg {
+      position: absolute; inset: 0;
+      background:
+        radial-gradient(ellipse 80% 60% at 50% 0%, rgba(37,99,235,0.2) 0%, transparent 65%),
+        radial-gradient(ellipse 40% 40% at 80% 80%, rgba(37,99,235,0.07) 0%, transparent 60%);
+      pointer-events: none;
+    }
+    .hero::after {
+      content: ''; position: absolute; bottom: 0; left: 50%; transform: translateX(-50%);
+      width: 1px; height: 64px;
+      background: linear-gradient(to bottom, var(--blue), transparent);
+    }
+
+    .hero-badge {
+      display: inline-flex; align-items: center; gap: 0.5rem;
+      border: 1px solid rgba(59,130,246,0.3); background: var(--blue-dim);
+      color: var(--blue-bright); font-size: 0.72rem; letter-spacing: 0.1em;
+      text-transform: uppercase; font-weight: 500;
+      padding: 0.35rem 1rem; border-radius: 99px; margin-bottom: 2rem;
+      opacity: 0; animation: fadeUp 0.6s 0.1s ease forwards;
+    }
+    .hero-badge::before {
+      content: ''; width: 6px; height: 6px;
+      background: var(--blue-bright); border-radius: 50%;
+      animation: blink 2s infinite;
+    }
+    @keyframes blink { 0%,100%{opacity:1;} 50%{opacity:0.3;} }
+
+    h1 {
+      font-family: 'Lora', serif;
+      font-size: clamp(3rem, 6.5vw, 5.8rem);
+      font-weight: 600; line-height: 1.08; letter-spacing: -0.025em; max-width: 13ch;
+      opacity: 0; animation: fadeUp 0.7s 0.2s ease forwards;
+    }
+    h1 em {
+      font-style: italic;
+      background: linear-gradient(135deg, var(--blue-bright), #93c5fd);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    }
+
+    .hero-sub {
+      margin-top: 1.75rem; font-size: 1.05rem; color: var(--muted);
+      max-width: 50ch; line-height: 1.8;
+      opacity: 0; animation: fadeUp 0.7s 0.35s ease forwards;
+    }
+    .hero-sub strong { color: var(--white); font-weight: 500; }
+
+    .hero-cta {
+      margin-top: 3rem; display: flex; gap: 1rem; flex-wrap: wrap; justify-content: center;
+      opacity: 0; animation: fadeUp 0.7s 0.5s ease forwards;
+    }
+
+    .btn-primary {
+      background: var(--blue); color: #fff; padding: 0.9rem 2.4rem;
+      border: none; border-radius: 8px; font-family: 'Sora', sans-serif;
+      font-size: 0.95rem; font-weight: 600; cursor: pointer; text-decoration: none;
+      transition: background 0.2s, transform 0.15s, box-shadow 0.2s; display: inline-block;
+    }
+    .btn-primary:hover {
+      background: var(--blue-bright); transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(37,99,235,0.35);
+    }
+    .btn-ghost {
+      background: transparent; color: var(--muted); padding: 0.9rem 2rem;
+      border: 1px solid var(--navy-border); border-radius: 8px;
+      font-family: 'Sora', sans-serif; font-size: 0.95rem; cursor: pointer;
+      text-decoration: none; transition: border-color 0.2s, color 0.2s; display: inline-block;
+    }
+    .btn-ghost:hover { border-color: var(--muted-mid); color: var(--white); }
+
+    /* TICKER */
+    .ticker-wrap {
+      margin-top: 4.5rem; width: 100%; overflow: hidden;
+      border-top: 1px solid var(--navy-border); border-bottom: 1px solid var(--navy-border);
+      padding: 0.85rem 0;
+      opacity: 0; animation: fadeUp 0.7s 0.7s ease forwards;
+    }
+    .ticker { display: flex; animation: scroll-left 36s linear infinite; white-space: nowrap; }
+    .ticker:hover { animation-play-state: paused; }
+    .t-item {
+      display: inline-flex; align-items: center; gap: 0.6rem;
+      padding: 0 2.5rem; font-size: 0.78rem; color: var(--muted);
+    }
+    .t-item::after { content: '·'; color: var(--muted-mid); margin-left: 2.5rem; }
+    .t-num { font-size: 0.7rem; color: var(--muted-mid); font-family: monospace; }
+    .badge {
+      font-size: 0.63rem; padding: 0.18rem 0.5rem; border-radius: 4px;
+      font-weight: 600; white-space: nowrap;
+    }
+    .b-red  { background:rgba(239,68,68,0.15);  color:#f87171; }
+    .b-yel  { background:rgba(234,179,8,0.15);  color:#fbbf24; }
+    .b-grn  { background:rgba(34,197,94,0.15);  color:#4ade80; }
+    .b-blu  { background:rgba(59,130,246,0.15); color:#93c5fd; }
+
+    @keyframes scroll-left {
+      0%   { transform:translateX(0); }
+      100% { transform:translateX(-50%); }
+    }
+
+    /* STATS */
+    .stats {
+      display: flex; justify-content: center;
+      border-bottom: 1px solid var(--navy-border); flex-wrap: wrap;
+    }
+    .stat {
+      flex: 1; min-width: 180px; text-align: center; padding: 3.5rem 2rem;
+      border-right: 1px solid var(--navy-border);
+      opacity: 0; transform: translateY(16px);
+      transition: opacity 0.5s, transform 0.5s;
+    }
+    .stat:last-child { border-right: none; }
+    .stat.visible { opacity: 1; transform: none; }
+    .stat-num {
+      font-family: 'Lora', serif; font-size: 2.8rem; font-weight: 600;
+      background: linear-gradient(135deg, #fff 40%, var(--blue-bright));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text; line-height: 1;
+    }
+    .stat-label {
+      font-size: 0.73rem; color: var(--muted);
+      letter-spacing: 0.07em; text-transform: uppercase; margin-top: 0.5rem;
+    }
+
+    /* SEÇÕES */
+    .section { max-width: 1100px; margin: 0 auto; padding: 7rem 5%; }
+    .tag {
+      display: inline-block; font-size: 0.68rem; letter-spacing: 0.14em;
+      text-transform: uppercase; font-weight: 600; color: var(--blue-bright);
+      background: var(--blue-dim); padding: 0.25rem 0.7rem; border-radius: 4px;
+      margin-bottom: 1.25rem;
+    }
+    h2 {
+      font-family: 'Lora', serif; font-size: clamp(2rem, 4vw, 3rem);
+      font-weight: 600; line-height: 1.2; letter-spacing: -0.02em;
+    }
+    h2 em { font-style: italic; color: var(--blue-bright); }
+
+    /* COMO FUNCIONA */
+    .steps {
+      margin-top: 4rem; display: grid; grid-template-columns: repeat(4, 1fr);
+      position: relative;
+    }
+    .steps::before {
+      content: ''; position: absolute; top: 2.4rem; left: 12%; right: 12%;
+      height: 1px;
+      background: linear-gradient(to right, transparent, var(--navy-border) 20%, var(--navy-border) 80%, transparent);
+    }
+    .step {
+      padding: 0 1.25rem 2rem; text-align: center;
+      opacity: 0; transform: translateY(20px);
+      transition: opacity 0.5s, transform 0.5s;
+    }
+    .step.visible { opacity: 1; transform: none; }
+    .step-circle {
+      width: 48px; height: 48px; border-radius: 50%;
+      background: var(--navy-base); border: 1px solid var(--navy-border);
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 1.5rem; font-family: 'Lora', serif;
+      font-size: 1rem; font-weight: 600; color: var(--blue-bright);
+      transition: border-color 0.2s, background 0.2s;
+    }
+    .step:hover .step-circle { border-color: var(--blue); background: var(--blue-dim); }
+    .step h3 { font-size: 0.95rem; font-weight: 600; margin-bottom: 0.6rem; }
+    .step p { font-size: 0.82rem; color: var(--muted); line-height: 1.7; }
+
+    /* FEATURES */
+    .features-grid {
+      margin-top: 4rem; display: grid; grid-template-columns: repeat(3, 1fr);
+      gap: 1px; background: var(--navy-border);
+      border: 1px solid var(--navy-border); border-radius: 12px; overflow: hidden;
+    }
+    .feature {
+      background: var(--navy-base); padding: 2rem 1.75rem;
+      opacity: 0; transform: translateY(16px);
+      transition: opacity 0.4s, transform 0.4s, background 0.2s;
+    }
+    .feature.visible { opacity: 1; transform: none; }
+    .feature:hover { background: var(--navy-mid); }
+    .feature-icon { font-size: 1.4rem; margin-bottom: 1rem; }
+    .feature h3 { font-size: 0.95rem; font-weight: 600; margin-bottom: 0.5rem; }
+    .feature p { font-size: 0.82rem; color: var(--muted); line-height: 1.7; }
+
+    /* DEMO */
+    .demo-wrap {
+      background: var(--navy-base);
+      border-top: 1px solid var(--navy-border); border-bottom: 1px solid var(--navy-border);
+    }
+    .demo-inner {
+      max-width: 1100px; margin: 0 auto; padding: 7rem 5%;
+      display: grid; grid-template-columns: 1fr 1fr; gap: 6rem; align-items: center;
+    }
+    .demo-text h2 { margin-bottom: 1.25rem; }
+    .demo-text .sub { color: var(--muted); line-height: 1.8; margin-bottom: 2rem; font-size: 0.95rem; }
+
+    .phone-frame {
+      background: #0f172a; border-radius: 28px; border: 1px solid #1e2d4d; overflow: hidden;
+      box-shadow: 0 40px 80px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.04);
+      max-width: 320px; margin: 0 auto;
+    }
+    .phone-bar { background: #111827; padding: 0.6rem 1.25rem; display: flex; justify-content: space-between; font-size: 0.68rem; color: #6b7280; }
+    .wpp-header { background: #1f2a37; padding: 0.9rem 1rem; display: flex; align-items: center; gap: 0.75rem; }
+    .wpp-av { width: 34px; height: 34px; background: var(--blue); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.8rem; color: #fff; flex-shrink: 0; }
+    .wpp-name { font-size: 0.85rem; font-weight: 500; color: #e9edef; }
+    .wpp-status-txt { font-size: 0.65rem; color: #8696a0; }
+    .wpp-body { padding: 1rem; display: flex; flex-direction: column; gap: 0.6rem; background: #0d1721; min-height: 280px; }
+    .wpp-msg {
+      max-width: 90%; padding: 0.6rem 0.85rem; border-radius: 8px;
+      font-size: 0.74rem; line-height: 1.55; color: #e9edef;
+      opacity: 0; transform: translateY(6px); transition: opacity 0.4s, transform 0.4s;
+    }
+    .wpp-msg.visible { opacity: 1; transform: none; }
+    .recv { background: #1f2a37; align-self: flex-start; border-radius: 2px 8px 8px 8px; }
+    .sent { background: #0a3d62; align-self: flex-end; border-radius: 8px 2px 8px 8px; }
+    .wpp-time { font-size: 0.58rem; color: #8696a0; text-align: right; margin-top: 0.2rem; }
+
+    /* PREÇO */
+    .pricing-wrap { max-width: 640px; margin: 0 auto; padding: 7rem 5%; text-align: center; }
+    .pricing-card {
+      margin-top: 3rem; border: 1px solid var(--navy-border);
+      background: var(--navy-base); border-radius: 16px; padding: 3rem 2.5rem;
+      position: relative; overflow: hidden;
+    }
+    .pricing-card::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+      background: linear-gradient(90deg, transparent, var(--blue), var(--blue-bright), transparent);
+    }
+    .pricing-card::after {
+      content: ''; position: absolute; top: -50px; left: 50%; transform: translateX(-50%);
+      width: 300px; height: 200px;
+      background: radial-gradient(ellipse, rgba(37,99,235,0.12), transparent 70%);
+      pointer-events: none;
+    }
+    .p-badge {
+      display: inline-block; background: rgba(37,99,235,0.15); color: var(--blue-bright);
+      font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase; font-weight: 600;
+      padding: 0.3rem 0.9rem; border-radius: 99px;
+      border: 1px solid rgba(59,130,246,0.25); margin-bottom: 1.75rem;
+    }
+    .p-price { font-family: 'Lora', serif; font-size: 4rem; font-weight: 600; line-height: 1; }
+    .p-price span { font-size: 1.4rem; color: var(--muted); font-weight: 300; font-family: 'Sora', sans-serif; }
+    .p-period { color: var(--muted); font-size: 0.82rem; margin-top: 0.4rem; }
+    .p-list { list-style: none; margin: 2.25rem 0; text-align: left; display: flex; flex-direction: column; gap: 0.75rem; }
+    .p-list li { display: flex; align-items: flex-start; gap: 0.7rem; font-size: 0.88rem; color: var(--muted); }
+    .p-list li::before { content: '✓'; color: var(--blue-bright); font-weight: 600; flex-shrink: 0; }
+    .p-note { margin-top: 1.25rem; font-size: 0.77rem; color: var(--muted); }
+
+    /* CTA FINAL */
+    .cta-section {
+      text-align: center; padding: 7rem 5%;
+      background: var(--navy-base); border-top: 1px solid var(--navy-border);
+      position: relative; overflow: hidden;
+    }
+    .cta-section::before {
+      content: ''; position: absolute; top: -100px; left: 50%; transform: translateX(-50%);
+      width: 600px; height: 400px;
+      background: radial-gradient(ellipse, rgba(37,99,235,0.13), transparent 70%);
+      pointer-events: none;
+    }
+    .cta-section h2 { margin-bottom: 1rem; max-width: 20ch; margin-left: auto; margin-right: auto; }
+    .cta-section p { color: var(--muted); margin-bottom: 2.5rem; max-width: 44ch; margin-left: auto; margin-right: auto; }
+
+    /* FOOTER */
+    footer {
+      border-top: 1px solid var(--navy-border); padding: 1.75rem 5%;
+      display: flex; justify-content: space-between; align-items: center;
+      font-size: 0.77rem; color: var(--muted); flex-wrap: wrap; gap: 1rem;
+    }
+    .footer-logo { font-family: 'Sora', sans-serif; font-weight: 800; font-size: 1.2rem; color: var(--blue); text-decoration: none; }
+
+    /* BOTÕES VERDES */
+    .btn-green {
+      background: #22c55e; color: #fff; padding: 0.9rem 2.4rem;
+      border: none; border-radius: 8px; font-family: 'Sora', sans-serif;
+      font-size: 0.95rem; font-weight: 600; cursor: pointer; text-decoration: none;
+      transition: background 0.2s, transform 0.15s, box-shadow 0.2s; display: inline-block;
+    }
+    .btn-green:hover {
+      background: #16a34a; transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(34,197,94,0.35);
+    }
+    .btn-green-full {
+      display: block; text-align: center; width: 100%;
+      background: #22c55e; color: #fff; padding: 0.95rem 2rem;
+      border: none; border-radius: 8px; font-family: 'Sora', sans-serif;
+      font-size: 0.95rem; font-weight: 600; cursor: pointer; text-decoration: none;
+      transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
+    }
+    .btn-green-full:hover {
+      background: #16a34a; transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(34,197,94,0.35);
+    }
+
+    /* FAQ */
+    .faq-wrap {
+      max-width: 760px; margin: 0 auto; padding: 7rem 5%;
+    }
+    .faq-wrap h2 { text-align: center; margin-bottom: 0.75rem; }
+    .faq-sub { text-align: center; color: var(--muted); margin-bottom: 3rem; font-size: 0.95rem; }
+    .faq-list { display: flex; flex-direction: column; gap: 0; }
+    .faq-item {
+      border-bottom: 1px solid var(--navy-border);
+      opacity: 0; transform: translateY(12px);
+      transition: opacity 0.4s, transform 0.4s;
+    }
+    .faq-item:first-child { border-top: 1px solid var(--navy-border); }
+    .faq-item.visible { opacity: 1; transform: none; }
+    .faq-q {
+      width: 100%; background: none; border: none; color: var(--white);
+      font-family: 'Sora', sans-serif; font-size: 0.95rem; font-weight: 500;
+      text-align: left; padding: 1.4rem 0; cursor: pointer;
+      display: flex; justify-content: space-between; align-items: center; gap: 1rem;
+    }
+    .faq-q:hover { color: var(--blue-bright); }
+    .faq-icon {
+      flex-shrink: 0; width: 22px; height: 22px;
+      border: 1px solid var(--navy-border); border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.9rem; color: var(--blue-bright);
+      transition: transform 0.3s, background 0.2s;
+    }
+    .faq-item.open .faq-icon { transform: rotate(45deg); background: var(--blue-dim); }
+    .faq-a {
+      max-height: 0; overflow: hidden;
+      transition: max-height 0.35s ease, padding 0.3s;
+      font-size: 0.88rem; color: var(--muted); line-height: 1.8;
+    }
+    .faq-item.open .faq-a { max-height: 400px; padding-bottom: 1.4rem; }
+
+    /* BANNER PÓS-FAQ */
+    .faq-cta {
+      margin-top: 3rem; background: var(--navy-base);
+      border: 1px solid var(--navy-border); border-radius: 12px;
+      padding: 2.5rem 2rem; text-align: center;
+    }
+    .faq-cta p { font-size: 1.05rem; font-weight: 500; margin-bottom: 0.5rem; }
+    .faq-cta span { font-size: 0.88rem; color: var(--muted); display: block; margin-bottom: 1.75rem; }
+
+    /* BOTÃO FLUTUANTE WHATSAPP */
+    .wpp-float {
+      position: fixed; bottom: 28px; right: 28px; z-index: 999;
+      width: 58px; height: 58px; border-radius: 50%;
+      background: #22c55e;
+      box-shadow: 0 4px 20px rgba(34,197,94,0.45);
+      display: flex; align-items: center; justify-content: center;
+      text-decoration: none; cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+      animation: float-in 0.5s 1.5s ease backwards;
+    }
+    .wpp-float:hover {
+      transform: scale(1.1) translateY(-2px);
+      box-shadow: 0 8px 28px rgba(34,197,94,0.55);
+    }
+    .wpp-float svg { width: 30px; height: 30px; fill: #fff; }
+    .wpp-float-tooltip {
+      position: absolute; right: 68px; top: 50%; transform: translateY(-50%);
+      background: #111; color: #fff; font-size: 0.78rem; font-weight: 500;
+      padding: 0.4rem 0.85rem; border-radius: 6px; white-space: nowrap;
+      opacity: 0; pointer-events: none;
+      transition: opacity 0.2s;
+    }
+    .wpp-float:hover .wpp-float-tooltip { opacity: 1; }
+
+    @keyframes float-in {
+      from { opacity: 0; transform: scale(0.5); }
+      to   { opacity: 1; transform: scale(1); }
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(18px); }
+      to   { opacity: 1; transform: none; }
+    }
+
+    @media (max-width: 900px) {
+      .steps { grid-template-columns: repeat(2, 1fr); }
+      .steps::before { display: none; }
+      .features-grid { grid-template-columns: 1fr 1fr; }
+      .demo-inner { grid-template-columns: 1fr; gap: 3rem; }
+      .stat { border-right: none; border-bottom: 1px solid var(--navy-border); min-width: 50%; }
+    }
+
+    @media (max-width: 600px) {
+      nav { padding: 1rem 5%; }
+      .nav-links { display: none; }
+      /* HAMBURGUER */
+      .nav-mobile-btn {
+        display: flex; flex-direction: column; gap: 5px;
+        background: none; border: none; cursor: pointer; padding: 4px;
+      }
+      .nav-mobile-btn span {
+        display: block; width: 22px; height: 2px;
+        background: var(--white); border-radius: 2px;
+        transition: transform 0.3s, opacity 0.3s;
+      }
+      /* MENU MOBILE ABERTO */
+      .mobile-menu {
+        display: none; position: fixed; inset: 0; z-index: 99;
+        background: rgba(10,15,28,0.98); backdrop-filter: blur(12px);
+        flex-direction: column; align-items: center; justify-content: center; gap: 2rem;
+      }
+      .mobile-menu.open { display: flex; }
+      .mobile-menu a {
+        color: var(--white); text-decoration: none; font-size: 1.5rem; font-weight: 600;
+        font-family: 'Lora', serif; font-style: italic;
+      }
+      .mobile-menu a:hover { color: var(--blue-bright); }
+      .mobile-menu .close-btn {
+        position: absolute; top: 1.5rem; right: 1.5rem;
+        background: none; border: none; color: var(--muted); font-size: 1.5rem; cursor: pointer;
+      }
+
+      h1 { font-size: 2.6rem; }
+      .hero-sub { font-size: 0.95rem; }
+      .hero { padding: 7rem 5% 4rem; }
+      .ticker-wrap { overflow: hidden; }
+
+      .steps { grid-template-columns: 1fr; }
+      .features-grid { grid-template-columns: 1fr; }
+      .stat { min-width: 100%; }
+
+      .section { padding: 4rem 5%; }
+      .demo-inner { padding: 4rem 5%; }
+      .pricing-wrap { padding: 4rem 5%; }
+      .faq-wrap { padding: 4rem 5%; }
+      .cta-section { padding: 4rem 5%; }
+
+      .phone-frame { max-width: 100%; }
+
+      footer { flex-direction: column; text-align: center; padding: 1.5rem 5%; }
+
+      /* Botão flutuante mais baixo no mobile (acima da barra do browser) */
+      .wpp-float { bottom: 20px; right: 20px; width: 52px; height: 52px; }
+      .wpp-float svg { width: 26px; height: 26px; }
+      .wpp-float-tooltip { display: none; }
+    }
+    /* nav-mobile-btn hidden on desktop */
+    .nav-mobile-btn { display: none; }
+  </style>
+</head>
+<body>
+
+<nav id="nav">
+  <a href="/" class="logo-mark">prazu</a>
+  <ul class="nav-links">
+    <li><a href="#como-funciona">Como funciona</a></li>
+    <li><a href="#recursos">Recursos</a></li>
+    <li><a href="#preco">Preço</a></li>
+    <li><a href="#faq">Dúvidas</a></li>
+    <li><a href="/login">Entrar</a></li>
+    <li><a href="/cadastro" class="btn-nav">Teste grátis</a></li>
+  </ul>
+  <button class="nav-mobile-btn" onclick="abrirMenu()" aria-label="Menu">
+    <span></span><span></span><span></span>
+  </button>
+</nav>
+
+<!-- MENU MOBILE -->
+<div class="mobile-menu" id="mobile-menu">
+  <button class="close-btn" onclick="fecharMenu()">✕</button>
+  <a href="#como-funciona" onclick="fecharMenu()">Como funciona</a>
+  <a href="#recursos" onclick="fecharMenu()">Recursos</a>
+  <a href="#preco" onclick="fecharMenu()">Preço</a>
+  <a href="#faq" onclick="fecharMenu()">Dúvidas</a>
+  <a href="/login" onclick="fecharMenu()">Entrar</a>
+  <a href="/cadastro" style="color:var(--green)!important" onclick="fecharMenu()">Teste grátis →</a>
+</div>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-bg"></div>
+  <div class="hero-badge">Copiloto jurídico · WhatsApp</div>
+  <h1>Nunca mais perca<br>um <em>prazo.</em></h1>
+  <p class="hero-sub">
+    Todo dia de manhã você recebe um aviso no WhatsApp com todos os seus prazos —
+    calculados com feriados forenses de <strong>2.374 comarcas</strong> brasileiras.
+    Sem planilha. Sem esforço.
+  </p>
+  <div class="hero-cta">
+    <a href="/cadastro" class="btn-green">Começar 7 dias grátis</a>
+    <a href="#como-funciona" class="btn-ghost">Como funciona →</a>
+  </div>
+  <div class="ticker-wrap">
+    <div class="ticker">
+      <span class="t-item"><span class="badge b-red">Vence hoje</span><span class="t-num">0001234-55.2024.8.13.0024</span>Recurso de Apelação · Juiz de Fora/MG</span>
+      <span class="t-item"><span class="badge b-yel">3 dias</span><span class="t-num">0009871-12.2023.8.26.0100</span>Contestação · 1ª Vara Cível · São Paulo/SP</span>
+      <span class="t-item"><span class="badge b-blu">✓ Cumprido</span><span class="t-num">0004521-88.2024.8.13.0079</span>Impugnação · Uberlândia/MG</span>
+      <span class="t-item"><span class="badge b-grn">12 dias</span><span class="t-num">0007654-32.2024.8.19.0001</span>Razões finais · 3ª Vara Cível · Rio de Janeiro/RJ</span>
+      <span class="t-item"><span class="badge b-yel">Amanhã</span><span class="t-num">0002345-67.2024.8.26.0577</span>Embargos de Declaração · São Paulo/SP</span>
+      <span class="t-item"><span class="badge b-grn">7 dias</span><span class="t-num">0008123-45.2024.8.13.0145</span>Contrarrazões · Montes Claros/MG</span>
+      <span class="t-item"><span class="badge b-red">Vence hoje</span><span class="t-num">0001234-55.2024.8.13.0024</span>Recurso de Apelação · Juiz de Fora/MG</span>
+      <span class="t-item"><span class="badge b-yel">3 dias</span><span class="t-num">0009871-12.2023.8.26.0100</span>Contestação · 1ª Vara Cível · São Paulo/SP</span>
+      <span class="t-item"><span class="badge b-blu">✓ Cumprido</span><span class="t-num">0004521-88.2024.8.13.0079</span>Impugnação · Uberlândia/MG</span>
+      <span class="t-item"><span class="badge b-grn">12 dias</span><span class="t-num">0007654-32.2024.8.19.0001</span>Razões finais · 3ª Vara Cível · Rio de Janeiro/RJ</span>
+      <span class="t-item"><span class="badge b-yel">Amanhã</span><span class="t-num">0002345-67.2024.8.26.0577</span>Embargos de Declaração · São Paulo/SP</span>
+      <span class="t-item"><span class="badge b-grn">7 dias</span><span class="t-num">0008123-45.2024.8.13.0145</span>Contrarrazões · Montes Claros/MG</span>
+    </div>
+  </div>
+</section>
+
+<!-- STATS -->
+<div class="stats">
+  <div class="stat"><div class="stat-num" data-target="2374" data-suffix="">0</div><div class="stat-label">Comarcas cobertas</div></div>
+  <div class="stat"><div class="stat-num" data-target="84" data-suffix="M+">0</div><div class="stat-label">Processos ativos no Brasil</div></div>
+  <div class="stat"><div class="stat-num" data-target="28" data-suffix="+">0</div><div class="stat-label">Tribunais estaduais</div></div>
+  <div class="stat"><div class="stat-num" data-target="7" data-suffix=" dias">0</div><div class="stat-label">Grátis para testar</div></div>
+</div>
+
+<!-- COMO FUNCIONA -->
+<section class="section" id="como-funciona">
+  <div class="tag">Como funciona</div>
+  <h2>Você cadastra a OAB.<br>A Prazu <em>cuida do resto.</em></h2>
+  <div class="steps">
+    <div class="step">
+      <div class="step-circle">1</div>
+      <h3>Cadastre sua OAB</h3>
+      <p>Em 2 minutos você conecta sua OAB e a Prazu busca todas as suas publicações no DJEN automaticamente.</p>
+    </div>
+    <div class="step">
+      <div class="step-circle">2</div>
+      <h3>Prazos calculados</h3>
+      <p>O sistema calcula cada prazo com feriados municipais, estaduais e recesso forense — conforme o CPC.</p>
+    </div>
+    <div class="step">
+      <div class="step-circle">3</div>
+      <h3>Aviso diário no WhatsApp</h3>
+      <p>Todo dia no horário que você escolher, recebe um resumo com todos os vencimentos da semana.</p>
+    </div>
+    <div class="step">
+      <div class="step-circle">4</div>
+      <h3>Alertas antes do prazo</h3>
+      <p>3 dias, 1 dia e no vencimento — você é avisado com antecedência. Prazos fatais com destaque especial.</p>
+    </div>
+  </div>
+</section>
+
+<!-- RECURSOS -->
+<section class="section" id="recursos" style="padding-top:0;">
+  <div class="tag">Recursos</div>
+  <h2>Tudo que você precisa<br><em>num só lugar.</em></h2>
+  <div class="features-grid">
+    <div class="feature">
+      <div class="feature-icon">⚖️</div>
+      <h3>CPC na veia</h3>
+      <p>Contagem em dias úteis, feriados da comarca do processo, recesso 20/dez–20/jan. Arts. 216, 219, 220 e 224.</p>
+    </div>
+    <div class="feature">
+      <div class="feature-icon">🗺️</div>
+      <h3>2.374 comarcas</h3>
+      <p>Feriados municipais, estaduais e forenses de 27 UFs. Nenhuma comarca fica de fora.</p>
+    </div>
+    <div class="feature">
+      <div class="feature-icon">📡</div>
+      <h3>DJEN automático</h3>
+      <p>Busca novas publicações a cada 5 dias. Verifica se o prazo já foi cumprido no DataJud/CNJ.</p>
+    </div>
+    <div class="feature">
+      <div class="feature-icon">💬</div>
+      <h3>Pergunte no WhatsApp</h3>
+      <p>"Qual o próximo prazo do processo X?" — a Prazu responde na hora com IA. Como ter um assistente 24h.</p>
+    </div>
+    <div class="feature">
+      <div class="feature-icon">📊</div>
+      <h3>Painel completo</h3>
+      <p>Acesse todos os processos e prazos pelo computador ou celular. Tudo organizado e filtrável.</p>
+    </div>
+    <div class="feature">
+      <div class="feature-icon">🔒</div>
+      <h3>Seguro e privado</h3>
+      <p>Dados criptografados, hospedagem no Google Cloud Brasil. Sem acesso a documentos — só aos prazos.</p>
+    </div>
+  </div>
+</section>
+
+<!-- DEMO WHATSAPP -->
+<section class="demo-wrap">
+  <div class="demo-inner">
+    <div class="demo-text">
+      <div class="tag">Aviso diário</div>
+      <h2>Às 7h da manhã,<br><em>tudo na tela.</em></h2>
+      <p class="sub">
+        Antes de chegar ao escritório você já sabe exatamente o que precisa fazer no dia.
+        Sem precisar abrir sistema nenhum — só ler o aviso no WhatsApp.
+      </p>
+      <a href="/cadastro" class="btn-green">Receber meu aviso diário</a>
+    </div>
+    <div class="phone-frame">
+      <div class="phone-bar"><span>9:41</span><span>● ● ●</span></div>
+      <div class="wpp-header">
+        <div class="wpp-av">P</div>
+        <div><div class="wpp-name">Prazu</div><div class="wpp-status-txt">online</div></div>
+      </div>
+      <div class="wpp-body">
+        <div class="wpp-msg recv">
+          ☀️ Bom dia, Dr(a). <b>Maria Silva</b>!<br>
+          Hoje é 07/03/2026. Seus prazos:<br><br>
+          🔴 <b>HOJE</b> — Recurso de Apelação<br>
+          <span style="font-size:0.63rem;color:#8696a0">0001234-55.2024.8.13.0024</span><br>
+          Comarca de Juiz de Fora<br><br>
+          🟡 <b>Em 3 dias</b> — Contestação<br>
+          <span style="font-size:0.63rem;color:#8696a0">0009871-12.2023.8.26.0100</span><br>
+          1ª Vara Cível · São Paulo<br><br>
+          ✅ Cumprido — Impugnação · Uberlândia
+          <div class="wpp-time">07:00</div>
+        </div>
+        <div class="wpp-msg sent">
+          qual o prazo do processo 9871?
+          <div class="wpp-time">07:03</div>
+        </div>
+        <div class="wpp-msg recv">
+          📌 <b>Contestação</b><br>
+          1ª Vara Cível de São Paulo<br>
+          Publicado em 20/02/2026<br>
+          ⏰ <b>Vence em 10/03/2026</b> — 3 dias<br><br>
+          Sem petição juntada (DataJud).
+          <div class="wpp-time">07:03</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PREÇO -->
+<section class="pricing-wrap" id="preco">
+  <div class="tag">Preço</div>
+  <h2>Simples como<br><em>deve ser.</em></h2>
+  <div class="pricing-card">
+    <div class="p-badge">✦ 7 dias grátis · sem cartão de crédito</div>
+    <div class="p-price">R$ 49<span>,90/mês</span></div>
+    <div class="p-period">por advogado · cancele quando quiser</div>
+    <ul class="p-list">
+      <li>Monitoramento automático do DJEN pela OAB</li>
+      <li>Cálculo de prazos com 2.374 comarcas brasileiras</li>
+      <li>Aviso diário no WhatsApp com seus prazos do dia</li>
+      <li>Alertas 3 dias antes, 1 dia antes e no vencimento</li>
+      <li>Painel web com todos os seus processos e prazos</li>
+      <li>Verificação de cumprimento via DataJud/CNJ</li>
+      <li>Pergunte sobre qualquer processo no WhatsApp (IA)</li>
+      <li>Suporte via WhatsApp</li>
+    </ul>
+    <a href="/cadastro" class="btn-green-full">
+      Começar teste gratuito
+    </a>
+    <p class="p-note">Sem cartão de crédito. Cancela em 1 clique.</p>
+  </div>
+</section>
+
+<!-- FAQ -->
+<section class="faq-wrap" id="faq">
+  <div class="tag">Dúvidas frequentes</div>
+  <h2>Perguntas <em>frequentes</em></h2>
+  <p class="faq-sub">Tudo que você quer saber antes de começar.</p>
+  <div class="faq-list">
+
+    <div class="faq-item">
+      <button class="faq-q" onclick="toggleFaq(this)">
+        Como a Prazu sabe quais são os meus processos?
+        <span class="faq-icon">+</span>
+      </button>
+      <div class="faq-a">
+        Você informa apenas seu número de OAB e estado (ex: 12345/MG). A Prazu busca automaticamente todas as suas publicações no DJEN — o Diário da Justiça Eletrônico Nacional — sem precisar de login em nenhum sistema ou acesso a processos confidenciais.
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <button class="faq-q" onclick="toggleFaq(this)">
+        Os prazos são calculados corretamente com feriados?
+        <span class="faq-icon">+</span>
+      </button>
+      <div class="faq-a">
+        Sim. O cálculo segue os arts. 216, 219, 220 e 224 do CPC: dias úteis, feriados da comarca do processo (não do advogado), recesso forense de 20/dez a 20/jan e suspensões especiais. Temos feriados de 2.374 comarcas em todo o Brasil atualizados.
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <button class="faq-q" onclick="toggleFaq(this)">
+        Precisa baixar algum aplicativo?
+        <span class="faq-icon">+</span>
+      </button>
+      <div class="faq-a">
+        Não. Os avisos chegam direto no seu WhatsApp — que você já usa. O painel completo fica disponível em qualquer navegador, no celular ou computador. Sem instalar nada.
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <button class="faq-q" onclick="toggleFaq(this)">
+        Posso usar em mais de um escritório ou OAB?
+        <span class="faq-icon">+</span>
+      </button>
+      <div class="faq-a">
+        O plano base monitora 1 OAB por conta. Para escritórios com mais advogados, entre em contato pelo WhatsApp e montamos um plano para equipes com desconto.
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <button class="faq-q" onclick="toggleFaq(this)">
+        Os 7 dias grátis precisam de cartão de crédito?
+        <span class="faq-icon">+</span>
+      </button>
+      <div class="faq-a">
+        Não. Você cria a conta com nome, e-mail e OAB — sem informar cartão. Só pedimos o pagamento se você decidir continuar após os 7 dias. E cancela em 1 clique, sem burocracia.
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <button class="faq-q" onclick="toggleFaq(this)">
+        Meus dados processuais ficam seguros?
+        <span class="faq-icon">+</span>
+      </button>
+      <div class="faq-a">
+        Sim. A Prazu acessa apenas informações públicas do DJEN e DataJud — não vê petições, documentos ou qualquer dado sigiloso. Tudo é armazenado com criptografia no Google Cloud Brasil.
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <button class="faq-q" onclick="toggleFaq(this)">
+        A Prazu funciona para todos os tribunais?
+        <span class="faq-icon">+</span>
+      </button>
+      <div class="faq-a">
+        A Prazu monitora publicações via DJEN, que cobre a maioria dos tribunais estaduais. Estamos expandindo continuamente a cobertura. Caso seu tribunal ainda não esteja integrado, fale com a gente — priorizamos conforme a demanda.
+      </div>
+    </div>
+
+  </div>
+
+  <!-- CTA pós-FAQ -->
+  <div class="faq-cta">
+    <p>Ficou com alguma dúvida?</p>
+    <span>A gente responde na hora — é só chamar no WhatsApp.</span>
+    <a href="https://wa.me/5511974543508?text=Ol%C3%A1%20queria%20saber%20mais%20detalhes%20da%20prazu.%20Como%20funciona%3F" target="_blank" class="btn-green">
+      💬 Chamar no WhatsApp
+    </a>
+  </div>
+</section>
+
+<!-- CTA FINAL -->
+<section class="cta-section">
+  <div class="tag">Tranquilidade</div>
+  <h2>Advogados não deveriam perder o sono com medo de <em>esquecer um prazo.</em></h2>
+  <p>A Prazu existe para isso. Para que nenhum prazo passe despercebido. Nunca mais.</p>
+  <a href="/cadastro" class="btn-green">Ativar agora — 7 dias grátis</a>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <a href="/" class="footer-logo">prazu</a>
+  <span>© 2026 Prazu · Copiloto Jurídico Brasileiro</span>
+  <span>Feito no Brasil 🇧🇷</span>
+</footer>
+
+<!-- BOTÃO FLUTUANTE WHATSAPP -->
+<a href="https://wa.me/5511974543508?text=Ol%C3%A1%20queria%20saber%20mais%20detalhes%20da%20prazu.%20Como%20funciona%3F" target="_blank" class="wpp-float" aria-label="Falar no WhatsApp">
+  <span class="wpp-float-tooltip">Falar no WhatsApp</span>
+  <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+  </svg>
+</a>
+
+<script>
+  function abrirMenu()  { document.getElementById('mobile-menu').classList.add('open'); document.body.style.overflow='hidden'; }
+  function fecharMenu() { document.getElementById('mobile-menu').classList.remove('open'); document.body.style.overflow=''; }
+
+  const nav = document.getElementById('nav');
+  window.addEventListener('scroll', () => {
+    nav.classList.toggle('scrolled', window.scrollY > 40);
+  }, { passive: true });
+
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach((e, i) => {
+      if (e.isIntersecting) setTimeout(() => e.target.classList.add('visible'), i * 70);
+    });
+  }, { threshold: 0.1 });
+  document.querySelectorAll('.stat, .step, .feature, .wpp-msg, .faq-item').forEach(el => io.observe(el));
+
+  const statIo = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (!e.isIntersecting) return;
+      const num = e.target.querySelector('.stat-num');
+      const target = parseInt(num.dataset.target);
+      const suffix = num.dataset.suffix ?? '+';
+      let start = null;
+      const anim = (ts) => {
+        if (!start) start = ts;
+        const p = Math.min((ts - start) / 1600, 1);
+        const ease = 1 - Math.pow(1 - p, 3);
+        num.textContent = Math.floor(ease * target).toLocaleString('pt-BR') + suffix;
+        if (p < 1) requestAnimationFrame(anim);
+      };
+      requestAnimationFrame(anim);
+      statIo.unobserve(e.target);
+    });
+  }, { threshold: 0.5 });
+  document.querySelectorAll('.stat').forEach(el => statIo.observe(el));
+
+  function toggleFaq(btn) {
+    const item = btn.closest('.faq-item');
+    const isOpen = item.classList.contains('open');
+    // fecha todos
+    document.querySelectorAll('.faq-item.open').forEach(el => el.classList.remove('open'));
+    if (!isOpen) item.classList.add('open');
+  }
+</script>
+</body>
+</html>
