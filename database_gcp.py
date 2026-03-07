@@ -439,7 +439,7 @@ async def log_whatsapp(
 
 # ── Processos ────────────────────────────────────────────────────────────────
 
-async def criar_ou_atualizar_processo(advogado_id, numero, partes="", vara="", tribunal="", comarca="", fonte="djen+datajud"):
+async def criar_ou_atualizar_processo(advogado_id, numero, partes="", vara="", tribunal="", comarca="", fonte="djen"):
     async with _pool.acquire() as conn:
         row = await conn.fetchrow("SELECT id FROM processos WHERE advogado_id=$1 AND numero=$2", advogado_id, numero)
         if row:

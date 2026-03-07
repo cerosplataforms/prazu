@@ -222,7 +222,7 @@ async def _buscar_djen(adv_id, phone, oab_num, oab_uf):
             processo_id = await db.criar_ou_atualizar_processo(
                 advogado_id=adv_id, numero=num_cnj, partes=partes,
                 vara=vara, tribunal=tribunal,
-                comarca=comarca_proc or comarca, fonte="djen+datajud",
+                comarca=comarca_proc or comarca, fonte="djen",
             )
             novos += 1
             pub = next((c for c in comunicacoes_com_prazo if c.get("numero_processo") == num_cnj), {})
