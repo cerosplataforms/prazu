@@ -224,6 +224,105 @@ async def job_lembrete_trial(request: Request):
     from web.onboarding import enviar_lembrete_trial
     return {"ok": True, "enviados": await enviar_lembrete_trial()}
 
+
+
+# ─────────────────────────────────────────────────────────
+# Config endpoints (dashboard)
+# ─────────────────────────────────────────────────────────
+
+@app.post("/api/advogado/dados")
+async def atualizar_dados(payload: dict, adv=Depends(advogado_logado)):
+    nome = payload.get("nome", "").strip()
+    if not nome:
+        raise HTTPException(400, "Nome inválido")
+    await db.atualizar_dados(adv["id"], nome=nome, horario_briefing=payload.get("horario_briefing","07:00"))
+    return {"ok": True}
+
+
+@app.post("/api/advogado/senha")
+async def alterar_senha(payload: dict, adv=Depends(advogado_logado)):
+    atual = payload.get("senha_atual", "")
+    nova  = payload.get("senha_nova", "")
+    if not db.verificar_senha(atual, adv.get("senha_hash", "")):
+        raise HTTPException(400, "Senha atual incorreta")
+    if len(nova) < 6:
+        raise HTTPException(400, "Nova senha: mínimo 6 caracteres")
+    await db.atualizar_senha(adv["id"], nova)
+    return {"ok": True}
+
+
+_email_codigos: dict = {}
+
+@app.post("/api/advogado/solicitar-codigo-email")
+async def solicitar_codigo_email(payload: dict, adv=Depends(advogado_logado)):
+    import re, random, time as _t
+    novo_email = payload.get("novo_email", "").strip().lower()
+    if not re.match(r"[^@\s]+@[^@\s]+\.[^@\s]+", novo_email):
+        raise HTTPException(400, "E-mail inválido")
+    existente = await db.buscar_por_email(novo_email)
+    if existente and existente["id"] != adv["id"]:
+        raise HTTPException(409, "E-mail já cadastrado em outra conta")
+    codigo = "".join(str(random.randint(0,9)) for _ in range(6))
+    _email_codigos[adv["id"]] = {"codigo": codigo, "novo_email": novo_email, "exp": _t.time()+600}
+    from web.email_sender import enviar_codigo
+    await enviar_codigo(novo_email, codigo, "alteração de e-mail")
+    return {"ok": True}
+
+
+@app.post("/api/advogado/confirmar-email")
+async def confirmar_email(payload: dict, adv=Depends(advogado_logado)):
+    import time as _t
+    codigo     = payload.get("codigo","").strip()
+    novo_email = payload.get("novo_email","").strip().lower()
+    reg        = _email_codigos.get(adv["id"])
+    if not reg or _t.time() > reg["exp"]:
+        raise HTTPException(400, "Código expirado. Solicite um novo.")
+    if reg["codigo"] != codigo or reg["novo_email"] != novo_email:
+        raise HTTPException(400, "Código incorreto")
+    await db.atualizar_email(adv["id"], novo_email)
+    _email_codigos.pop(adv["id"], None)
+    return {"ok": True}
+
+
+_wpp_codigos: dict = {}
+
+@app.post("/api/advogado/solicitar-codigo-wpp")
+async def solicitar_codigo_wpp(payload: dict, adv=Depends(advogado_logado)):
+    import random, time as _t
+    novo_wpp = "".join(filter(str.isdigit, payload.get("novo_whatsapp","")))
+    if len(novo_wpp) < 10:
+        raise HTTPException(400, "Número inválido")
+    codigo = "".join(str(random.randint(0,9)) for _ in range(6))
+    _wpp_codigos[adv["id"]] = {"codigo": codigo, "novo_wpp": novo_wpp, "exp": _t.time()+600}
+    from web.email_sender import enviar_codigo
+    await enviar_codigo(adv["email"], codigo, f"vinculação do WhatsApp {novo_wpp}")
+    return {"ok": True}
+
+
+@app.post("/api/advogado/confirmar-wpp")
+async def confirmar_wpp(payload: dict, adv=Depends(advogado_logado)):
+    import time as _t
+    codigo   = payload.get("codigo","").strip()
+    novo_wpp = "".join(filter(str.isdigit, payload.get("novo_whatsapp","")))
+    reg      = _wpp_codigos.get(adv["id"])
+    if not reg or _t.time() > reg["exp"]:
+        raise HTTPException(400, "Código expirado. Solicite um novo.")
+    if reg["codigo"] != codigo:
+        raise HTTPException(400, "Código incorreto")
+    await db.atualizar_whatsapp(adv["id"], novo_wpp, confirmado=True)
+    _wpp_codigos.pop(adv["id"], None)
+    return {"ok": True}
+
+
+@app.post("/api/advogado/buscar-djen")
+async def buscar_djen_api(adv=Depends(advogado_logado)):
+    import asyncio
+    from web.onboarding import _buscar_djen
+    asyncio.create_task(
+        _buscar_djen(adv["id"], adv.get("whatsapp"), adv["oab_numero"], adv["oab_seccional"])
+    )
+    return {"ok": True}
+
 @app.get("/health")
 async def health():
     try:
