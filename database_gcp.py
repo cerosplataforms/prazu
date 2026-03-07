@@ -27,16 +27,20 @@ _pool: Optional[asyncpg.Pool] = None
 async def init_db() -> None:
     """Cria o pool de conexões. Chamado no startup do FastAPI."""
     global _pool
-    _pool = await asyncpg.create_pool(
-        host=os.getenv("DB_HOST", "localhost"),
-        port=int(os.getenv("DB_PORT", "5432")),
-        database=os.getenv("DB_NAME", "prazu"),
-        user=os.getenv("DB_USER", "prazu_user"),
-        password=os.getenv("DB_PASSWORD", ""),
-        min_size=2,
-        max_size=10,
-        command_timeout=30,
-    )
+    db_name = os.getenv("DB_NAME", "prazu")
+    db_user = os.getenv("DB_USER", "prazu_user")
+    db_pass = os.getenv("DB_PASSWORD", "")
+    if os.getenv("ENVIRONMENT") == "production":
+        socket = "/cloudsql/prazu-prod:southamerica-east1:prazu-db"
+        dsn = f"postgresql://{db_user}:{db_pass}@/{db_name}?host={socket}"
+        _pool = await asyncpg.create_pool(dsn=dsn, min_size=2, max_size=10, command_timeout=30)
+    else:
+        _pool = await asyncpg.create_pool(
+            host=os.getenv("DB_HOST", "localhost"),
+            port=int(os.getenv("DB_PORT", "5432")),
+            database=db_name, user=db_user, password=db_pass,
+            min_size=2, max_size=10, command_timeout=30,
+        )
     log.info("Pool PostgreSQL inicializado")
 
 
