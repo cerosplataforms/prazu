@@ -77,7 +77,6 @@
     .empty-state h3 { font-size: 1rem; font-weight: 600; margin-bottom: 0.5rem; color: var(--navy-deep); }
     .empty-state p { font-size: 0.83rem; color: var(--muted); line-height: 1.7; max-width: 32ch; margin: 0 auto 1.5rem; }
 
-    /* Processo: agrupado por número via JS */
     .processo-card { background: var(--surface); border-radius: 12px; border: 1px solid #e5e9f2; margin-bottom: 1rem; overflow: hidden; transition: box-shadow 0.2s; }
     .processo-card:hover { box-shadow: 0 4px 20px rgba(0,0,0,0.07); }
     .processo-header { padding: 1rem 1.25rem; display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; border-bottom: 1px solid #f0f3fa; cursor: pointer; }
@@ -109,8 +108,8 @@
     .config-title { font-size: 0.9rem; font-weight: 700; color: var(--navy-deep); margin-bottom: 1.25rem; padding-bottom: 0.75rem; border-bottom: 1px solid #f0f3fa; }
     .config-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
     .config-field label { display: block; font-size: 0.75rem; color: var(--muted); margin-bottom: 0.4rem; font-weight: 500; }
-    .config-field input { width: 100%; padding: 0.65rem 0.9rem; border: 1px solid #e5e9f2; border-radius: 8px; font-family: 'Sora', sans-serif; font-size: 0.88rem; color: #1a2340; background: var(--bg); outline: none; transition: border-color 0.2s; }
-    .config-field input:focus { border-color: var(--blue); }
+    .config-field input, .config-field select { width: 100%; padding: 0.65rem 0.9rem; border: 1px solid #e5e9f2; border-radius: 8px; font-family: 'Sora', sans-serif; font-size: 0.88rem; color: #1a2340; background: var(--bg); outline: none; transition: border-color 0.2s; }
+    .config-field input:focus, .config-field select:focus { border-color: var(--blue); }
     .config-actions { margin-top: 1rem; display: flex; gap: 0.75rem; }
 
     .toast { position: fixed; bottom: 1.5rem; right: 1.5rem; z-index: 999; background: var(--navy-deep); color: var(--white); padding: 0.75rem 1.25rem; border-radius: 10px; font-size: 0.83rem; box-shadow: 0 8px 30px rgba(0,0,0,0.3); transform: translateY(120%); transition: transform 0.3s; max-width: 300px; }
@@ -131,7 +130,7 @@
 <nav class="topbar">
   <a href="/" class="topbar-logo">prazu</a>
   <div class="topbar-right">
-    <span class="topbar-nome">Olá, <span>{{ advogado.nome.split()[0] }}</span></span>
+    <span class="topbar-nome">Olá, <span>{{ primeiro_nome }}</span></span>
     <a href="/logout" class="btn-logout">Sair</a>
   </div>
 </nav>
@@ -146,7 +145,7 @@
 <div class="main">
 
   <div class="page-header">
-    <h1>Bom dia, <em>Dr(a). {{ advogado.nome.split()[0] }}.</em></h1>
+    <h1>Bom dia, <em>{{ tratamento }} {{ primeiro_nome }}.</em></h1>
     <p>OAB {{ advogado.oab_numero }}/{{ advogado.oab_seccional }} · {{ advogado.email }}</p>
   </div>
 
@@ -185,8 +184,17 @@
     <div class="config-title">⚙️ Configurações da conta</div>
     <div class="config-grid">
       <div class="config-field">
-        <label>Nome</label>
+        <label>Nome completo</label>
         <input type="text" id="cfg-nome" value="{{ advogado.nome }}">
+      </div>
+      <div class="config-field">
+        <label>Como prefere ser chamado(a)</label>
+        <select id="cfg-tratamento">
+          <option value="Dr." {% if advogado.tratamento == 'Dr.' %}selected{% endif %}>Dr.</option>
+          <option value="Dra." {% if advogado.tratamento == 'Dra.' %}selected{% endif %}>Dra.</option>
+          <option value="Excelência" {% if advogado.tratamento == 'Excelência' %}selected{% endif %}>Excelência</option>
+          <option value="" {% if not advogado.tratamento %}selected{% endif %}>Sem título</option>
+        </select>
       </div>
       <div class="config-field">
         <label>Horário do briefing diário</label>
@@ -212,11 +220,9 @@
 
 <script>
   // ── Dados do servidor ──
-  // listar_processos_com_prazos retorna uma linha por PRAZO (JOIN)
-  // Precisamos agrupar por número do processo
   const linhas = {{ processos | tojson }};
 
-  // Agrupa linhas por processo
+  // Agrupa linhas por processo (JOIN retorna 1 linha por prazo)
   const processosMap = {};
   linhas.forEach(r => {
     const chave = r.numero || ('proc_' + Math.random());
@@ -285,9 +291,8 @@
     lista.innerHTML = `
       <div class="empty-state">
         <div class="icon">📬</div>
-        <h3>Nenhum processo ainda</h3>
-        <p>Clique em "Buscar publicações no DJEN" para importar seus processos automaticamente pela OAB.</p>
-        <button class="btn-acao btn-primary" onclick="buscarDjen(document.getElementById('btn-djen'))" style="margin:0 auto;">🔍 Buscar agora</button>
+        <h3>Buscando seus processos...</h3>
+        <p>Estamos importando suas publicações do DJEN pela OAB. Aguarde alguns instantes e recarregue a página.</p>
       </div>`;
   } else {
     processos.forEach((p, i) => {
@@ -332,7 +337,7 @@
     btn.disabled = true; btn.textContent = '⏳ Buscando...';
     try {
       const res = await fetch('/api/advogado/buscar-djen', { method: 'POST', credentials: 'same-origin' });
-      if (res.ok) showToast('✅ Busca iniciada! Pode levar alguns minutos.');
+      if (res.ok) showToast('✅ Busca iniciada! Recarregue em alguns minutos.');
       else showToast('Erro ao buscar. Tente novamente.', 'error');
     } catch(e) { showToast('Erro de conexão.', 'error'); }
     btn.disabled = false; btn.textContent = '🔍 Buscar publicações no DJEN';
@@ -341,14 +346,15 @@
   // ── Salvar config ──
   async function salvarConfig(btn) {
     btn.disabled = true; btn.textContent = 'Salvando...';
-    const nome    = document.getElementById('cfg-nome').value.trim();
-    const horario = document.getElementById('cfg-horario').value;
-    const comarca = document.getElementById('cfg-comarca').value.trim();
+    const nome       = document.getElementById('cfg-nome').value.trim();
+    const horario    = document.getElementById('cfg-horario').value;
+    const comarca    = document.getElementById('cfg-comarca').value.trim();
+    const tratamento = document.getElementById('cfg-tratamento').value;
     try {
       const r1 = await fetch('/api/advogado/dados', {
         method: 'POST', credentials: 'same-origin',
         headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({ nome, horario_briefing: horario })
+        body: JSON.stringify({ nome, horario_briefing: horario, tratamento })
       });
       if (comarca) {
         await fetch('/api/advogado/comarca', {
@@ -361,6 +367,16 @@
     } catch(e) { showToast('Erro de conexão.', 'error'); }
     btn.disabled = false; btn.textContent = 'Salvar alterações';
   }
+
+  // ── Busca automática no primeiro acesso ──
+  {% if buscar_djen_auto %}
+  window.addEventListener('load', () => {
+    setTimeout(() => {
+      const btn = document.getElementById('btn-djen');
+      buscarDjen(btn);
+    }, 1500);
+  });
+  {% endif %}
 </script>
 </body>
 </html>

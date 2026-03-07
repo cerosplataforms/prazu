@@ -248,11 +248,12 @@ async def atualizar_dados(
     advogado_id: int,
     nome: str,
     horario_briefing: str = "07:00",
+    tratamento: str = "",
 ) -> None:
     async with _pool.acquire() as conn:
         await conn.execute(
-            "UPDATE advogados SET nome=$1, horario_briefing=$2 WHERE id=$3",
-            nome, horario_briefing, advogado_id,
+            "UPDATE advogados SET nome=$1, horario_briefing=$2, tratamento=$3 WHERE id=$4",
+            nome, horario_briefing, tratamento or "Dr(a).", advogado_id,
         )
 
 

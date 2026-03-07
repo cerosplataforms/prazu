@@ -83,9 +83,18 @@ async def dashboard(request: Request, adv=Depends(advogado_logado)):
         if hasattr(trial_fim, "tzinfo") and trial_fim.tzinfo is None:
             trial_fim = trial_fim.replace(tzinfo=timezone.utc)
         trial_dias = max(0, (trial_fim - datetime.now(timezone.utc)).days)
+    # Primeiro nome ignorando títulos
+    _titulos = {'dr', 'dra', 'dr.', 'dra.', 'prof', 'prof.', 'me', 'me.', 'excelência', 'excelencia'}
+    _partes = adv["nome"].split()
+    primeiro_nome = next((p for p in _partes if p.lower().rstrip('.') not in _titulos), _partes[0])
+    tratamento = adv.get("tratamento") or "Dr(a)."
+    buscar_djen_auto = not adv.get("ultima_busca_djen")
     return templates.TemplateResponse("dashboard.html", {
         "request": request, "advogado": adv,
         "processos": processos, "trial_dias": trial_dias,
+        "primeiro_nome": primeiro_nome,
+        "tratamento": tratamento,
+        "buscar_djen_auto": buscar_djen_auto,
     })
 
 @app.get("/plano-expirado", response_class=HTMLResponse)
@@ -235,7 +244,8 @@ async def atualizar_dados(payload: dict, adv=Depends(advogado_logado)):
     nome = payload.get("nome", "").strip()
     if not nome:
         raise HTTPException(400, "Nome inválido")
-    await db.atualizar_dados(adv["id"], nome=nome, horario_briefing=payload.get("horario_briefing","07:00"))
+    tratamento = payload.get("tratamento", "").strip()
+    await db.atualizar_dados(adv["id"], nome=nome, horario_briefing=payload.get("horario_briefing","07:00"), tratamento=tratamento)
     return {"ok": True}
 
 
