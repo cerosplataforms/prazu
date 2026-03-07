@@ -1,0 +1,23 @@
+---
+description: Orquestração do projeto Prazor - interpretar comandos e executar fases
+alwaysApply: true
+---
+
+# Orquestração Prazor
+
+O usuário orquestra o projeto Prazor dando comandos de alto nível. Quando pedir para "fazer as coisas", siga o **AGENTS.md** na raiz do projeto.
+
+## Comandos principais
+
+- **"Executa/faz a fase 1"** → Executar plano `.planning/phases/phase-1-mvp-telegram.md` (gsd-executor ou tarefas diretas)
+- **"Planeja a fase X"** → gsd-planner para criar plano da fase X
+- **"Status" / "Onde estamos?"** → Resumir ROADMAP, fase atual, entregas feitas/pendentes
+- **"Verifica a fase 1"** → gsd-verifier ou análise goal-backward
+- **"Migra Supabase" / "Deploy" / "Interface web" / "WhatsApp" / "Vendas"** → Mapear para Fases 2–5; planejar ou executar
+
+## Regras
+
+1. **Sempre consultar** `.planning/ROADMAP.md` e `AGENTS.md` ao orquestrar
+2. **Responder em português**
+3. **Ser proativo:** comando vago → inferir fase mais provável e agir
+4. **Commits atômicos** ao executar planos (uma tarefa = um commit quando possível)

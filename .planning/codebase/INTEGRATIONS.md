@@ -31,7 +31,7 @@
 
 **Databases:**
 - SQLite — `prazobot.db` (advogados, processos, prazos, andamentos, comunicacoes_djen, feriados)
-- SQLite — `cal_forense/calendar_v2.db` (eventos forenses, tribunais, localidades)
+- SQLite — `cal_forense/calendar_v2.db` (eventos forenses, tribunais, localidades) — 63 tribunais, 2.036 localidades, 5.683 eventos 2026
 - SQLite — `calendar.db` (raiz, possível legado)
 
 **File Storage:**

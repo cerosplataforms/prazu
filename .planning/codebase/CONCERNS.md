@@ -2,6 +2,12 @@
 
 **Analysis Date:** 2026-03-06
 
+## Melhorias recentes (contexto para planejamento)
+
+- **Comarca por processo (CPC art. 216):** Cálculo de prazo usa comarca onde o processo tramita, extraída via `_resolver_comarca_processo` em `bot.py` (CNJ + vara). Não usa mais comarca do advogado para prazos.
+- **Duplicatas no explain():** `calendar_store._explicar_v2` deduplica por (descrição normalizada, tipo) em `cal_forense/calendar_store.py` (linhas 168-184).
+- **Cobertura calendar_v2.db:** TJRJ 86 localidades NURCs 1-11; TJGO 128 localidades (expandido); TJPE complemento 2026. Dados: 63 tribunais, 2.036 localidades, 5.683 eventos 2026.
+
 ## Tech Debt
 
 **Sistema duplo de feriados (feriados_br vs cal_forense):**

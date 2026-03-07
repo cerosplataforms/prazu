@@ -28,8 +28,8 @@ prazu/
 │   ├── __init__.py
 │   ├── calendar_store.py  # Armazém SQLite de eventos
 │   ├── calendar_resolver.py  # Resolvedor de dias úteis
-│   ├── calendar_loader.py # Loader nacional (1.057 comarcas)
-│   ├── calendar_v2.db     # Banco v2 (eventos)
+│   ├── calendar_loader.py # Loader nacional (popula calendar_v2.db)
+│   ├── calendar_v2.db     # Banco v2 (63 tribunais, 2036 localidades, 5683 eventos 2026)
 │   └── calendar.db        # Banco legado (se existir)
 ├── prazobot.db            # Banco principal (runtime)
 ├── calendar.db            # Banco raiz (possível duplicata)
@@ -46,6 +46,7 @@ prazu/
 - Motor de feriados forenses
 - Schema v2 normalizado (tribunais, localidades, eventos)
 - Retrocompatível com schema v1 (holidays)
+- `calendar_v2.db`: 63 tribunais, 2.036 localidades, 5.683 eventos 2026 (RJ: 86, GO: 128, SP: 340, MG: 389)
 
 ## Key File Locations
 

@@ -5,7 +5,10 @@ Bot Telegram para advogados brasileiros. Calcula prazos processuais com feriados
 ## Cobertura
 
 - **27 UFs** + Distrito Federal
-- **97 comarcas** com feriados municipais
+- **2.036 localidades** (comarcas/foros) com feriados forenses
+- **5.683 eventos** 2026 (nacionais, estaduais, municipais, recesso)
+- **17 UFs completas** (AC, AP, BA, DF, ES, GO, MG, MS, PE, PR, RJ, RS, SC, SE, SP)
+- **8 UFs incompletas** (AL, AM, CE, MA, PA, PB, PI, RN, TO) — ver `.planning/COBERTURA_CALENDARIO.md`
 - **4 cenários** de início de contagem (CPC art. 231)
 - **Todos os tribunais** estaduais, federais, trabalhistas e eleitorais
 
@@ -85,17 +88,9 @@ O motor suporta 5 tipos de ciência:
 | `dje_consultada` | Citação via DJE — consultada | 5º dia útil após consulta |
 | `dje_tacita` | Citação via DJE — não consultada | 1º útil após 10º dia |
 
-### Comarcas por Estado
+### Cobertura por Estado
 
-| UF | Comarcas | UF | Comarcas |
-|----|----------|----|----------|
-| MG | 24 | SP | 9 |
-| RJ | 8 | BA | 6 |
-| PR | 6 | PE | 5 |
-| RS | 5 | CE | 4 |
-| SC | 4 | PA | 4 |
-| ES | 4 | GO | 3 |
-| Demais 15 UFs | 1 cada (capital) | | |
+Ver `.planning/COBERTURA_CALENDARIO.md` para detalhes. Principais: MG (389), SP (340), BA (224), RS (170), PR (168), SC (113), GO (128), RJ (86), ES (70), MS (76), MT (80). Estados incompletos: PE, CE, MA, TO, PA, AL, PB, PI, RN, AM.
 
 ## Testes
 

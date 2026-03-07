@@ -81,6 +81,7 @@
 - Purpose: Cálculo CPC-compliant (arts. 216, 219, 220, 224)
 - Location: `prazos_calc.py`
 - Pattern: Funções que delegam dia útil ao `CalendarResolver`
+- Comarca do processo (CPC art. 216): `comarca_processo` vem da comarca onde o processo tramita; `bot.py` extrai via `_resolver_comarca_processo` (CNJ + vara) e passa para `calcular_prazo_completo`
 
 ## Entry Points
 

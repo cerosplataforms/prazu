@@ -17,19 +17,22 @@ Roadmap em 5 fases para evolução do PrazorBot até produto pronto para vendas.
 
 **Objetivo:** Garantir cobertura nacional do calendário forense para que o bot funcione em qualquer tribunal/comarca do Brasil.
 
-**Contexto atual (PROJECT_KNOWLEDGE §11):**
+**Contexto atual (PROJECT_KNOWLEDGE §11) — atualizado mar/2026:**
 - 63 tribunais cadastrados
-- 1.971 localidades
-- 5.444 eventos
-- Lacunas: TJPE, TJRJ e outros tribunais com cobertura parcial (TJGO Low, TJSC/TJMT/TJMS/TJRS Medium)
+- 2.036 localidades
+- 5.683 eventos 2026
+- TJRJ: ✅ Completo (86 localidades, NURCs 1-11)
+- TJGO: ✅ Expandido (128 localidades)
+- TJPE: complemento feito; suspensões e globais ok
 
 **Entregas:**
-- [ ] Completar TJPE: feriados nacionais + recessos jan/dez 2026
-- [ ] Completar TJRJ: feriados municipais NURCs 7 e 8
-- [ ] Elevar TJGO para confiança High (completar feriados)
-- [ ] Validar tribunais em Medium e subir para High onde possível
+- [x] Completar TJRJ: feriados municipais NURCs 1-11 ✅
+- [x] Completar TJPE: complemento 2026 ✅
+- [x] Elevar TJGO: 128 localidades (expandido) ✅
+- [x] Documentar cobertura — `.planning/COBERTURA_CALENDARIO.md` ✅
+- [ ] **Completar estados incompletos:** CE, MA, TO, PA, AL, PB, PI, RN, AM (ver COBERTURA_CALENDARIO.md) — PE ✅ 151 comarcas no loader
+- [ ] Finalizar parciais: MT, RO, RR
 - [ ] Unificar sistema de feriados (feriados_br vs cal_forense — ver CONCERNS.md)
-- [ ] Documentar lista de tribunais/comarcas com cobertura completa
 
 **Critérios de sucesso:**
 - Todas as 27 UFs + DF com cobertura High ou Medium documentada
