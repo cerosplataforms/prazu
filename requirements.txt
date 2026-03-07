@@ -1,35 +1,31 @@
-# =============================================================================
-# requirements.txt — Prazu Fase 2
-# =============================================================================
+# ── Fase 1 (legado — não remover) ───────────────────────────────────────────
+python-telegram-bot>=20.0
+APScheduler>=3.10.0
+groq>=0.9.0
+requests>=2.31.0
 
-# Web framework
-fastapi==0.115.6
-uvicorn[standard]==0.32.1
-jinja2==3.1.4
-python-multipart==0.0.20
+# ── Fase 2 — Web / API ───────────────────────────────────────────────────────
+fastapi>=0.111.0
+uvicorn[standard]>=0.29.0
+jinja2>=3.1.3
+python-multipart>=0.0.9
+pydantic[email]>=2.7.0
 
-# Banco de dados
-asyncpg==0.30.0
-cloud-sql-python-connector[asyncpg]==1.12.1
+# ── Fase 2 — Banco ──────────────────────────────────────────────────────────
+asyncpg>=0.29.0
+bcrypt>=4.1.2
 
-# Google Cloud
-google-cloud-secret-manager==2.22.0
-google-generativeai==0.8.3
+# ── Fase 2 — Auth ───────────────────────────────────────────────────────────
+python-jose[cryptography]>=3.3.0
 
-# Auth
-python-jose[cryptography]==3.3.0
-passlib[bcrypt]==1.7.4
+# ── Fase 2 — HTTP ───────────────────────────────────────────────────────────
+httpx>=0.27.0
 
-# Bot legado (Telegram — mantido durante transição)
-python-telegram-bot==21.9
+# ── Fase 2 — GCP ────────────────────────────────────────────────────────────
+google-cloud-secret-manager>=2.20.0
 
-# HTTP client (Z-API)
-httpx==0.28.1
+# ── E-mail (opcional — descomentar se usar SendGrid) ─────────────────────────
+# sendgrid>=6.11.0
 
-# Scheduler (jobs internos — Cloud Scheduler chama endpoints)
-apscheduler==3.10.4
-
-# Utilitários
-python-dotenv==1.0.1
-requests==2.32.3
-groq==0.12.0
+# ── Utilitários ─────────────────────────────────────────────────────────────
+python-dotenv>=1.0.0
