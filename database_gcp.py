@@ -435,3 +435,33 @@ async def log_whatsapp(
             )
     except Exception as e:
         log.warning(f"log_whatsapp falhou (não crítico): {e}")
+
+
+# ── Processos ────────────────────────────────────────────────────────────────
+
+async def criar_ou_atualizar_processo(advogado_id, numero, partes="", vara="", tribunal="", comarca="", fonte="djen+datajud"):
+    async with _pool.acquire() as conn:
+        row = await conn.fetchrow("SELECT id FROM processos WHERE advogado_id=$1 AND numero=$2", advogado_id, numero)
+        if row:
+            return row["id"]
+        row = await conn.fetchrow("INSERT INTO processos (advogado_id, numero, partes, vara, tribunal, comarca, fonte) VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING id", advogado_id, numero, partes, vara, tribunal, comarca, fonte)
+        return row["id"]
+
+
+async def criar_prazo_processo(processo_id, tipo, data_inicio, data_fim, fatal=False, contagem="uteis", dias_totais=15):
+    async with _pool.acquire() as conn:
+        existe = await conn.fetchrow("SELECT id FROM prazos WHERE processo_id=$1 AND tipo=$2 AND data_fim=$3", processo_id, tipo, data_fim)
+        if existe:
+            return
+        await conn.execute("INSERT INTO prazos (processo_id, tipo, data_inicio, data_fim, fatal, contagem, dias_totais) VALUES ($1,$2,$3,$4,$5,$6,$7)", processo_id, tipo, data_inicio, data_fim, fatal, contagem, dias_totais)
+
+
+async def comunicacao_djen_existe(advogado_id, numero_processo, data_disponibilizacao):
+    async with _pool.acquire() as conn:
+        row = await conn.fetchrow("SELECT id FROM comunicacoes_djen WHERE advogado_id=$1 AND numero_processo=$2 AND data_disponibilizacao=$3", advogado_id, numero_processo, data_disponibilizacao)
+        return row is not None
+
+
+async def salvar_comunicacao_djen(advogado_id, numero_processo, tribunal, conteudo, data_disponibilizacao, data_publicacao="", tipo_comunicacao=""):
+    async with _pool.acquire() as conn:
+        await conn.execute("INSERT INTO comunicacoes_djen (advogado_id, numero_processo, tribunal, conteudo, data_disponibilizacao, data_publicacao, tipo_comunicacao) VALUES ($1,$2,$3,$4,$5,$6,$7)", advogado_id, numero_processo, tribunal, conteudo, data_disponibilizacao, data_publicacao, tipo_comunicacao)

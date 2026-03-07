@@ -101,23 +101,167 @@ async def _handle_onboarding(phone, texto, step, dados):
 
 
 async def _buscar_djen(adv_id, phone, oab_num, oab_uf):
+    import re
+    from datetime import datetime, date
+
+    _TRIBUNAL_UF = {
+        "8.01":"AC","8.02":"AL","8.03":"AP","8.04":"AM","8.05":"BA","8.06":"CE",
+        "8.07":"DF","8.08":"ES","8.09":"GO","8.10":"MA","8.11":"MT","8.12":"MS",
+        "8.13":"MG","8.14":"PA","8.15":"PB","8.16":"PR","8.17":"PE","8.18":"PI",
+        "8.19":"RJ","8.20":"RN","8.21":"RS","8.22":"RO","8.23":"RR","8.24":"SC",
+        "8.25":"SE","8.26":"SP","8.27":"TO",
+    }
+    PRAZOS_POR_TIPO = {
+        "intimacao": 15, "citacao": 15, "edital": 20,
+        "notificacao": 15, "lista de distribuicao": 0,
+    }
+
+    def _extrair_uf_do_cnj(numero):
+        digits = re.sub(r"\D", "", numero)
+        if len(digits) != 20:
+            return ""
+        return _TRIBUNAL_UF.get(f"{digits[13]}.{digits[14:16]}", "")
+
+    def _extrair_comarca_da_vara(vara):
+        if not vara or vara == "N/I":
+            return ""
+        m = re.search(r"[Cc]omarca\s+de\s+(.+?)(?:\s*[-/]|$)", vara)
+        if m:
+            return m.group(1).strip().rstrip(".")
+        parts = vara.split(" - ")
+        if len(parts) >= 2:
+            last = parts[-1].strip()
+            if last and last[0].isupper() and len(last) > 3:
+                return last.rstrip(".")
+        return ""
+
+    def _calcular_prazos_djen(comunicacoes, comarca, uf=""):
+        from prazos_calc import calcular_prazo_completo
+        hoje = date.today()
+        resultados = []
+        for c in comunicacoes:
+            tipo = (c.get("tipo") or "").lower()
+            tipo_norm = tipo.replace("\xe7\xe3o","cao").replace("\xe3o","ao")
+            dias = PRAZOS_POR_TIPO.get(tipo_norm, 15)
+            if dias == 0:
+                c["prazo_info"] = None
+                resultados.append(c)
+                continue
+            data_disp_str = c.get("data_disponibilizacao", "")
+            if not data_disp_str:
+                c["prazo_info"] = None
+                resultados.append(c)
+                continue
+            try:
+                data_disp = datetime.strptime(data_disp_str, "%Y-%m-%d").date()
+            except ValueError:
+                c["prazo_info"] = None
+                resultados.append(c)
+                continue
+            resultado = calcular_prazo_completo(data_disp, dias, uf=uf, comarca_processo=comarca)
+            venc = datetime.strptime(resultado["data_vencimento"], "%Y-%m-%d").date()
+            dias_restantes = (venc - hoje).days
+            if dias_restantes < 0:
+                status, emoji = f"VENCIDO ha {abs(dias_restantes)}d", "🔴"
+            elif dias_restantes == 0:
+                status, emoji = "VENCE HOJE", "🔴"
+            elif dias_restantes <= 3:
+                status, emoji = f"Vence em {dias_restantes}d", "🟡"
+            else:
+                status, emoji = f"Vence em {dias_restantes}d", "🟢"
+            c["prazo_info"] = {
+                "dias_prazo": dias,
+                "data_publicacao": resultado["data_publicacao"],
+                "data_inicio": resultado["data_inicio_prazo"],
+                "data_vencimento": resultado["data_vencimento"],
+                "dias_restantes": dias_restantes,
+                "status": status,
+                "emoji": emoji,
+            }
+            resultados.append(c)
+        return resultados
+
+    log.info(f"_buscar_djen: adv_id={adv_id} oab={oab_num}/{oab_uf}")
     try:
         loop = asyncio.get_event_loop()
         from djen import consultar_djen_por_oab
-        comunicacoes = await loop.run_in_executor(None, consultar_djen_por_oab, oab_num, oab_uf, 30)
+        from datajud import consultar_processo
+        comunicacoes = await loop.run_in_executor(None, consultar_djen_por_oab, oab_num, oab_uf, 90)
         if not comunicacoes:
-            await _evo_client.enviar(phone, "Nenhuma publicação encontrada nos últimos 30 dias.\nDigite *buscar* quando quiser tentar novamente.")
+            if phone:
+                await _evo_client.send_text(phone, "Nenhuma publicacao encontrada no DJEN nos ultimos 90 dias.")
             return
-        await _evo_client.enviar(phone,
-            f"📬 Encontrei *{len(comunicacoes)} publicação(ões)* no DJEN!\n\n"
-            "Acesse *prazu.com.br/dashboard* para ver os prazos calculados.\n"
-            "Amanhã às *7h* você recebe seu primeiro aviso diário. ☀️"
-        )
-        await db.atualizar_ultima_busca_djen(adv_id)
+        numeros_cnj = list({c["numero_processo"] for c in comunicacoes if c.get("numero_processo")})
+        adv = await db.get_advogado(adv_id)
+        comarca = adv.get("comarca", "") if adv else ""
+        uf = adv.get("oab_seccional", oab_uf) if adv else oab_uf
+        comunicacoes_com_prazo = _calcular_prazos_djen(comunicacoes, comarca, uf)
+        processos_existentes = {p["numero"] for p in await db.listar_processos(adv_id)}
+        novos = 0
+        erros = 0
+        for num_cnj in numeros_cnj:
+            if num_cnj in processos_existentes:
+                continue
+            try:
+                dados = await loop.run_in_executor(None, consultar_processo, num_cnj)
+            except Exception:
+                dados = None
+            if dados:
+                autor = ", ".join(dados.get("partes_ativo", [])) or ""
+                reu = ", ".join(dados.get("partes_passivo", [])) or ""
+                partes = f"{autor} vs {reu}" if autor and reu else autor or reu or "N/I"
+                vara = dados.get("vara", "N/I")
+                tribunal = dados.get("tribunal", "")
+            else:
+                erros += 1
+                pub = next((c for c in comunicacoes if c.get("numero_processo") == num_cnj), {})
+                vara = pub.get("orgao") or pub.get("classe") or "N/I"
+                partes = pub.get("classe") or pub.get("tipo", "N/I")
+                tribunal = pub.get("tribunal", "")
+            comarca_proc = _extrair_comarca_da_vara(vara)
+            processo_id = await db.criar_ou_atualizar_processo(
+                advogado_id=adv_id, numero=num_cnj, partes=partes,
+                vara=vara, tribunal=tribunal,
+                comarca=comarca_proc or comarca, fonte="djen+datajud",
+            )
+            novos += 1
+            pub = next((c for c in comunicacoes_com_prazo if c.get("numero_processo") == num_cnj), {})
+            prazo_info = pub.get("prazo_info")
+            if prazo_info and prazo_info.get("data_vencimento"):
+                await db.criar_prazo_processo(
+                    processo_id=processo_id,
+                    tipo=(pub.get("tipo") or "intimacao").lower(),
+                    data_inicio=prazo_info["data_inicio"],
+                    data_fim=prazo_info["data_vencimento"],
+                    dias_totais=prazo_info["dias_prazo"],
+                )
+        for c in comunicacoes:
+            existe = await db.comunicacao_djen_existe(adv_id, c["numero_processo"], c.get("data_disponibilizacao", ""))
+            if not existe:
+                await db.salvar_comunicacao_djen(
+                    advogado_id=adv_id,
+                    numero_processo=c["numero_processo"],
+                    tribunal=c.get("tribunal", ""),
+                    conteudo=c.get("conteudo", ""),
+                    data_disponibilizacao=c.get("data_disponibilizacao", ""),
+                    data_publicacao=c.get("data_publicacao", ""),
+                    tipo_comunicacao=c.get("tipo", ""),
+                )
+        await db.atualizar_ultima_busca(adv_id)
+        if phone:
+            msg = f"Busca DJEN concluida! {len(numeros_cnj)} processo(s) encontrado(s), {novos} novo(s) importado(s)."
+            if erros:
+                msg += f" {erros} sem dados no DataJud."
+            msg += " Acesse o dashboard para ver seus prazos."
+            await _evo_client.send_text(phone, msg)
+        log.info(f"_buscar_djen OK: {novos} novos, {erros} erros")
     except Exception as e:
-        log.error(f"Erro DJEN onboarding {phone}: {e}")
-        await _evo_client.enviar(phone, "Não consegui buscar o DJEN agora. Digite *buscar* para tentar novamente.")
-
+        log.error(f"_buscar_djen erro: {e}", exc_info=True)
+        if phone:
+            try:
+                await _evo_client.send_text(phone, "Erro ao buscar processos. Tente novamente em alguns minutos.")
+            except Exception:
+                pass
 
 async def _handle_conversa(phone, adv, texto):
     tl = texto.lower().strip()
