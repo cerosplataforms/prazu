@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Plano Expirado — Prazu</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=Lora:ital,wght@0,600;1,600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --navy-deep:   #0A0F1C;
+      --navy-base:   #111B33;
+      --navy-border: #1e2d4d;
+      --blue:        #2563EB;
+      --blue-bright: #3B82F6;
+      --green:       #22c55e;
+      --green-dark:  #16a34a;
+      --white:       #F8FAFF;
+      --muted:       #7a8aaa;
+    }
+    body {
+      background: var(--navy-deep);
+      color: var(--white);
+      font-family: 'Sora', sans-serif;
+      font-weight: 300;
+      min-height: 100vh;
+      display: flex; align-items: center; justify-content: center;
+      padding: 2rem;
+    }
+    .card {
+      max-width: 480px; width: 100%;
+      background: var(--navy-base); border: 1px solid var(--navy-border);
+      border-radius: 16px; padding: 3rem 2.5rem; text-align: center;
+    }
+    .icon { font-size: 3rem; margin-bottom: 1.5rem; }
+    h1 {
+      font-family: 'Lora', serif; font-size: 1.8rem; font-weight: 600;
+      letter-spacing: -0.02em; margin-bottom: 0.75rem;
+    }
+    h1 em { font-style: italic; color: var(--blue-bright); }
+    p { font-size: 0.88rem; color: var(--muted); line-height: 1.8; margin-bottom: 2rem; }
+    .btn-assinar {
+      display: block; background: var(--green); color: #fff;
+      padding: 0.9rem 2rem; border-radius: 10px; text-decoration: none;
+      font-weight: 600; font-size: 0.95rem; margin-bottom: 1rem;
+      transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
+    }
+    .btn-assinar:hover {
+      background: var(--green-dark); transform: translateY(-1px);
+      box-shadow: 0 6px 20px rgba(34,197,94,0.3);
+    }
+    .btn-logout {
+      display: block; color: var(--muted); font-size: 0.8rem;
+      text-decoration: none; margin-top: 0.75rem;
+    }
+    .btn-logout:hover { color: var(--white); }
+    .logo {
+      display: block; font-family: 'Sora', sans-serif; font-weight: 800;
+      font-size: 1.3rem; color: var(--blue); text-decoration: none;
+      letter-spacing: -0.03em; margin-bottom: 2.5rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <a href="/" class="logo">prazu</a>
+    <div class="icon">⏰</div>
+    <h1>Seu período <em>expirou.</em></h1>
+    <p>
+      Seus 7 dias gratuitos chegaram ao fim.<br>
+      Para continuar monitorando seus prazos, assine o Prazu por apenas <strong style="color:var(--white)">R$ 49,90/mês</strong> — sem fidelidade.
+    </p>
+    <a href="https://wa.me/5511974543508?text=Quero+assinar+o+Prazu" target="_blank" class="btn-assinar">
+      💬 Assinar via WhatsApp
+    </a>
+    <a href="/logout" class="btn-logout">Sair da conta</a>
+  </div>
+</body>
+</html>
