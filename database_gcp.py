@@ -392,7 +392,7 @@ async def criar_session(
             INSERT INTO sessions (advogado_id, token, user_agent, ip, expira_em, criado_em)
             VALUES ($1, $2, $3, $4, $5, NOW())
             """,
-            advogado_id, token, (user_agent or ""00], ip or "", expira,
+            advogado_id, token, (user_agent or "")[:500], ip or "", expira,
         )
 
 
