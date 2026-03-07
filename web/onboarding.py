@@ -192,11 +192,11 @@ async def _buscar_djen(adv_id, phone, oab_num, oab_uf):
                 await _evo_client.send_text(phone, "Nenhuma publicacao encontrada no DJEN nos ultimos 90 dias.")
             return
         numeros_cnj = list({c["numero_processo"] for c in comunicacoes if c.get("numero_processo")})
-        adv = await db.get_advogado(adv_id)
+        adv = await db.buscar_por_id(adv_id)
         comarca = adv.get("comarca", "") if adv else ""
         uf = adv.get("oab_seccional", oab_uf) if adv else oab_uf
         comunicacoes_com_prazo = _calcular_prazos_djen(comunicacoes, comarca, uf)
-        processos_existentes = {p["numero"] for p in await db.listar_processos(adv_id)}
+        processos_existentes = {p["numero"] for p in await db.listar_processos_com_prazos(adv_id)}
         novos = 0
         erros = 0
         for num_cnj in numeros_cnj:
@@ -247,7 +247,7 @@ async def _buscar_djen(adv_id, phone, oab_num, oab_uf):
                     data_publicacao=c.get("data_publicacao", ""),
                     tipo_comunicacao=c.get("tipo", ""),
                 )
-        await db.atualizar_ultima_busca(adv_id)
+        await db.atualizar_ultima_busca_djen(adv_id)
         if phone:
             msg = f"Busca DJEN concluida! {len(numeros_cnj)} processo(s) encontrado(s), {novos} novo(s) importado(s)."
             if erros:
