@@ -60,7 +60,13 @@ ESTADUAIS_2026 = {
     "SC": [("2026-08-11", "Criacao de SC"), ("2026-11-25", "Santa Catarina")],
     "SE": [("2026-07-08", "Emancipacao de Sergipe")],
     "SP": [("2026-07-09", "Revolucao Constitucionalista")],
-    "TO": [("2026-10-05", "Criacao do Tocantins")],
+    "TO": [
+        ("2026-08-11", "Instituicao dos Cursos Juridicos no Brasil"),
+        ("2026-08-15", "Dia do Senhor do Bonfim (Lei 4.509/2024)"),
+        ("2026-09-08", "N.S. da Natividade - Padroeira do Tocantins"),
+        ("2026-10-05", "Criacao do Estado do Tocantins"),
+        ("2026-12-18", "Dia da Justica"),
+    ],
 }
 
 SUSPENSOES_TJ = {
@@ -86,6 +92,30 @@ SUSPENSOES_TJ = {
         ("2026-06-29", "Sao Joao TJPE"),
         ("2026-06-30", "Sao Joao TJPE"),
         ("2026-07-16", "N.S. Carmo (Recife)"),
+    ]},
+    "TJTO": {"fonte": "Lcp 10/1996 art. 110 e Lei 4.509/2024", "url": "https://www.tjto.jus.br", "suspensoes": [
+        ("2026-02-16", "Carnaval"),
+        ("2026-02-17", "Carnaval"),
+        ("2026-04-01", "Semana Santa"),
+        ("2026-04-02", "Semana Santa"),
+        ("2026-04-03", "Semana Santa"),
+        ("2026-04-20", "Ponto facultativo"),
+        ("2026-04-21", "Tiradentes"),
+        ("2026-05-01", "Dia do Trabalhador"),
+        ("2026-06-04", "Corpus Christi (ponto facultativo)"),
+        ("2026-06-05", "Ponto facultativo"),
+        ("2026-08-10", "Ponto facultativo"),
+        ("2026-08-11", "Instituicao dos Cursos Juridicos no Brasil"),
+        ("2026-08-15", "Dia do Senhor do Bonfim"),
+        ("2026-09-07", "Independencia do Brasil"),
+        ("2026-09-08", "N.S. da Natividade - Padroeira do Tocantins"),
+        ("2026-10-05", "Criacao do Estado do Tocantins"),
+        ("2026-10-12", "N.S. Aparecida - Padroeira do Brasil"),
+        ("2026-10-30", "Dia do Servidor Publico"),
+        ("2026-11-02", "Finados"),
+        ("2026-11-15", "Proclamacao da Republica"),
+        ("2026-11-20", "Dia da Consciencia Negra"),
+        ("2026-12-18", "Dia da Justica"),
     ]},
 }
 

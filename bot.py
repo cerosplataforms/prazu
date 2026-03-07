@@ -765,6 +765,7 @@ async def calcular_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     dobro_txt = " *(em dobro)*" if dobra else ""
     fmt = lambda iso: datetime.strptime(iso, "%Y-%m-%d").strftime("%d/%m/%Y")
 
+    conf = resultado.get("confidence", "?")
     msg = (
         f"*Calculo de Prazo*{dobro_txt}\n"
         f"Comarca: *{comarca or uf}*\n\n"
@@ -773,8 +774,10 @@ async def calcular_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         f"Inicio do prazo: `{fmt(resultado['data_inicio_prazo'])}`\n"
         f"Prazo: *{resultado['dias_prazo_efetivo']} dias {contagem}*\n"
         f"*Vencimento: `{fmt(resultado['data_vencimento'])}`*\n\n"
-        f"_Feriados considerados: nacionais + estaduais + municipais ({resultado.get('confidence', '?')})_"
+        f"_Feriados considerados: nacionais + estaduais + municipais ({conf})_"
     )
+    if conf in ("medium", "low"):
+        msg += "\n\n⚠️ _Confira o calendário completo no tribunal: esta comarca pode não ter feriados municipais no nosso banco._"
     await _send(update, msg, parse_mode="Markdown")
 
 
@@ -1045,6 +1048,9 @@ async def feriados_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if len(feriados_lista) > 25:
         msg += f"\n_... e mais {len(feriados_lista)-25} feriados._"
     msg += f"\n\n_Total: {len(feriados_lista)} feriados/suspensoes._"
+    conf = _cal_resolver.get_confidence_for(uf, comarca)
+    if conf in ("medium", "low"):
+        msg += "\n\n⚠️ _Confira o calendário completo no tribunal: esta comarca pode não ter feriados municipais no nosso banco._"
     await _send(update, msg, parse_mode="Markdown")
 
 

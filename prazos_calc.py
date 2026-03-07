@@ -26,6 +26,11 @@ def _eh_dia_util(d, uf="", comarca_processo=""):
     return _get_resolver().is_business_day(d, uf, comarca_processo)
 
 
+def _em_recesso(d):
+    """Recesso forense 20/dez a 20/jan (CPC art. 220). Exposto para testes."""
+    return _get_resolver()._em_recesso(d)
+
+
 def calcular_prazo_dias_uteis(data_inicio, dias, uf="", comarca_processo="", feriados=None):
     """CPC art. 224: exclui dia do comeco, inclui dia do vencimento."""
     d = data_inicio
