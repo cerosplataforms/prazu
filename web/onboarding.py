@@ -9,7 +9,6 @@ import asyncio
 from datetime import datetime, timezone
 
 import database_gcp as db
-from web.evolution import evolution as _evo_client
 
 log = logging.getLogger(__name__)
 , token=os.getenv("ZAPI_TOKEN", ""))
