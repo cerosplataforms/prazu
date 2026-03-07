@@ -7,11 +7,11 @@ import os
 import logging
 import asyncio
 from datetime import datetime, timezone
-
 import database_gcp as db
+from web.evolution import evolution as _evo_client
+
 
 log = logging.getLogger(__name__)
-, token=os.getenv("ZAPI_TOKEN", ""))
 
 _estados: dict = {}
 
@@ -195,6 +195,8 @@ async def enviar_lembrete_trial() -> int:
 
 async def monitorar_djen_todos() -> int:
     from datetime import timedelta
+import database_gcp as db
+from web.evolution import evolution as _evo_client
     advogados = await db.listar_advogados_ativos()
     notificados = 0; agora = datetime.now(timezone.utc)
     for adv in advogados:
