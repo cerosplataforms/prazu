@@ -30,16 +30,30 @@ async def init_db() -> None:
     db_name = os.getenv("DB_NAME", "prazu")
     db_user = os.getenv("DB_USER", "prazu_user")
     db_pass = os.getenv("DB_PASSWORD", "")
+
     if os.getenv("ENVIRONMENT") == "production":
-        socket = "/cloudsql/prazu-prod:southamerica-east1:prazu-db"
-        dsn = f"postgresql://{db_user}:{db_pass}@/{db_name}?host={socket}"
-        _pool = await asyncpg.create_pool(dsn=dsn, min_size=2, max_size=10, command_timeout=30)
+        # Cloud Run: conecta via socket Unix do Cloud SQL Proxy
+        socket_path = "/cloudsql/prazu-prod:southamerica-east1:prazu-db"
+        _pool = await asyncpg.create_pool(
+            host=socket_path,
+            database=db_name,
+            user=db_user,
+            password=db_pass,
+            min_size=2,
+            max_size=10,
+            command_timeout=30,
+        )
     else:
+        # Local: conecta via IP
         _pool = await asyncpg.create_pool(
             host=os.getenv("DB_HOST", "localhost"),
             port=int(os.getenv("DB_PORT", "5432")),
-            database=db_name, user=db_user, password=db_pass,
-            min_size=2, max_size=10, command_timeout=30,
+            database=db_name,
+            user=db_user,
+            password=db_pass,
+            min_size=2,
+            max_size=10,
+            command_timeout=30,
         )
     log.info("Pool PostgreSQL inicializado")
 
