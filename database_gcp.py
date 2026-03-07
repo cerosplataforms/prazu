@@ -382,15 +382,17 @@ async def criar_session(
     ip: str,
     ttl_dias: int = 30,
 ) -> None:
-    """Registra sessão — permite revogar no futuro."""
+    """Registra sessão para auditoria."""
+    import secrets
+    token = secrets.token_urlsafe(32)
     expira = datetime.now(timezone.utc) + timedelta(days=ttl_dias)
     async with _pool.acquire() as conn:
         await conn.execute(
             """
-            INSERT INTO sessions (advogado_id, user_agent, ip, expira_em, criado_em)
-            VALUES ($1, $2, $3, $4, NOW())
+            INSERT INTO sessions (advogado_id, token, user_agent, ip, expira_em, criado_em)
+            VALUES ($1, $2, $3, $4, $5, NOW())
             """,
-            advogado_id, (user_agent or "")[:500], ip or "", expira,
+            advogado_id, token, (user_agent or ""00], ip or "", expira,
         )
 
 
