@@ -1,0 +1,1153 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Painel — Prazu</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:         #F4F6FB;
+      --surface:    #FFFFFF;
+      --border:     #E4E9F2;
+      --border-mid: #C9D3E8;
+      --blue:       #1D4ED8;
+      --blue-mid:   #2563EB;
+      --blue-light: #EFF4FF;
+      --blue-ring:  rgba(29,78,216,0.18);
+      --green:      #15803D;
+      --green-light:#F0FDF4;
+      --yellow:     #B45309;
+      --yellow-light:#FFFBEB;
+      --red:        #DC2626;
+      --red-light:  #FEF2F2;
+      --text:       #0F172A;
+      --text-mid:   #334155;
+      --text-muted: #94A3B8;
+      --sidebar-w:  252px;
+    }
+
+    html, body { height: 100%; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Sora', sans-serif;
+      font-size: 14px;
+      font-weight: 400;
+    }
+
+    /* ─── LAYOUT ─── */
+    .layout { display: flex; min-height: 100vh; }
+
+    /* ─── SIDEBAR ─── */
+    .sidebar {
+      width: var(--sidebar-w);
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      display: flex; flex-direction: column;
+      position: fixed; top: 0; left: 0; bottom: 0; z-index: 50;
+      transition: transform .3s cubic-bezier(.4,0,.2,1);
+    }
+    .sidebar-logo {
+      padding: 1.4rem 1.5rem 1.1rem;
+      font-family: 'Sora', sans-serif; font-weight: 800;
+      font-size: 1.45rem; color: var(--blue); text-decoration: none;
+      letter-spacing: -.04em; display: block;
+      border-bottom: 1px solid var(--border);
+    }
+    .sidebar-user {
+      padding: .85rem 1.5rem;
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; gap: .7rem;
+    }
+    .avatar {
+      width: 34px; height: 34px; border-radius: 50%;
+      background: var(--blue); color: #fff;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 700; font-size: .82rem; flex-shrink: 0;
+      letter-spacing: -.01em;
+    }
+    .user-nome { font-size: .8rem; font-weight: 600; max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .user-oab  { font-size: .7rem; color: var(--text-muted); }
+
+    .sidebar-nav { flex: 1; padding: .6rem 0; overflow-y: auto; }
+    .nav-group-label {
+      font-size: .61rem; text-transform: uppercase; letter-spacing: .1em;
+      color: var(--text-muted); font-weight: 600;
+      padding: .7rem 1.5rem .3rem;
+    }
+    .nav-item {
+      display: flex; align-items: center; gap: .55rem;
+      padding: .58rem 1.5rem; font-size: .82rem; color: var(--text-mid);
+      cursor: pointer; border: none; background: none; width: 100%;
+      text-align: left; font-family: 'Sora', sans-serif;
+      text-decoration: none; transition: color .15s, background .15s;
+      border-right: 2px solid transparent;
+    }
+    .nav-item:hover { color: var(--text); background: var(--bg); }
+    .nav-item.active {
+      color: var(--blue); background: var(--blue-light);
+      border-right-color: var(--blue); font-weight: 600;
+    }
+    .nav-icon { font-size: .9rem; width: 18px; text-align: center; flex-shrink: 0; }
+    .nav-badge {
+      margin-left: auto; background: var(--red); color: #fff;
+      font-size: .6rem; font-weight: 700; padding: .1rem .42rem;
+      border-radius: 99px; min-width: 18px; text-align: center;
+    }
+    .sidebar-footer {
+      padding: 1rem 1.5rem; border-top: 1px solid var(--border);
+    }
+    .btn-sair {
+      display: flex; align-items: center; gap: .5rem;
+      font-size: .78rem; color: var(--text-muted);
+      background: none; border: none; cursor: pointer;
+      font-family: 'Sora', sans-serif; text-decoration: none;
+      transition: color .2s;
+    }
+    .btn-sair:hover { color: var(--red); }
+
+    /* ─── MAIN ─── */
+    .main { margin-left: var(--sidebar-w); flex: 1; display: flex; flex-direction: column; }
+
+    /* ─── TOPBAR ─── */
+    .topbar {
+      background: var(--surface); border-bottom: 1px solid var(--border);
+      padding: .9rem 2rem;
+      display: flex; align-items: center; justify-content: space-between;
+      position: sticky; top: 0; z-index: 40;
+    }
+    .topbar-info { display: flex; flex-direction: column; gap: .1rem; }
+    .topbar-saudacao { font-size: .95rem; font-weight: 600; }
+    .topbar-data     { font-size: .73rem; color: var(--text-muted); }
+    .topbar-right    { display: flex; align-items: center; gap: .75rem; }
+    .hamburger {
+      display: none; background: none; border: none;
+      cursor: pointer; flex-direction: column; gap: 4px; padding: 4px;
+    }
+    .hamburger span { display: block; width: 20px; height: 2px; background: var(--text); border-radius: 2px; }
+
+    .btn-djen {
+      display: flex; align-items: center; gap: .4rem;
+      background: var(--blue); color: #fff; border: none;
+      border-radius: 7px; padding: .5rem 1rem;
+      font-family: 'Sora', sans-serif; font-size: .8rem; font-weight: 600;
+      cursor: pointer; transition: background .2s;
+    }
+    .btn-djen:hover { background: var(--blue-mid); }
+
+    /* ─── CONTENT ─── */
+    .content { padding: 1.75rem 2rem; flex: 1; max-width: 1100px; }
+
+    /* ─── TRIAL BANNER ─── */
+    .trial-banner {
+      display: none;
+      background: var(--yellow-light); border: 1px solid #FDE68A;
+      border-radius: 10px; padding: .85rem 1.25rem;
+      align-items: center; justify-content: space-between; gap: 1rem;
+      margin-bottom: 1.5rem; flex-wrap: wrap;
+    }
+    .trial-banner p { font-size: .83rem; color: #92400E; }
+    .btn-assinar {
+      background: var(--yellow); color: #fff; padding: .42rem 1rem;
+      border-radius: 6px; font-size: .78rem; font-weight: 600;
+      text-decoration: none; white-space: nowrap; transition: opacity .2s;
+    }
+    .btn-assinar:hover { opacity: .85; }
+
+    /* ─── STATS ─── */
+    .stats-row {
+      display: grid; grid-template-columns: repeat(4, 1fr);
+      gap: 1rem; margin-bottom: 1.75rem;
+    }
+    .stat {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 11px; padding: 1.1rem 1.2rem;
+      opacity: 0; animation: rise .4s ease forwards;
+    }
+    .stat:nth-child(1){animation-delay:.05s}
+    .stat:nth-child(2){animation-delay:.1s}
+    .stat:nth-child(3){animation-delay:.15s}
+    .stat:nth-child(4){animation-delay:.2s}
+    .stat-label { font-size: .68rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: .07em; margin-bottom: .5rem; }
+    .stat-num   { font-family: 'DM Serif Display', serif; font-size: 2.1rem; line-height: 1; }
+    .stat-sub   { font-size: .68rem; color: var(--text-muted); margin-top: .3rem; }
+    .c-red    { color: var(--red); }
+    .c-yellow { color: var(--yellow); }
+    .c-green  { color: var(--green); }
+    .c-blue   { color: var(--blue); }
+
+    /* ─── TABS ─── */
+    .tab-bar {
+      display: flex; border-bottom: 2px solid var(--border);
+      margin-bottom: 1.5rem;
+    }
+    .tab-btn {
+      padding: .65rem 1.25rem; font-size: .82rem; font-weight: 500;
+      color: var(--text-muted); background: none; border: none;
+      border-bottom: 2px solid transparent; margin-bottom: -2px;
+      cursor: pointer; font-family: 'Sora', sans-serif; transition: color .15s;
+    }
+    .tab-btn:hover { color: var(--text); }
+    .tab-btn.on { color: var(--blue); border-bottom-color: var(--blue); font-weight: 700; }
+    .tab-pane { display: none; }
+    .tab-pane.on { display: block; animation: rise .22s ease; }
+
+    /* ─── PROCESSO CARD ─── */
+    .list { display: flex; flex-direction: column; gap: .5rem; }
+    .pcard {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 10px; overflow: hidden;
+      display: grid; grid-template-columns: 3px 1fr auto;
+      cursor: pointer; transition: box-shadow .15s, border-color .15s;
+      opacity: 0; animation: rise .3s ease forwards;
+    }
+    .pcard:hover { border-color: var(--blue-mid); box-shadow: 0 2px 12px rgba(29,78,216,.08); }
+    .urgbar { width: 3px; flex-shrink: 0; }
+    .ub-hoje   { background: var(--red);   animation: pulse 1.2s infinite; }
+    .ub-amanha { background: #F59E0B; }
+    .ub-3d     { background: #FCD34D; }
+    .ub-ok     { background: var(--green); }
+    .ub-fut    { background: var(--border-mid); }
+    .ub-venc   { background: #CBD5E1; }
+    @keyframes pulse { 0%,100%{opacity:1}50%{opacity:.25} }
+
+    .pbody { padding: .85rem 1.1rem; min-width: 0; }
+    .pnum  { font-size: .67rem; color: var(--text-muted); font-family: monospace; margin-bottom: .15rem; }
+    .ptipo { font-size: .87rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .pmeta { font-size: .73rem; color: var(--text-muted); margin-top: .2rem; display: flex; gap: .35rem; flex-wrap: wrap; }
+    .sep   { color: var(--border-mid); }
+
+    .chip {
+      display: inline-block; font-size: .6rem; font-weight: 600;
+      padding: .14rem .48rem; border-radius: 4px; margin-left: .35rem; vertical-align: middle;
+    }
+    .chip-red  { background: var(--red-light);   color: #B91C1C; }
+    .chip-yel  { background: var(--yellow-light); color: #92400E; }
+    .chip-grn  { background: var(--green-light);  color: #15803D; }
+    .chip-blue { background: var(--blue-light);   color: var(--blue); }
+    .chip-gray { background: #F1F5F9;             color: #64748B; }
+
+    .pright { padding: .85rem 1.1rem .85rem 0; display: flex; flex-direction: column; align-items: flex-end; justify-content: center; gap: .15rem; min-width: 70px; }
+    .pdays { font-family: 'DM Serif Display', serif; font-size: 1.55rem; line-height: 1; text-align: right; }
+    .pdlabel { font-size: .61rem; color: var(--text-muted); }
+    .pdate   { font-size: .64rem; color: var(--text-muted); }
+
+    /* ─── EMPTY STATE ─── */
+    .empty {
+      text-align: center; padding: 3.5rem 2rem;
+      background: var(--surface); border: 1px dashed var(--border-mid);
+      border-radius: 12px;
+    }
+    .empty-ic { font-size: 2rem; opacity: .35; margin-bottom: .75rem; }
+    .empty h3 { font-size: .95rem; font-weight: 600; margin-bottom: .4rem; }
+    .empty p  { font-size: .8rem; color: var(--text-muted); margin-bottom: 1.25rem; }
+    .btn-blue {
+      display: inline-block; background: var(--blue); color: #fff;
+      padding: .58rem 1.35rem; border-radius: 8px; font-size: .82rem; font-weight: 600;
+      border: none; cursor: pointer; font-family: 'Sora', sans-serif;
+      text-decoration: none; transition: background .2s;
+    }
+    .btn-blue:hover { background: var(--blue-mid); }
+
+    /* ─── CONFIG ─── */
+    .cfg-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.1rem; }
+    .cfg-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 12px; overflow: hidden;
+    }
+    .cfg-card.wide { grid-column: 1/-1; }
+    .cfg-head {
+      padding: 1rem 1.25rem; border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; gap: .65rem;
+    }
+    .cfg-head-icon { font-size: 1rem; }
+    .cfg-head h3 { font-size: .87rem; font-weight: 700; }
+    .cfg-head p  { font-size: .72rem; color: var(--text-muted); margin-top: .08rem; }
+    .cfg-body { padding: 1.25rem; }
+
+    .fld { margin-bottom: .95rem; }
+    .fld:last-child { margin-bottom: 0; }
+    .fld label {
+      display: block; font-size: .72rem; font-weight: 600;
+      color: var(--text-mid); margin-bottom: .3rem;
+    }
+    .fld input, .fld select {
+      width: 100%; border: 1.5px solid var(--border);
+      border-radius: 7px; padding: .58rem .85rem;
+      font-family: 'Sora', sans-serif; font-size: .84rem;
+      color: var(--text); background: var(--bg);
+      outline: none; transition: border-color .2s, box-shadow .2s;
+      -webkit-appearance: none;
+    }
+    .fld input:focus, .fld select:focus {
+      border-color: var(--blue); box-shadow: 0 0 0 3px var(--blue-ring);
+      background: #fff;
+    }
+    .fld input[readonly] { color: var(--text-muted); cursor: default; }
+    .fld-hint { font-size: .68rem; color: var(--text-muted); margin-top: .28rem; }
+    .fld-row  { display: grid; grid-template-columns: 1fr 1fr; gap: .7rem; }
+    .fld-row3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: .7rem; }
+
+    .btn-save {
+      background: var(--blue); color: #fff; border: none;
+      padding: .58rem 1.25rem; border-radius: 7px;
+      font-family: 'Sora', sans-serif; font-size: .81rem; font-weight: 600;
+      cursor: pointer; transition: background .2s; margin-top: .25rem;
+    }
+    .btn-save:hover { background: var(--blue-mid); }
+
+    .btn-ghost {
+      background: transparent; color: var(--blue);
+      border: 1.5px solid var(--blue-ring); padding: .55rem 1.15rem;
+      border-radius: 7px; font-family: 'Sora', sans-serif;
+      font-size: .8rem; font-weight: 600; cursor: pointer;
+      transition: background .2s;
+    }
+    .btn-ghost:hover { background: var(--blue-light); }
+
+    .wpp-verify {
+      display: flex; align-items: center; gap: .45rem;
+      font-size: .73rem; margin-top: .35rem; color: var(--text-muted);
+    }
+    .dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+    .dot-on  { background: var(--green); }
+    .dot-off { background: var(--text-muted); }
+    .dot-on  + span { color: var(--green); }
+
+    .alert {
+      padding: .6rem .9rem; border-radius: 7px;
+      font-size: .78rem; margin-bottom: .9rem; display: none;
+    }
+    .alert.show { display: block; }
+    .alert-ok  { background: var(--green-light); border: 1px solid #BBF7D0; color: var(--green); }
+    .alert-err { background: var(--red-light);   border: 1px solid #FECACA; color: var(--red); }
+
+    /* ─── DETALHE SLIDE ─── */
+    .slide-mask {
+      position: fixed; inset: 0; z-index: 100;
+      background: rgba(15,23,42,.3); backdrop-filter: blur(3px);
+      opacity: 0; pointer-events: none; transition: opacity .25s;
+    }
+    .slide-mask.on { opacity: 1; pointer-events: all; }
+    .slide-panel {
+      position: fixed; top: 0; right: 0; bottom: 0;
+      width: 390px; max-width: 95vw;
+      background: var(--surface); border-left: 1px solid var(--border);
+      transform: translateX(100%); transition: transform .3s cubic-bezier(.4,0,.2,1);
+      z-index: 101; display: flex; flex-direction: column;
+      box-shadow: -8px 0 40px rgba(15,23,42,.1);
+    }
+    .slide-mask.on .slide-panel { transform: none; }
+    .slide-hdr {
+      padding: 1.1rem 1.5rem;
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .slide-hdr h3 { font-size: .88rem; font-weight: 700; }
+    .x-btn { background: none; border: none; cursor: pointer; color: var(--text-muted); font-size: 1rem; padding: 4px; transition: color .15s; }
+    .x-btn:hover { color: var(--text); }
+    .slide-body { padding: 1.5rem; flex: 1; overflow-y: auto; }
+
+    .dl { margin-bottom: 1rem; }
+    .dl-label { font-size: .65rem; text-transform: uppercase; letter-spacing: .09em; color: var(--text-muted); font-weight: 600; margin-bottom: .28rem; }
+    .dl-val    { font-size: .87rem; }
+    .dl-val.mono { font-family: monospace; font-size: .78rem; color: var(--text-mid); }
+    .dl-div { height: 1px; background: var(--border); margin: 1rem 0; }
+
+    .big-countdown {
+      background: var(--bg); border: 1px solid var(--border);
+      border-radius: 12px; padding: 1.5rem; text-align: center; margin-bottom: 1.25rem;
+    }
+    .big-num  { font-family: 'DM Serif Display', serif; font-size: 3.5rem; line-height: 1; }
+    .big-desc { font-size: .78rem; color: var(--text-muted); margin-top: .35rem; }
+
+    /* ─── MODAL ─── */
+    .modal-mask {
+      position: fixed; inset: 0; z-index: 200;
+      background: rgba(15,23,42,.4); backdrop-filter: blur(5px);
+      display: flex; align-items: center; justify-content: center; padding: 1rem;
+      opacity: 0; pointer-events: none; transition: opacity .2s;
+    }
+    .modal-mask.on { opacity: 1; pointer-events: all; }
+    .modal-box {
+      background: var(--surface); border-radius: 14px;
+      width: 100%; max-width: 420px; padding: 1.75rem;
+      transform: translateY(14px); transition: transform .25s;
+      box-shadow: 0 24px 64px rgba(15,23,42,.18);
+    }
+    .modal-mask.on .modal-box { transform: none; }
+    .modal-box h3 { font-family: 'DM Serif Display', serif; font-size: 1.2rem; margin-bottom: .4rem; }
+    .modal-box .sub { font-size: .8rem; color: var(--text-muted); margin-bottom: 1.25rem; line-height: 1.6; }
+    .modal-foot { display: flex; gap: .6rem; justify-content: flex-end; margin-top: 1.25rem; }
+    .btn-cancel {
+      background: var(--bg); border: 1px solid var(--border);
+      color: var(--text-mid); padding: .55rem 1.1rem; border-radius: 7px;
+      font-family: 'Sora', sans-serif; font-size: .8rem; cursor: pointer;
+    }
+
+    /* código ─ 6 dígitos */
+    .code-row { display: flex; gap: .5rem; justify-content: center; margin: 1rem 0; }
+    .cdigit {
+      width: 46px; height: 54px; border: 2px solid var(--border);
+      border-radius: 8px; text-align: center;
+      font-family: 'Sora', sans-serif; font-size: 1.45rem; font-weight: 700;
+      color: var(--text); background: var(--bg); outline: none;
+      transition: border-color .2s, box-shadow .2s;
+    }
+    .cdigit:focus { border-color: var(--blue); box-shadow: 0 0 0 3px var(--blue-ring); background: #fff; }
+
+    /* ─── SIDEBAR OVERLAY MOBILE ─── */
+    .sb-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.45); z-index: 49; }
+
+    /* ─── TOAST ─── */
+    .toast {
+      position: fixed; bottom: 1.5rem; left: 50%;
+      transform: translateX(-50%) translateY(80px);
+      background: var(--text); color: #fff;
+      padding: .65rem 1.2rem; border-radius: 8px;
+      font-size: .81rem; z-index: 500; transition: transform .3s;
+      box-shadow: 0 4px 20px rgba(15,23,42,.2); white-space: nowrap;
+    }
+    .toast.on { transform: translateX(-50%) translateY(0); }
+
+    /* ─── ANIMS ─── */
+    @keyframes rise {
+      from { opacity: 0; transform: translateY(10px); }
+      to   { opacity: 1; transform: none; }
+    }
+    @keyframes shimmer {
+      0%   { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+    .skel {
+      height: 72px; border-radius: 10px;
+      background: linear-gradient(90deg, #F1F5F9 25%, #E2E8F0 50%, #F1F5F9 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.4s infinite;
+    }
+
+    /* ─── RESPONSIVE ─── */
+    @media (max-width: 960px) {
+      .stats-row { grid-template-columns: repeat(2,1fr); }
+      .cfg-grid  { grid-template-columns: 1fr; }
+      .cfg-card.wide { grid-column: 1; }
+    }
+    @media (max-width: 768px) {
+      .sidebar { transform: translateX(-100%); }
+      .sidebar.on { transform: none; box-shadow: 4px 0 24px rgba(0,0,0,.12); }
+      .sb-overlay.on { display: block; }
+      .main { margin-left: 0 !important; }
+      .topbar { padding: .85rem 1rem; }
+      .hamburger { display: flex; }
+      .content { padding: 1rem; }
+      .stats-row { grid-template-columns: 1fr 1fr; gap: .75rem; }
+      .fld-row3 { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 480px) {
+      .pright { display: none; }
+      .trial-banner { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="sb-overlay" id="sb-overlay" onclick="closeSidebar()"></div>
+
+<!-- ── SIDEBAR ── -->
+<aside class="sidebar" id="sidebar">
+  <a href="/" class="sidebar-logo">prazu</a>
+
+  <div class="sidebar-user">
+    <div class="avatar" id="sb-av">?</div>
+    <div>
+      <div class="user-nome" id="sb-nome">Carregando...</div>
+      <div class="user-oab"  id="sb-oab">OAB ...</div>
+    </div>
+  </div>
+
+  <nav class="sidebar-nav">
+    <div class="nav-group-label">Principal</div>
+    <button class="nav-item active" id="nav-prazos" onclick="goTab('prazos')">
+      <span class="nav-icon">📋</span> Meus prazos
+      <span class="nav-badge" id="nav-badge" style="display:none">!</span>
+    </button>
+    <button class="nav-item" id="nav-processos" onclick="goTab('processos')">
+      <span class="nav-icon">⚖️</span> Processos
+    </button>
+    <div class="nav-group-label">Conta</div>
+    <button class="nav-item" id="nav-config" onclick="goTab('config')">
+      <span class="nav-icon">⚙️</span> Configurações
+    </button>
+    <a href="/plano" class="nav-item">
+      <span class="nav-icon">💳</span> Meu plano
+    </a>
+    <div class="nav-group-label">Suporte</div>
+    <a href="https://wa.me/5511974543508" target="_blank" class="nav-item">
+      <span class="nav-icon">💬</span> Falar no WhatsApp
+    </a>
+  </nav>
+
+  <div class="sidebar-footer">
+    <a href="/logout" class="btn-sair">↩&nbsp; Sair da conta</a>
+  </div>
+</aside>
+
+<!-- ── MAIN ── -->
+<div class="main" id="main-wrap" style="margin-left:var(--sidebar-w)">
+
+  <header class="topbar">
+    <div style="display:flex;align-items:center;gap:.85rem">
+      <button class="hamburger" onclick="openSidebar()">
+        <span></span><span></span><span></span>
+      </button>
+      <div class="topbar-info">
+        <div class="topbar-saudacao" id="t-saudacao">Olá!</div>
+        <div class="topbar-data"    id="t-data"></div>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <button class="btn-djen" onclick="buscarDJEN()">📡 Atualizar DJEN</button>
+    </div>
+  </header>
+
+  <div class="content" id="pg-content">
+
+    <!-- TRIAL BANNER -->
+    <div class="trial-banner" id="trial-banner">
+      <p id="trial-msg"></p>
+      <a href="/plano" class="btn-assinar">Assinar agora →</a>
+    </div>
+
+    <!-- STATS -->
+    <div class="stats-row">
+      <div class="stat"><div class="stat-label">Vencem hoje</div><div class="stat-num c-red"    id="s-hoje">—</div><div class="stat-sub">ação imediata</div></div>
+      <div class="stat"><div class="stat-label">Próximos 3 dias</div><div class="stat-num c-yellow" id="s-3d">—</div><div class="stat-sub">fique de olho</div></div>
+      <div class="stat"><div class="stat-label">Cumpridos</div><div class="stat-num c-green"  id="s-ok">—</div><div class="stat-sub">este mês</div></div>
+      <div class="stat"><div class="stat-label">Em aberto</div><div class="stat-num c-blue"   id="s-tot">—</div><div class="stat-sub">monitorados</div></div>
+    </div>
+
+    <!-- ABAS -->
+    <div class="tab-bar">
+      <button class="tab-btn on"  id="tb-prazos"    onclick="goTab('prazos')">Prazos</button>
+      <button class="tab-btn"     id="tb-processos" onclick="goTab('processos')">Processos</button>
+      <button class="tab-btn"     id="tb-config"    onclick="goTab('config')">Configurações</button>
+    </div>
+
+    <!-- PANE: PRAZOS -->
+    <div class="tab-pane on" id="pane-prazos">
+      <div class="list" id="list-prazos">
+        <div class="skel"></div><div class="skel"></div><div class="skel"></div>
+      </div>
+    </div>
+
+    <!-- PANE: PROCESSOS -->
+    <div class="tab-pane" id="pane-processos">
+      <div class="list" id="list-processos"></div>
+    </div>
+
+    <!-- PANE: CONFIG -->
+    <div class="tab-pane" id="pane-config">
+      <div class="cfg-grid">
+
+        <!-- Dados pessoais -->
+        <div class="cfg-card">
+          <div class="cfg-head">
+            <span class="cfg-head-icon">👤</span>
+            <div><h3>Dados pessoais</h3><p>Nome e preferências de uso</p></div>
+          </div>
+          <div class="cfg-body">
+            <div class="alert alert-ok"  id="ok-dados">✅ Dados salvos!</div>
+            <div class="fld"><label>Nome completo</label><input type="text"   id="c-nome"    placeholder="Seu nome"></div>
+            <div class="fld">
+              <label>Horário do aviso diário (BRT)</label>
+              <select id="c-hora">
+                <option value="06:00">06:00</option>
+                <option value="07:00" selected>07:00</option>
+                <option value="08:00">08:00</option>
+                <option value="09:00">09:00</option>
+              </select>
+            </div>
+            <button class="btn-save" onclick="salvarDados()">Salvar dados</button>
+          </div>
+        </div>
+
+        <!-- OAB vinculada -->
+        <div class="cfg-card">
+          <div class="cfg-head">
+            <span class="cfg-head-icon">⚖️</span>
+            <div><h3>OAB vinculada</h3><p>Número monitorado via DJEN</p></div>
+          </div>
+          <div class="cfg-body">
+            <div class="fld-row">
+              <div class="fld">
+                <label>Número OAB</label>
+                <input type="text" id="c-oab-num" readonly>
+                <div class="fld-hint">Para alterar entre em contato com o suporte.</div>
+              </div>
+              <div class="fld">
+                <label>Seccional</label>
+                <input type="text" id="c-oab-uf" readonly>
+              </div>
+            </div>
+            <div class="fld">
+              <label>Comarca principal (feriados)</label>
+              <input type="text" id="c-comarca" placeholder="Ex: Belo Horizonte">
+              <div class="fld-hint">Usada para calcular prazos com feriados locais.</div>
+            </div>
+            <button class="btn-save" onclick="salvarComarca()">Salvar comarca</button>
+          </div>
+        </div>
+
+        <!-- E-mail -->
+        <div class="cfg-card">
+          <div class="cfg-head">
+            <span class="cfg-head-icon">📧</span>
+            <div><h3>E-mail</h3><p>Acesso à conta e notificações</p></div>
+          </div>
+          <div class="cfg-body">
+            <div class="fld">
+              <label>E-mail atual</label>
+              <input type="email" id="c-email" readonly>
+            </div>
+            <button class="btn-ghost" onclick="openModal('m-email')">Alterar e-mail →</button>
+          </div>
+        </div>
+
+        <!-- WhatsApp -->
+        <div class="cfg-card">
+          <div class="cfg-head">
+            <span class="cfg-head-icon">💬</span>
+            <div><h3>WhatsApp</h3><p>Recebe o aviso diário e alertas</p></div>
+          </div>
+          <div class="cfg-body">
+            <div class="fld">
+              <label>Número atual</label>
+              <input type="text" id="c-wpp" readonly placeholder="Não vinculado">
+              <div class="wpp-verify" id="wpp-verify">
+                <span class="dot dot-off"></span>
+                <span>Não verificado</span>
+              </div>
+            </div>
+            <button class="btn-ghost" onclick="openModal('m-wpp')">Alterar WhatsApp →</button>
+          </div>
+        </div>
+
+        <!-- Senha (wide) -->
+        <div class="cfg-card wide">
+          <div class="cfg-head">
+            <span class="cfg-head-icon">🔒</span>
+            <div><h3>Senha</h3><p>Altere sua senha de acesso ao painel</p></div>
+          </div>
+          <div class="cfg-body">
+            <div class="alert alert-ok"  id="ok-senha"></div>
+            <div class="alert alert-err" id="err-senha"></div>
+            <div class="fld-row3">
+              <div class="fld"><label>Senha atual</label><input type="password" id="c-senha-at" placeholder="••••••"></div>
+              <div class="fld"><label>Nova senha</label><input type="password" id="c-senha-nv" placeholder="••••••"></div>
+              <div class="fld"><label>Confirmar nova senha</label><input type="password" id="c-senha-cf" placeholder="••••••"></div>
+            </div>
+            <button class="btn-save" onclick="trocarSenha()">Alterar senha</button>
+          </div>
+        </div>
+
+      </div><!-- /cfg-grid -->
+    </div><!-- /pane-config -->
+
+  </div><!-- /content -->
+</div><!-- /main -->
+
+<!-- ── SLIDE DETALHE ── -->
+<div class="slide-mask" id="slide" onclick="closeSlide(event)">
+  <div class="slide-panel">
+    <div class="slide-hdr">
+      <h3 id="sl-tipo">Detalhes do prazo</h3>
+      <button class="x-btn" onclick="closeSlide()">✕</button>
+    </div>
+    <div class="slide-body" id="sl-body"></div>
+  </div>
+</div>
+
+<!-- ── MODAL ALTERAR E-MAIL ── -->
+<div class="modal-mask" id="m-email" onclick="maskClose(event,'m-email')">
+  <div class="modal-box">
+    <h3>Alterar e-mail</h3>
+    <p class="sub" id="m-email-sub">Digite o novo e-mail. Enviaremos um código de 6 dígitos para confirmação.</p>
+    <div class="alert alert-err" id="m-email-err"></div>
+
+    <div id="m-email-s1">
+      <div class="fld"><label>Novo e-mail</label><input type="email" id="m-email-new" placeholder="novo@email.com"></div>
+      <div class="modal-foot">
+        <button class="btn-cancel" onclick="closeModal('m-email')">Cancelar</button>
+        <button class="btn-save"   onclick="emailStep1()">Enviar código</button>
+      </div>
+    </div>
+
+    <div id="m-email-s2" style="display:none">
+      <p style="font-size:.78rem;color:var(--text-muted);margin-bottom:.5rem">
+        Código enviado para <strong id="m-email-dest"></strong>. Expira em 10 min.
+      </p>
+      <div class="code-row" id="cr-email">
+        <input class="cdigit" maxlength="1" oninput="nextD(this,'cr-email')">
+        <input class="cdigit" maxlength="1" oninput="nextD(this,'cr-email')">
+        <input class="cdigit" maxlength="1" oninput="nextD(this,'cr-email')">
+        <input class="cdigit" maxlength="1" oninput="nextD(this,'cr-email')">
+        <input class="cdigit" maxlength="1" oninput="nextD(this,'cr-email')">
+        <input class="cdigit" maxlength="1" oninput="nextD(this,'cr-email')">
+      </div>
+      <div class="modal-foot">
+        <button class="btn-cancel" onclick="closeModal('m-email')">Cancelar</button>
+        <button class="btn-save"   onclick="emailStep2()">Confirmar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── MODAL ALTERAR WHATSAPP ── -->
+<div class="modal-mask" id="m-wpp" onclick="maskClose(event,'m-wpp')">
+  <div class="modal-box">
+    <h3>Alterar WhatsApp</h3>
+    <p class="sub">Digite o novo número. Enviaremos um código para o seu <strong>e-mail</strong> para confirmar a troca.</p>
+    <div class="alert alert-err" id="m-wpp-err"></div>
+
+    <div id="m-wpp-s1">
+      <div class="fld">
+        <label>Novo número (com DDD)</label>
+        <input type="tel" id="m-wpp-new" placeholder="11999998888" inputmode="numeric">
+        <div class="fld-hint">Só números, com DDD. Ex: 11999998888</div>
+      </div>
+      <div class="modal-foot">
+        <button class="btn-cancel" onclick="closeModal('m-wpp')">Cancelar</button>
+        <button class="btn-save"   onclick="wppStep1()">Enviar código</button>
+      </div>
+    </div>
+
+    <div id="m-wpp-s2" style="display:none">
+      <p style="font-size:.78rem;color:var(--text-muted);margin-bottom:.5rem">
+        Código enviado para seu e-mail <strong id="m-wpp-dest"></strong>. Expira em 10 min.
+      </p>
+      <div class="code-row" id="cr-wpp">
+        <input class="cdigit" maxlength="1" oninput="nextD(this,'cr-wpp')">
+        <input class="cdigit" maxlength="1" oninput="nextD(this,'cr-wpp')">
+        <input class="cdigit" maxlength="1" oninput="nextD(this,'cr-wpp')">
+        <input class="cdigit" maxlength="1" oninput="nextD(this,'cr-wpp')">
+        <input class="cdigit" maxlength="1" oninput="nextD(this,'cr-wpp')">
+        <input class="cdigit" maxlength="1" oninput="nextD(this,'cr-wpp')">
+      </div>
+      <div class="modal-foot">
+        <button class="btn-cancel" onclick="closeModal('m-wpp')">Cancelar</button>
+        <button class="btn-save"   onclick="wppStep2()">Confirmar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<!-- WhatsApp float -->
+<a href="https://wa.me/5511974543508" target="_blank"
+   style="position:fixed;bottom:22px;right:22px;z-index:90;width:48px;height:48px;border-radius:50%;background:#22c55e;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 16px rgba(34,197,94,.35);text-decoration:none;transition:transform .2s"
+   onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">
+  <svg width="22" height="22" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+</a>
+
+<script>
+/* ── estado ─────────────────────────── */
+let adv = {}, todos = [], listSorted = [];
+
+/* ── init ───────────────────────────── */
+document.addEventListener('DOMContentLoaded', () => {
+  const d = new Date();
+  document.getElementById('t-data').textContent =
+    d.toLocaleDateString('pt-BR',{weekday:'long',day:'2-digit',month:'long',year:'numeric'});
+  load();
+});
+
+/* ── carga inicial ───────────────────── */
+async function load() {
+  try {
+    const [meR, prR] = await Promise.all([
+      fetch('/api/advogado/me',        {credentials:'same-origin'}),
+      fetch('/api/advogado/processos', {credentials:'same-origin'}),
+    ]);
+    if (!meR.ok) { location.href='/login'; return; }
+    adv  = await meR.json();
+    const {processos} = await prR.json();
+    todos = processos || [];
+    renderUser(); renderTrial(); renderStats();
+    const sl = sorted();
+    renderList('list-prazos',    sl, true);
+    renderList('list-processos', sl, false);
+    fillConfig();
+  } catch(e) { showToast('Erro de conexão. Recarregue a página.'); }
+}
+
+/* ── usuário ─────────────────────────── */
+function renderUser() {
+  const fn = adv.nome?.split(' ')[0] || '';
+  const h  = new Date().getHours();
+  const s  = h<12?'Bom dia':h<18?'Boa tarde':'Boa noite';
+  document.getElementById('t-saudacao').textContent = `${s}, ${fn}!`;
+  document.getElementById('sb-nome').textContent     = adv.nome||'';
+  document.getElementById('sb-oab').textContent      = `OAB ${adv.oab||''}`;
+  document.getElementById('sb-av').textContent       = (adv.nome||'?')[0].toUpperCase();
+}
+
+/* ── trial ───────────────────────────── */
+function renderTrial() {
+  if (adv.status !== 'trial' || !adv.trial_fim) return;
+  const dias = Math.max(0, Math.ceil((new Date(adv.trial_fim)-new Date())/86400000));
+  const b = document.getElementById('trial-banner');
+  b.style.display = 'flex';
+  document.getElementById('trial-msg').innerHTML = dias===0
+    ? '⚠️ <strong>Teste encerra hoje.</strong> Assine agora para manter o acesso.'
+    : `⏰ <strong>${dias} dia${dias>1?'s':''} restante${dias>1?'s':''}</strong> no período de teste gratuito.`;
+}
+
+/* ── stats ───────────────────────────── */
+function renderStats() {
+  const hoje = todos.filter(p=>urgClass(p)==='hoje').length;
+  const tres  = todos.filter(p=>['hoje','amanha','3d'].includes(urgClass(p))).length;
+  const ok    = todos.filter(p=>p.cumprido).length;
+  const tot   = todos.filter(p=>!p.cumprido).length;
+  document.getElementById('s-hoje').textContent = hoje;
+  document.getElementById('s-3d').textContent   = tres;
+  document.getElementById('s-ok').textContent   = ok;
+  document.getElementById('s-tot').textContent  = tot;
+  if (hoje>0) {
+    const b=document.getElementById('nav-badge');
+    b.textContent=hoje; b.style.display='';
+  }
+}
+
+/* ── urgência ────────────────────────── */
+function urgClass(p) {
+  if (p.cumprido) return 'ok';
+  if (!p.data_fim) return 'fut';
+  const hj = new Date(); hj.setHours(0,0,0,0);
+  const fm = new Date(p.data_fim); fm.setHours(0,0,0,0);
+  const d  = Math.ceil((fm-hj)/86400000);
+  if (d<0)   return 'venc';
+  if (d===0) return 'hoje';
+  if (d===1) return 'amanha';
+  if (d<=3)  return '3d';
+  return 'fut';
+}
+function diasR(p) {
+  if (!p.data_fim) return null;
+  const hj=new Date(); hj.setHours(0,0,0,0);
+  const fm=new Date(p.data_fim); fm.setHours(0,0,0,0);
+  return Math.ceil((fm-hj)/86400000);
+}
+function fmtD(iso) {
+  if (!iso) return '—';
+  return new Date(iso).toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric'});
+}
+function sorted() {
+  const o={hoje:0,amanha:1,'3d':2,fut:3,ok:4,venc:5};
+  return [...todos].sort((a,b)=>{
+    const d=(o[urgClass(a)]??9)-(o[urgClass(b)]??9);
+    if(d) return d;
+    return (diasR(a)??9999)-(diasR(b)??9999);
+  });
+}
+
+/* ── render lista ────────────────────── */
+function renderList(id, lista, apenasAbertos) {
+  const el = document.getElementById(id);
+  const fl = apenasAbertos ? lista.filter(p=>!p.cumprido) : lista;
+  if (!fl.length) {
+    el.innerHTML=`<div class="empty"><div class="empty-ic">📭</div><h3>Nenhum processo monitorado</h3><p>Clique em "Atualizar DJEN" para buscar suas publicações pela OAB.</p><button class="btn-blue" onclick="buscarDJEN()">📡 Buscar agora</button></div>`;
+    return;
+  }
+  listSorted = fl;
+  const UB  = {hoje:'ub-hoje',amanha:'ub-amanha','3d':'ub-3d',ok:'ub-ok',fut:'ub-fut',venc:'ub-venc'};
+  const CH  = {hoje:'chip-red',amanha:'chip-yel','3d':'chip-yel',ok:'chip-grn',fut:'chip-blue',venc:'chip-gray'};
+  const DC  = {hoje:'c-red',amanha:'c-yellow','3d':'c-yellow',ok:'c-green',fut:'c-blue',venc:'c-blue'};
+  const CL  = {hoje:'🔴 Hoje',amanha:'🟡 Amanhã',ok:'✅ Cumprido',venc:'⚫ Decurso'};
+
+  el.innerHTML = fl.map((p,i)=>{
+    const u=urgClass(p), d=diasR(p);
+    const cl  = u==='3d'?`🟡 ${d} dias`:u==='fut'?`${d}d`:(CL[u]||`${d}d`);
+    const dn  = u==='ok'?'✓':u==='venc'?'—':d===0?'!':d;
+    const dlb = u==='ok'?'cumprido':u==='venc'?'decurso':'dias';
+    return `
+    <div class="pcard" style="animation-delay:${i*.04}s" onclick="openSlide(${i})">
+      <div class="urgbar ${UB[u]}"></div>
+      <div class="pbody">
+        <div class="pnum">${p.numero||'—'}</div>
+        <div class="ptipo">${p.tipo_prazo||p.tipo||'Prazo processual'} <span class="chip ${CH[u]}">${cl}</span></div>
+        <div class="pmeta">
+          <span>${p.tribunal||'—'}</span>
+          <span class="sep">·</span>
+          <span>${p.comarca||p.vara||'—'}</span>
+          ${p.data_fim?`<span class="sep">·</span><span>${fmtD(p.data_fim)}</span>`:''}
+        </div>
+      </div>
+      <div class="pright">
+        <div class="pdays ${DC[u]}">${dn}</div>
+        <div class="pdlabel">${dlb}</div>
+        ${p.data_fim?`<div class="pdate">${fmtD(p.data_fim)}</div>`:''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+/* ── slide detalhe ───────────────────── */
+function openSlide(i) {
+  const p=listSorted[i]; if(!p) return;
+  const u=urgClass(p), d=diasR(p);
+  const DC={hoje:'c-red',amanha:'c-yellow','3d':'c-yellow',ok:'c-green',fut:'c-blue',venc:'c-blue'};
+  const dn = u==='ok'?'✓':u==='venc'?'—':d===0?'!':d;
+  const dd = u==='ok'?'cumprido':u==='venc'?'prazo decorrido':d===0?'vence hoje!':
+             `dia${d!==1?'s':''} restante${d!==1?'s':''}`;
+  document.getElementById('sl-tipo').textContent = p.tipo_prazo||p.tipo||'Prazo';
+  document.getElementById('sl-body').innerHTML=`
+    <div class="big-countdown">
+      <div class="big-num ${DC[u]}">${dn}</div>
+      <div class="big-desc">${dd}</div>
+    </div>
+    <div class="dl"><div class="dl-label">Número</div><div class="dl-val mono">${p.numero||'—'}</div></div>
+    <div class="dl"><div class="dl-label">Tipo de prazo</div><div class="dl-val">${p.tipo_prazo||p.tipo||'—'}</div></div>
+    <div class="dl-div"></div>
+    <div class="dl"><div class="dl-label">Tribunal</div><div class="dl-val">${p.tribunal||'—'}</div></div>
+    <div class="dl"><div class="dl-label">Vara / Comarca</div><div class="dl-val">${p.vara||p.comarca||'—'}</div></div>
+    <div class="dl-div"></div>
+    <div class="dl"><div class="dl-label">Data de publicação</div><div class="dl-val">${fmtD(p.data_inicio)}</div></div>
+    <div class="dl"><div class="dl-label">Vencimento</div><div class="dl-val">${fmtD(p.data_fim)}</div></div>
+    <div class="dl"><div class="dl-label">Status</div><div class="dl-val">${p.cumprido?'✅ Cumprido':u==='venc'?'⚫ Decurso':'🟢 Em aberto'}</div></div>
+    ${p.partes?`<div class="dl-div"></div><div class="dl"><div class="dl-label">Partes</div><div class="dl-val" style="font-size:.8rem">${p.partes}</div></div>`:''}
+  `;
+  document.getElementById('slide').classList.add('on');
+  document.body.style.overflow='hidden';
+}
+function closeSlide(e) {
+  if(e&&e.target!==document.getElementById('slide')) return;
+  document.getElementById('slide').classList.remove('on');
+  document.body.style.overflow='';
+}
+
+/* ── fill config ─────────────────────── */
+function fillConfig() {
+  document.getElementById('c-nome').value    = adv.nome||'';
+  document.getElementById('c-oab-num').value = adv.oab?.split('/')[0]||'';
+  document.getElementById('c-oab-uf').value  = adv.oab?.split('/')[1]||'';
+  document.getElementById('c-comarca').value = adv.comarca||'';
+  document.getElementById('c-email').value   = adv.email||'';
+  document.getElementById('c-wpp').value     = adv.whatsapp
+    ? adv.whatsapp.replace(/(\d{2})(\d{2})(\d{5})(\d{4})/,'+$1 ($2) $3-$4') : '';
+  if (adv.zapi_confirmado) {
+    document.getElementById('wpp-verify').innerHTML=
+      '<span class="dot dot-on"></span><span>Verificado ✓</span>';
+  }
+}
+
+/* ── salvar dados ────────────────────── */
+async function salvarDados() {
+  const nome = document.getElementById('c-nome').value.trim();
+  if (!nome) { showToast('Nome não pode ser vazio.'); return; }
+  try {
+    const r = await fetch('/api/advogado/dados',{
+      method:'POST', credentials:'same-origin',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({nome, horario_briefing: document.getElementById('c-hora').value}),
+    });
+    const ok = document.getElementById('ok-dados');
+    if (r.ok) {
+      ok.classList.add('show'); setTimeout(()=>ok.classList.remove('show'),3000);
+      adv.nome=nome; renderUser();
+    } else showToast('Erro ao salvar. Tente novamente.');
+  } catch { showToast('Erro de conexão.'); }
+}
+
+async function salvarComarca() {
+  const comarca = document.getElementById('c-comarca').value.trim();
+  if (!comarca) { showToast('Informe a comarca.'); return; }
+  try {
+    const r = await fetch('/api/advogado/comarca',{
+      method:'POST', credentials:'same-origin',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({comarca}),
+    });
+    if (r.ok) showToast('✅ Comarca salva!');
+    else showToast('Erro ao salvar.');
+  } catch { showToast('Erro de conexão.'); }
+}
+
+/* ── trocar senha ────────────────────── */
+async function trocarSenha() {
+  const at=document.getElementById('c-senha-at').value;
+  const nv=document.getElementById('c-senha-nv').value;
+  const cf=document.getElementById('c-senha-cf').value;
+  const ok=document.getElementById('ok-senha');
+  const er=document.getElementById('err-senha');
+  ok.classList.remove('show'); er.classList.remove('show');
+  if (!at||!nv) { er.textContent='Preencha todos os campos.'; er.classList.add('show'); return; }
+  if (nv.length<6) { er.textContent='Nova senha: mínimo 6 caracteres.'; er.classList.add('show'); return; }
+  if (nv!==cf)  { er.textContent='As senhas não coincidem.'; er.classList.add('show'); return; }
+  try {
+    const r = await fetch('/api/advogado/senha',{
+      method:'POST', credentials:'same-origin',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({senha_atual:at, senha_nova:nv}),
+    });
+    if (r.ok) {
+      ok.textContent='✅ Senha alterada com sucesso!';
+      ok.classList.add('show');
+      ['c-senha-at','c-senha-nv','c-senha-cf'].forEach(id=>document.getElementById(id).value='');
+      setTimeout(()=>ok.classList.remove('show'),3000);
+    } else {
+      const d=await r.json();
+      er.textContent=d.detail||'Senha atual incorreta.'; er.classList.add('show');
+    }
+  } catch { er.textContent='Erro de conexão.'; er.classList.add('show'); }
+}
+
+/* ── alterar e-mail ──────────────────── */
+async function emailStep1() {
+  const email=document.getElementById('m-email-new').value.trim();
+  const er=document.getElementById('m-email-err'); er.classList.remove('show');
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { er.textContent='E-mail inválido.'; er.classList.add('show'); return; }
+  try {
+    const r = await fetch('/api/advogado/solicitar-codigo-email',{
+      method:'POST', credentials:'same-origin',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({novo_email:email}),
+    });
+    if (r.ok) {
+      document.getElementById('m-email-dest').textContent=email;
+      document.getElementById('m-email-s1').style.display='none';
+      document.getElementById('m-email-s2').style.display='';
+    } else {
+      const d=await r.json(); er.textContent=d.detail||'Erro ao enviar código.'; er.classList.add('show');
+    }
+  } catch { er.textContent='Erro de conexão.'; er.classList.add('show'); }
+}
+async function emailStep2() {
+  const codigo=getCode('cr-email');
+  const er=document.getElementById('m-email-err'); er.classList.remove('show');
+  if (codigo.length<6) { er.textContent='Digite o código completo.'; er.classList.add('show'); return; }
+  try {
+    const r = await fetch('/api/advogado/confirmar-email',{
+      method:'POST', credentials:'same-origin',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({codigo, novo_email:document.getElementById('m-email-dest').textContent}),
+    });
+    if (r.ok) {
+      closeModal('m-email'); showToast('✅ E-mail atualizado!'); await load();
+    } else {
+      const d=await r.json(); er.textContent=d.detail||'Código inválido.'; er.classList.add('show');
+    }
+  } catch { er.textContent='Erro de conexão.'; er.classList.add('show'); }
+}
+
+/* ── alterar WhatsApp ────────────────── */
+async function wppStep1() {
+  const wpp=document.getElementById('m-wpp-new').value.replace(/\D/g,'');
+  const er=document.getElementById('m-wpp-err'); er.classList.remove('show');
+  if (wpp.length<10) { er.textContent='Número inválido. Use DDD + número.'; er.classList.add('show'); return; }
+  try {
+    const r = await fetch('/api/advogado/solicitar-codigo-wpp',{
+      method:'POST', credentials:'same-origin',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({novo_whatsapp:wpp}),
+    });
+    if (r.ok) {
+      document.getElementById('m-wpp-dest').textContent=adv.email;
+      document.getElementById('m-wpp-s1').style.display='none';
+      document.getElementById('m-wpp-s2').style.display='';
+    } else {
+      const d=await r.json(); er.textContent=d.detail||'Erro ao enviar código.'; er.classList.add('show');
+    }
+  } catch { er.textContent='Erro de conexão.'; er.classList.add('show'); }
+}
+async function wppStep2() {
+  const codigo=getCode('cr-wpp');
+  const wpp=document.getElementById('m-wpp-new').value.replace(/\D/g,'');
+  const er=document.getElementById('m-wpp-err'); er.classList.remove('show');
+  if (codigo.length<6) { er.textContent='Digite o código completo.'; er.classList.add('show'); return; }
+  try {
+    const r = await fetch('/api/advogado/confirmar-wpp',{
+      method:'POST', credentials:'same-origin',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({codigo, novo_whatsapp:wpp}),
+    });
+    if (r.ok) {
+      closeModal('m-wpp'); showToast('✅ WhatsApp atualizado!'); await load();
+    } else {
+      const d=await r.json(); er.textContent=d.detail||'Código inválido.'; er.classList.add('show');
+    }
+  } catch { er.textContent='Erro de conexão.'; er.classList.add('show'); }
+}
+
+/* ── buscar DJEN ─────────────────────── */
+async function buscarDJEN() {
+  showToast('🔍 Buscando publicações no DJEN...');
+  try {
+    await fetch('/api/advogado/buscar-djen',{method:'POST',credentials:'same-origin'});
+    showToast('✅ Busca iniciada! Aguarde alguns minutos.');
+    setTimeout(load, 7000);
+  } catch { showToast('Erro ao iniciar busca.'); }
+}
+
+/* ── tabs ────────────────────────────── */
+function goTab(name) {
+  ['prazos','processos','config'].forEach(n=>{
+    document.getElementById(`pane-${n}`)?.classList.toggle('on', n===name);
+    document.getElementById(`tb-${n}`)?.classList.toggle('on', n===name);
+    document.getElementById(`nav-${n}`)?.classList.toggle('active', n===name);
+  });
+  closeSidebar();
+}
+
+/* ── modais ──────────────────────────── */
+function openModal(id) {
+  // reset steps
+  if (id==='m-email') {
+    document.getElementById('m-email-s1').style.display='';
+    document.getElementById('m-email-s2').style.display='none';
+    document.getElementById('m-email-new').value='';
+    document.getElementById('m-email-err').classList.remove('show');
+  }
+  if (id==='m-wpp') {
+    document.getElementById('m-wpp-s1').style.display='';
+    document.getElementById('m-wpp-s2').style.display='none';
+    document.getElementById('m-wpp-new').value='';
+    document.getElementById('m-wpp-err').classList.remove('show');
+  }
+  document.getElementById(id).classList.add('on');
+  document.body.style.overflow='hidden';
+}
+function closeModal(id) {
+  document.getElementById(id).classList.remove('on');
+  document.body.style.overflow='';
+}
+function maskClose(e,id) {
+  if(e.target===document.getElementById(id)) closeModal(id);
+}
+
+/* ── helpers ─────────────────────────── */
+function getCode(rowId) {
+  return [...document.querySelectorAll(`#${rowId} .cdigit`)].map(i=>i.value).join('');
+}
+function nextD(el, rowId) {
+  if (el.value && el.nextElementSibling?.classList.contains('cdigit'))
+    el.nextElementSibling.focus();
+}
+function openSidebar()  { document.getElementById('sidebar').classList.add('on');    document.getElementById('sb-overlay').classList.add('on');    document.body.style.overflow='hidden'; }
+function closeSidebar() { document.getElementById('sidebar').classList.remove('on'); document.getElementById('sb-overlay').classList.remove('on'); document.body.style.overflow=''; }
+
+let _tt;
+function showToast(msg) {
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('on');
+  clearTimeout(_tt); _tt=setTimeout(()=>t.classList.remove('on'),3500);
+}
+</script>
+</body>
+</html>

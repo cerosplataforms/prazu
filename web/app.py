@@ -175,10 +175,10 @@ async def atualizar_comarca(payload: dict, adv=Depends(advogado_logado)):
 
 # — Webhook Z-API —
 
-@app.post("/webhook/zapi")
-async def webhook_zapi(request: Request):
-    zapi_token = os.getenv("ZAPI_TOKEN", "")
-    if zapi_token and request.headers.get("x-zapi-token", "") != zapi_token:
+@app.post("/webhook/evolution")
+async def webhook_evolution(request: Request):
+    evo_key = os.getenv("EVOLUTION_API_KEY", "")
+    if evo_key and request.headers.get("apikey", "") != evo_key:
         raise HTTPException(401, "Token inválido")
     try:
         payload = await request.json()

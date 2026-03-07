@@ -15,6 +15,8 @@ O **Prazor** (ou PrazorBot) é um **bot do Telegram** que ajuda advogados a **n�
 
 Ou seja: o advogado conversa com o bot no Telegram, cadastra OAB e comarca, e passa a receber lembretes e cálculos de prazo com base nos feriados da comarca de cada processo.
 
+**Cobertura do calendário (mar/2026):** 17 UFs completas + DF, 9 UFs expandidas (CE, MA, PA, PI, PB, RN, TO, AL e TJDFT), PE com 97 comarcas, ~6.120 eventos no ano. Detalhes em `.planning/COBERTURA_CALENDARIO.md`.
+
 ---
 
 ## 2. Resultado dos testes (março/2026)
@@ -197,4 +199,4 @@ Ou seja: **bot.py** é a “porta de entrada”; **database.py** e **prazobot.db
 
 ---
 
-*Documentação gerada em março/2026. Testes: 129 passando.*
+*Documentação atualizada em março/2026. Testes: 129 passando. Cobertura: 17 UFs completas + 9 expandidas (CE, MA, PA, PI, PB, RN, TO, AL, TJDFT); PE 97 comarcas; ~6.120 eventos 2026.*

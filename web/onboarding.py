@@ -9,10 +9,10 @@ import asyncio
 from datetime import datetime, timezone
 
 import database_gcp as db
-from web.zapi import ZAPI
+from web.evolution import evolution as _evo_client
 
 log = logging.getLogger(__name__)
-zapi = ZAPI(instance_id=os.getenv("ZAPI_INSTANCE", ""), token=os.getenv("ZAPI_TOKEN", ""))
+, token=os.getenv("ZAPI_TOKEN", ""))
 
 _estados: dict = {}
 
@@ -41,7 +41,7 @@ async def processar_mensagem_zapi(payload: dict):
 
 
 async def _iniciar_onboarding(phone: str):
-    await zapi.enviar(phone,
+    await _evo_client.enviar(phone,
         "👋 Olá! Eu sou o *Prazu*, seu copiloto jurídico.\n\n"
         "Monitoro seus prazos processuais e te aviso todo dia via WhatsApp — "
         "com feriados forenses de *2.374 comarcas* em todo o Brasil.\n\n"
@@ -53,47 +53,47 @@ async def _iniciar_onboarding(phone: str):
 async def _handle_onboarding(phone, texto, step, dados):
     if step == "onboarding_nome":
         dados["nome"] = texto
-        await zapi.enviar(phone, f"Prazer, Dr(a). *{texto}*! ✨\n\nMe informe sua *OAB* com estado.\nEx: `12345/MG`")
+        await _evo_client.enviar(phone, f"Prazer, Dr(a). *{texto}*! ✨\n\nMe informe sua *OAB* com estado.\nEx: `12345/MG`")
         _set(phone, "onboarding_oab", dados)
 
     elif step == "onboarding_oab":
         if "/" not in texto:
-            await zapi.enviar(phone, "Use o formato `numero/UF` — ex: `12345/MG`"); return
+            await _evo_client.enviar(phone, "Use o formato `numero/UF` — ex: `12345/MG`"); return
         num, uf = texto.split("/", 1)
         num = num.strip(); uf = uf.strip().upper().rstrip(".,;:!?")
         if len(uf) != 2:
-            await zapi.enviar(phone, "Seccional inválida. Use a sigla do estado (MG, SP, RJ...)"); return
+            await _evo_client.enviar(phone, "Seccional inválida. Use a sigla do estado (MG, SP, RJ...)"); return
         existente = await db.buscar_por_oab(num, uf)
         if existente:
             await db.atualizar_whatsapp(existente["id"], phone, confirmado=True)
             _clear(phone)
-            await zapi.enviar(phone, f"✅ OAB *{num}/{uf}* encontrada!\nOlá de volta, Dr(a). *{existente['nome']}*!\nDigite *prazos* para ver seu resumo de hoje.")
+            await _evo_client.enviar(phone, f"✅ OAB *{num}/{uf}* encontrada!\nOlá de volta, Dr(a). *{existente['nome']}*!\nDigite *prazos* para ver seu resumo de hoje.")
             return
         dados.update({"oab_numero": num, "oab_seccional": uf})
-        await zapi.enviar(phone, f"OAB *{num}/{uf}* anotado! ✅\n\nAgora preciso de um *e-mail* para criar sua conta.")
+        await _evo_client.enviar(phone, f"OAB *{num}/{uf}* anotado! ✅\n\nAgora preciso de um *e-mail* para criar sua conta.")
         _set(phone, "onboarding_email", dados)
 
     elif step == "onboarding_email":
         if "@" not in texto or "." not in texto:
-            await zapi.enviar(phone, "E-mail inválido. Digite um e-mail válido."); return
+            await _evo_client.enviar(phone, "E-mail inválido. Digite um e-mail válido."); return
         dados["email"] = texto.lower().strip()
-        await zapi.enviar(phone, "Ótimo! Crie uma *senha* para sua conta Prazu.\n(mínimo 6 caracteres)")
+        await _evo_client.enviar(phone, "Ótimo! Crie uma *senha* para sua conta Prazu.\n(mínimo 6 caracteres)")
         _set(phone, "onboarding_senha", dados)
 
     elif step == "onboarding_senha":
         if len(texto) < 6:
-            await zapi.enviar(phone, "Senha muito curta. Use pelo menos 6 caracteres."); return
+            await _evo_client.enviar(phone, "Senha muito curta. Use pelo menos 6 caracteres."); return
         dados["senha"] = texto
         adv_id = await db.criar_advogado(
             nome=dados["nome"], email=dados["email"], senha=dados["senha"],
             oab_numero=dados["oab_numero"], oab_seccional=dados["oab_seccional"], whatsapp=phone,
         )
         if not adv_id:
-            await zapi.enviar(phone, "❌ Esse e-mail já está cadastrado.\nDigite outro e-mail.")
+            await _evo_client.enviar(phone, "❌ Esse e-mail já está cadastrado.\nDigite outro e-mail.")
             _set(phone, "onboarding_email", dados); return
         await db.confirmar_whatsapp(adv_id)
         _clear(phone)
-        await zapi.enviar(phone,
+        await _evo_client.enviar(phone,
             f"🎉 Conta criada, Dr(a). *{dados['nome']}*!\n\n"
             "✅ *7 dias grátis* — sem cartão de crédito\n\n"
             "Buscando seus processos no DJEN... ⏳"
@@ -107,9 +107,9 @@ async def _buscar_djen(adv_id, phone, oab_num, oab_uf):
         from djen import consultar_djen_por_oab
         comunicacoes = await loop.run_in_executor(None, consultar_djen_por_oab, oab_num, oab_uf, 30)
         if not comunicacoes:
-            await zapi.enviar(phone, "Nenhuma publicação encontrada nos últimos 30 dias.\nDigite *buscar* quando quiser tentar novamente.")
+            await _evo_client.enviar(phone, "Nenhuma publicação encontrada nos últimos 30 dias.\nDigite *buscar* quando quiser tentar novamente.")
             return
-        await zapi.enviar(phone,
+        await _evo_client.enviar(phone,
             f"📬 Encontrei *{len(comunicacoes)} publicação(ões)* no DJEN!\n\n"
             "Acesse *prazu.com.br/dashboard* para ver os prazos calculados.\n"
             "Amanhã às *7h* você recebe seu primeiro aviso diário. ☀️"
@@ -117,33 +117,33 @@ async def _buscar_djen(adv_id, phone, oab_num, oab_uf):
         await db.atualizar_ultima_busca_djen(adv_id)
     except Exception as e:
         log.error(f"Erro DJEN onboarding {phone}: {e}")
-        await zapi.enviar(phone, "Não consegui buscar o DJEN agora. Digite *buscar* para tentar novamente.")
+        await _evo_client.enviar(phone, "Não consegui buscar o DJEN agora. Digite *buscar* para tentar novamente.")
 
 
 async def _handle_conversa(phone, adv, texto):
     tl = texto.lower().strip()
     if not await db.pode_usar(adv["id"]):
-        await zapi.enviar(phone, "⚠️ Seu período de teste encerrou.\nAcesse *prazu.com.br* para assinar."); return
+        await _evo_client.enviar(phone, "⚠️ Seu período de teste encerrou.\nAcesse *prazu.com.br* para assinar."); return
     if tl in ("prazos", "resumo", "briefing", "oi", "olá", "ola", "bom dia", "boa tarde", "boa noite"):
         await _enviar_resumo(phone, adv)
     elif tl in ("buscar", "atualizar", "djen"):
-        await zapi.enviar(phone, "🔍 Buscando publicações no DJEN...")
+        await _evo_client.enviar(phone, "🔍 Buscando publicações no DJEN...")
         asyncio.create_task(_buscar_djen(adv["id"], phone, adv["oab_numero"], adv["oab_seccional"]))
     elif tl.startswith("comarca "):
         nova = texto[8:].strip()
         await db.atualizar_comarca(adv["id"], nova)
-        await zapi.enviar(phone, f"✅ Comarca atualizada para *{nova}*")
+        await _evo_client.enviar(phone, f"✅ Comarca atualizada para *{nova}*")
     else:
-        await zapi.enviar(phone, "🤔 Processando...")
+        await _evo_client.enviar(phone, "🤔 Processando...")
         try:
             processos = await db.listar_processos_com_prazos(adv["id"])
             from ia import responder_pergunta
             loop = asyncio.get_event_loop()
             resp = await loop.run_in_executor(None, responder_pergunta, texto, adv["nome"], processos, adv.get("comarca", ""))
-            await zapi.enviar(phone, resp)
+            await _evo_client.enviar(phone, resp)
         except Exception as e:
             log.error(f"Erro IA {phone}: {e}")
-            await zapi.enviar(phone, "Não consegui processar sua pergunta agora. Tente novamente.")
+            await _evo_client.enviar(phone, "Não consegui processar sua pergunta agora. Tente novamente.")
 
 
 async def _enviar_resumo(phone, adv):
@@ -152,11 +152,11 @@ async def _enviar_resumo(phone, adv):
         hoje = datetime.now(timezone.utc).strftime("%d/%m/%Y")
         header = f"☀️ Bom dia, Dr(a). *{adv['nome']}*! ({hoje})\n\n"
         if not processos:
-            await zapi.enviar(phone, header + "Você não tem processos monitorados ainda.\nDigite *buscar* para importar pela OAB."); return
+            await _evo_client.enviar(phone, header + "Você não tem processos monitorados ainda.\nDigite *buscar* para importar pela OAB."); return
         from ia import gerar_briefing
         loop = asyncio.get_event_loop()
         texto = await loop.run_in_executor(None, gerar_briefing, adv["nome"], processos, adv.get("comarca", ""))
-        await zapi.enviar(phone, header + texto)
+        await _evo_client.enviar(phone, header + texto)
         await db.log_whatsapp(adv["id"], "outbound", "resumo", texto[:200])
     except Exception as e:
         log.error(f"Erro resumo {phone}: {e}")
@@ -184,7 +184,7 @@ async def enviar_lembrete_trial() -> int:
     enviados = 0
     for adv in advogados:
         try:
-            await zapi.enviar(adv["whatsapp"],
+            await _evo_client.enviar(adv["whatsapp"],
                 f"⏰ Dr(a). *{adv['nome']}*, seu teste encerra em *2 dias*.\n\n"
                 "Para continuar, assine em *prazu.com.br* por apenas *R$ 49,90/mês*."
             )

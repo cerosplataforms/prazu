@@ -220,44 +220,39 @@ Não é o scraping nem a IA — é o **hábito**. Advogado que abre a mensagem t
 ## 11. COBERTURA DO CALENDÁRIO FORENSE
 
 ### Dados atuais (calendar_v2.db) — mar/2026:
-- 63 tribunais
-- 2.036 localidades
-- 5.683 eventos 2026
+- 63+ tribunais
+- 2.100+ localidades
+- ~6.120 eventos 2026
 
 **Documento completo:** `.planning/COBERTURA_CALENDARIO.md`
 
-### Resumo por status
+### Resumo por status (atualizado 2026-03-07)
 
 | Status | UFs |
 |--------|-----|
-| **Completo** (17) | AC, AP, BA, DF, ES, GO, MG, MS, **PE**, PR, RJ, RS, SC, SE, SP |
+| **Completo** (17) | AC, AP, BA, DF, ES, GO, MG, MS, **PE** (97 comarcas), PR, RJ, RS, SC, SE, SP |
+| **Expandido** (9) | CE, MA, PA, PB, PI, RN, TO, AL (+ TJDFT) |
 | **Parcial** (3) | MT, RO, RR |
-| **Incompleto** (8) | AL, AM, CE, MA, PA, PB, PI, RN, TO |
+| **Incompleto** (1) | AM |
 
-### Estados incompletos — prioridade
+### Expansões recentes (commits mar/2026)
+- TJPE: 97 comarcas, 303 eventos
+- TJCE: 48 comarcas | TJMA: 35 | TJPA: 38 | TJPI: 30 | TJPB: 34 | TJRN: 37 | TJTO: 21
+- TJDFT: 16 circunscrições (Portaria 105/2025)
 
-| Prioridade | UFs | O que falta |
-|------------|-----|-------------|
-| Alta | CE, MA, TO, PA | Feriados municipais |
-| Média | AL, PB, PI, RN, AM | Expandir cobertura |
-| Parcial | MT, RO, RR | Completar comarcas restantes |
-| ~~PE~~ | ✅ | 151 comarcas no calendar_loader (MUNICIPAIS_TJPE) |
+### Tabela por UF (localidades no DB)
 
-### Tabela por UF (localidades / eventos 2026)
-
-| UF | Loc | Ev | UF | Loc | Ev | UF | Loc | Ev |
-|----|-----|-----|----|-----|-----|----|-----|-----|
-| AC | 22 | 57 | AL | 12 | 26 | AM | 4 | 7 |
-| AP | 13 | 29 | BA | 224 | 649 | CE | 17 | 28 |
-| DF | 1 | 2 | ES | 70 | 185 | GO | 128 | 320 |
-| MA | 3 | 7 | MG | 389 | 989 | MS | 76 | 162 |
-| MT | 80 | 186 | PA | 3 | 5 | PB | 11 | 31 |
-| PE | 151 | 402 | PI | 4 | 6 | PR | 168 | 354 |
-| RJ | 86 | 210 | RN | 3 | 6 | RO | 34 | 62 |
-| RR | 10 | 33 | RS | 170 | 437 | SC | 113 | 203 |
-| SE | 51 | 119 | SP | 340 | 693 | TO | 2 | 2 |
-
-PE: 151 comarcas no calendar_loader (MUNICIPAIS_TJPE). Se o bot usar calendar_v2.db schema v2, verificar import.
+| UF | Loc | UF | Loc | UF | Loc |
+|----|-----|-----|-----|-----|-----|
+| AC | 22 | AL | 10 | AM | 4 |
+| AP | 13 | BA | 224 | CE | 28 |
+| DF | 1 | ES | 70 | GO | 128 |
+| MA | 17 | MG | 389 | MS | 76 |
+| MT | 80 | PA | 21 | PB | 16 |
+| PE | 97 | PI | 19 | PR | 168 |
+| RJ | 86 | RN | 20 | RO | 34 |
+| RR | 10 | RS | 170 | SC | 113 |
+| SE | 51 | SP | 340 | TO | 14 |
 
 ---
 

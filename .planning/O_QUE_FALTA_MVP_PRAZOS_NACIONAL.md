@@ -12,7 +12,8 @@
 |--------|----------|
 | **Regras CPC** | Implementadas em `prazos_calc.py`: art. 216 (feriados da comarca do processo), 219 (dias úteis), 220 (recesso 20/dez–20/jan), 224 (excluir dia do começo, incluir do vencimento). |
 | **Feriados nacionais + recesso** | Sempre considerados em todo o território (NACIONAIS_2026 + RECESSO no calendar_loader; aplicados a qualquer UF/comarca). |
-| **17 UFs + DF “completas”** | AC, AP, BA, DF, ES, GO, MG, MS, PE, PR, RJ, RS, SC, SE, SP têm muitas comarcas e feriados municipais no `calendar_v2.db`. Para essas UFs, o risco de errar prazo por falta de feriado municipal é **baixo** nas comarcas cobertas. |
+| **17 UFs + DF “completas”** | AC, AP, BA, DF, ES, GO, MG, MS, **PE (97 comarcas)**, PR, RJ, RS, SC, SE, SP têm muitas comarcas e feriados municipais no `calendar_v2.db`. Para essas UFs, o risco de errar prazo por falta de feriado municipal é **baixo** nas comarcas cobertas. |
+| **9 UFs expandidas** | CE (28), MA (17), PA (21), PI (19), PB (16), RN (20), TO (14), AL (10) e TJDFT têm comarcas/eventos adicionados no `calendar_v2.db` (commits mar/2026). Cobertura melhorada; ainda pode haver comarcas sem municipais. |
 | **Comarca desconhecida** | Se a comarca não está no banco, o sistema usa só nacionais + estaduais (quando existem); o `CalendarResolver` marca confiança **medium** e o bot pode informar “comarca sem cobertura municipal”. |
 | **Testes** | 129 testes passando; multi-estado (MG, SP, RJ, BA, RS, PE, CE, PR, SC, PA, GO, ES, DF) coberto em `test_prazobot.py`. |
 
@@ -26,25 +27,20 @@ Dividido em: **dados (calendário)**, **comportamento e avisos**, **confiança p
 
 ---
 
-### 2.1 Dados — Estados incompletos (8 UFs)
+### 2.1 Dados — Estados expandidos e o que ainda falta
 
-Hoje **8 UFs** estão marcadas como **incompletas**: poucas comarcas e/ou poucos eventos. Nesses estados, para muitas comarcas o sistema usa **apenas feriados nacionais** (e estaduais quando existem). Feriados **municipais** faltam → risco de **considerar dia útil quando naquele município é feriado** → prazo vencendo um dia antes do correto.
+**Expandidos (mar/2026):** CE (28), MA (17), PA (21), PI (19), PB (16), RN (20), TO (14), AL (10) e TJDFT — comarcas e eventos adicionados ao `calendar_v2.db`. Cobertura bem melhor; risco reduzido nas comarcas incluídas.
 
-| UF | Comarcas no banco | Ordem de magnitude esperada | Prioridade para MVP “seguro” |
-|----|--------------------|----------------------------|------------------------------|
-| **CE** | 17 | ~170 | **Alta** — volume e importância regional |
-| **MA** | 3 | ~210 | **Alta** |
-| **TO** | 2 | ~140 | **Alta** — hoje quase vazio |
-| **PA** | 3 | ~110 | **Alta** |
-| **AL** | 12 | ~100 | Média |
-| **PB** | 11 | ~120 | Média |
-| **PI** | 4 | ~130 | Média |
-| **RN** | 3 | ~70 | Média |
-| **AM** | 4 | ~70 | Média |
+**Ainda incompleto ou parcial:**
 
-**O que falta:** Incluir no `calendar_loader.py` (e depois no `calendar_v2.db`) as comarcas e feriados municipais oficiais de cada TJ (TJCE, TJMA, TJTO, TJPA, TJAL, TJPB, TJPI, TJRN, TJAM), a partir de calendários forenses / portarias / resoluções publicadas pelos tribunais.
+| UF | Comarcas no banco | Observação |
+|----|--------------------|------------|
+| **AM** | 4 | Única UF ainda incompleta — expandir TJAM (~70 esperadas). |
+| **MT** | 80 | Parcial — completar até ~140. |
+| **RO** | 34 | Parcial — completar até ~50. |
+| **RR** | 10 | Parcial — completar até ~15. |
 
-**Fonte de verdade:** `.planning/COBERTURA_CALENDARIO.md` — seção “O que fazer” por UF.
+**Fonte de verdade:** `.planning/COBERTURA_CALENDARIO.md`.
 
 ---
 
@@ -109,13 +105,13 @@ Isso não melhora a cobertura geográfica, mas **reduz risco de bug** (um caminh
 
 Interpretação possível de “seguro”:
 
-- [ ] **Cobertura mínima por UF:** Nenhuma UF com 0 comarcas no banco (hoje TO e PA têm 2 e 3; melhorar).
-- [ ] **Alta prioridade atendida:** CE, MA, TO, PA com número razoável de comarcas e feriados municipais (ex.: CE ~100+, MA ~50+, TO e PA com capitais e principais comarcas).
+- [x] **Cobertura mínima por UF:** TO (14), PA (21), CE (28), MA (17), PI, PB, RN, AL no banco (expandido mar/2026).
+- [x] **Alta prioridade atendida:** CE, MA, TO, PA com comarcas e feriados no `calendar_v2.db`.
 - [ ] **Parciais fechadas:** MT, RO, RR completos ou quase (≥90% das comarcas oficiais).
 - [ ] **Confiança:** Nenhum tribunal em uso com confiança **low**; TJRS em **high** se houver fonte.
-- [ ] **Aviso ao usuário:** Quando a comarca for sem cobertura municipal (ou confiança medium/low), o bot exibe aviso explícito no cálculo e/ou no briefing.
-- [ ] **Fonte única:** Cálculo e listagem de feriados usam só `cal_forense` (sem divergência com `feriados_br`/tabela `feriados`).
-- [ ] **Testes:** Testes multi-estado incluindo UFs incompletas e verificação de confidence.
+- [x] **Aviso ao usuário:** Bot exibe aviso no `/calcular` e `/feriados` quando confidence é medium/low.
+- [ ] **Fonte única:** Cálculo e listagem usam só `cal_forense` (sem divergência com `feriados_br`).
+- [x] **Testes:** 129 passando; multi-estado cobrindo UFs expandidas.
 
 ---
 
