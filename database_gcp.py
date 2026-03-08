@@ -179,6 +179,7 @@ async def salvar_onboarding(
                     tratamento                      = $3,
                     whatsapp_notificacao            = $4,
                     whatsapp_notificacao_confirmado = true,
+                    zapi_confirmado                 = true,
                     horario_briefing                = $5,
                     lembrete_fds                    = $6
                 WHERE id = $7
