@@ -301,10 +301,10 @@ async def atualizar_comarca(payload: dict, adv=Depends(advogado_logado)):
 
 # ── Webhook Z-API ─────────────────────────────────────────────────────────────
 
-@app.post("/webhook/evolution")
-async def webhook_evolution(request: Request):
-    evo_key = os.getenv("EVOLUTION_API_KEY", "")
-    if evo_key and request.headers.get("apikey", "") != evo_key:
+@app.post("/webhook/zapi")
+async def webhook_zapi(request: Request):
+    zapi_key = os.getenv("ZAPI_WEBHOOK_SECRET", "")
+    if zapi_key and request.headers.get("x-zapi-secret", "") != zapi_key:
         raise HTTPException(401, "Token inválido")
     try:
         payload = await request.json()
