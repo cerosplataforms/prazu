@@ -1,0 +1,84 @@
+name: Deploy PROD
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirmar:
+        description: 'Digite PRODUÇÃO para confirmar o deploy'
+        required: true
+        default: ''
+      motivo:
+        description: 'Motivo do deploy (ex: fix cadastro v2, feat billing)'
+        required: true
+        default: ''
+
+jobs:
+  validar:
+    name: Validar confirmação
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checar confirmação
+        run: |
+          if [ "${{ github.event.inputs.confirmar }}" != "PRODUÇÃO" ]; then
+            echo "❌ Digite exatamente PRODUÇÃO para confirmar."
+            exit 1
+          fi
+          echo "✅ Confirmação válida. Iniciando deploy em produção..."
+          echo "Motivo: ${{ github.event.inputs.motivo }}"
+
+  deploy:
+    name: Build e Deploy → prazu (PROD)
+    runs-on: ubuntu-latest
+    needs: validar
+    environment: production
+
+    steps:
+      - name: Checkout (branch master)
+        uses: actions/checkout@v4
+        with:
+          ref: master
+
+      - name: Autenticar no GCP
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Configurar gcloud
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: prazu-prod
+
+      - name: Build da imagem Docker
+        run: |
+          gcloud builds submit \
+            --tag gcr.io/prazu-prod/prazu:${{ github.sha }} \
+            --tag gcr.io/prazu-prod/prazu:latest \
+            --project=prazu-prod
+
+      - name: Deploy no Cloud Run PROD
+        run: |
+          gcloud run deploy prazu \
+            --image gcr.io/prazu-prod/prazu:${{ github.sha }} \
+            --region southamerica-east1 \
+            --project prazu-prod \
+            --set-env-vars ENVIRONMENT=production \
+            --allow-unauthenticated
+
+      - name: Verificar health check
+        run: |
+          sleep 10
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+            https://prazu-710127610365.southamerica-east1.run.app/health)
+          if [ "$STATUS" != "200" ]; then
+            echo "❌ Health check falhou após deploy! HTTP $STATUS"
+            exit 1
+          fi
+          echo "✅ Health check OK (HTTP $STATUS)"
+
+      - name: Resumo do deploy
+        run: |
+          echo "### 🚀 Deploy PROD concluído" >> $GITHUB_STEP_SUMMARY
+          echo "Commit: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "Por: ${{ github.actor }}" >> $GITHUB_STEP_SUMMARY
+          echo "Motivo: ${{ github.event.inputs.motivo }}" >> $GITHUB_STEP_SUMMARY
+          echo "Health: ✅ OK" >> $GITHUB_STEP_SUMMARY
