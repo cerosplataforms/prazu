@@ -1,6 +1,6 @@
 """
 calendar_loader.py - Carregador Nacional de Feriados Forenses (2026)
-Cobertura: 1.057 comarcas, 2.214 feriados municipais, 8 TJs
+Cobertura: 2.091 localidades, 6.121 eventos, 51 tribunais
 Uso: python cal_forense/calendar_loader.py --db calendar.db
 """
 
