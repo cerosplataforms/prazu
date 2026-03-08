@@ -126,18 +126,18 @@ async def _buscar_djen(adv_id, phone, oab_num, oab_uf):
         if not vara or vara == "N/I":
             return ""
         # Padrão 1: "Comarca de Nova Lima"
-        m = re.search(r"[Cc]omarca\s+de\s+([A-ZÀ-Ú][^,/\-]+?)(?:\s*[,/\-]|$)", vara)
+        m = re.search(r"[Cc]omarca\s+de\s+(.+?)(?:\s*[-/]|$)", vara)
         if m:
             return m.group(1).strip().rstrip(".")
-        # Padrão 2: "de Belo Horizonte, Betim e Contagem" — pega primeira cidade
-        m = re.search(r"\bde\s+([A-ZÀ-Ú][a-zà-ú]+(?:\s+[A-ZÀ-Ú][a-zà-ú]+)*)", vara)
+        # Padrão 2: "Turma/Vara/Juizado...de Belo Horizonte" — ancora no fim
+        m = re.search(r"(?:Vara|Juizado|Turma).*?\bde\s+([A-Z][a-záéíóúãõçê]+(?:\s+(?:de|do|da|dos|das|e)?\s*[A-Z][a-záéíóúãõçê]+)*)\s*$", vara)
         if m:
-            return m.group(1).strip().rstrip(".")
-        # Padrão 3: "Vara - Cidade" — pega última parte após " - "
+            return m.group(1).strip()
+        # Padrão 3: "Vara - Cidade" — última parte após " - "
         parts = vara.split(" - ")
         if len(parts) >= 2:
             last = parts[-1].strip()
-            if last and last[0].isupper() and len(last) > 3:
+            if last and last[0].isupper() and len(last) > 3 and not any(x in last.lower() for x in ["vara", "juiz", "turma", "seção", "cível", "criminal"]):
                 return last.rstrip(".")
         return ""
 
