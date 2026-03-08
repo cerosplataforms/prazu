@@ -221,35 +221,22 @@
 
 <script>
   // ── Dados do servidor ──
-  const linhas = {{ processos | tojson }};
-
-  // Agrupa linhas por processo (JOIN retorna 1 linha por prazo)
-  const processosMap = {};
-  linhas.forEach(r => {
-    const chave = r.numero || ('proc_' + Math.random());
-    if (!processosMap[chave]) {
-      processosMap[chave] = {
-        numero: r.numero,
-        partes: r.partes,
-        tribunal: r.tribunal,
-        vara: r.vara,
-        comarca: r.comarca,
-        prazos: []
-      };
-    }
-    if (r.prazo_id) {
-      processosMap[chave].prazos.push({
-        id: r.prazo_id,
-        tipo: r.tipo_prazo,
-        data_inicio: r.data_inicio,
-        data_fim: r.data_fim,
-        cumprido: r.cumprido,
-        decurso: r.decurso
-      });
-    }
-  });
-
-  const processos = Object.values(processosMap);
+  // Backend retorna 1 linha por processo com prazos em JSON array (json_agg)
+  const processos = ({{ processos | tojson }}).map(r => ({
+    numero:   r.numero,
+    partes:   r.partes,
+    tribunal: r.tribunal,
+    vara:     r.vara,
+    comarca:  r.comarca,
+    prazos:   Array.isArray(r.prazos) ? r.prazos.map(pr => ({
+      id:         pr.prazo_id,
+      tipo:       pr.tipo_prazo,
+      data_inicio: pr.data_inicio,
+      data_fim:   pr.data_fim,
+      cumprido:   pr.cumprido,
+      decurso:    pr.decurso
+    })) : []
+  }));
   const hoje = new Date(); hoje.setHours(0,0,0,0);
 
   // ── Contadores (só prazos ativos, não vencidos) ──
