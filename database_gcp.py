@@ -470,3 +470,25 @@ async def comunicacao_djen_existe(advogado_id, numero_processo, data_disponibili
 async def salvar_comunicacao_djen(advogado_id, numero_processo, tribunal, conteudo, data_disponibilizacao, data_publicacao="", tipo_comunicacao=""):
     async with _pool.acquire() as conn:
         await conn.execute("INSERT INTO comunicacoes_djen (advogado_id, numero_processo, tribunal, conteudo, data_disponibilizacao, data_publicacao, tipo_comunicacao) VALUES ($1,$2,$3,$4,$5,$6,$7)", advogado_id, numero_processo, tribunal, conteudo, data_disponibilizacao, data_publicacao, tipo_comunicacao)
+
+
+async def marcar_prazo_cumprido(processo_id: int, tipo: str, data_fim) -> None:
+    from datetime import date as _date
+    if isinstance(data_fim, str):
+        data_fim = _date.fromisoformat(data_fim)
+    async with _pool.acquire() as conn:
+        await conn.execute(
+            "UPDATE prazos SET cumprido=TRUE WHERE processo_id=$1 AND tipo=$2 AND data_fim=$3",
+            processo_id, tipo, data_fim,
+        )
+
+
+async def marcar_prazo_decurso(processo_id: int, tipo: str, data_fim) -> None:
+    from datetime import date as _date
+    if isinstance(data_fim, str):
+        data_fim = _date.fromisoformat(data_fim)
+    async with _pool.acquire() as conn:
+        await conn.execute(
+            "UPDATE prazos SET decurso=TRUE WHERE processo_id=$1 AND tipo=$2 AND data_fim=$3",
+            processo_id, tipo, data_fim,
+        )

@@ -228,13 +228,15 @@ async def _buscar_djen(adv_id, phone, oab_num, oab_uf):
             pub = next((c for c in comunicacoes_com_prazo if c.get("numero_processo") == num_cnj), {})
             prazo_info = pub.get("prazo_info")
             if prazo_info and prazo_info.get("data_vencimento"):
+                tipo_prazo = (pub.get("tipo") or "intimacao").lower()
                 await db.criar_prazo_processo(
                     processo_id=processo_id,
-                    tipo=(pub.get("tipo") or "intimacao").lower(),
+                    tipo=tipo_prazo,
                     data_inicio=prazo_info["data_inicio"],
                     data_fim=prazo_info["data_vencimento"],
                     dias_totais=prazo_info["dias_prazo"],
                 )
+
         for c in comunicacoes:
             existe = await db.comunicacao_djen_existe(adv_id, c["numero_processo"], c.get("data_disponibilizacao", ""))
             if not existe:
