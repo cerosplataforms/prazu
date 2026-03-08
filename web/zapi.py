@@ -11,9 +11,10 @@ log = logging.getLogger(__name__)
 
 
 class ZAPI:
-    def __init__(self, instance_id: str, token: str):
+    def __init__(self, instance_id: str, token: str, client_token: str = ""):
         self.instance_id = instance_id
         self.token = token
+        self.client_token = client_token
         self.base_url = f"https://api.z-api.io/instances/{instance_id}/token/{token}"
 
     async def enviar(self, phone: str, texto: str) -> bool:
@@ -21,9 +22,10 @@ class ZAPI:
             log.warning(f"Z-API não configurado. Msg para {phone}: {texto[:50]}")
             return False
         url = f"{self.base_url}/send-text"
+        headers = {"Client-Token": self.client_token} if self.client_token else {}
         try:
             async with httpx.AsyncClient(timeout=10) as client:
-                resp = await client.post(url, json={"phone": phone, "message": texto})
+                resp = await client.post(url, json={"phone": phone, "message": texto}, headers=headers)
                 resp.raise_for_status()
                 log.info(f"Z-API enviado para {phone} ✅")
                 return True
