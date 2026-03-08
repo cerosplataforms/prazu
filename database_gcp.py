@@ -449,6 +449,11 @@ async def criar_ou_atualizar_processo(advogado_id, numero, partes="", vara="", t
 
 
 async def criar_prazo_processo(processo_id, tipo, data_inicio, data_fim, fatal=False, contagem="uteis", dias_totais=15):
+    from datetime import date as _date
+    if isinstance(data_fim, str):
+        data_fim = _date.fromisoformat(data_fim)
+    if isinstance(data_inicio, str):
+        data_inicio = _date.fromisoformat(data_inicio)
     async with _pool.acquire() as conn:
         existe = await conn.fetchrow("SELECT id FROM prazos WHERE processo_id=$1 AND tipo=$2 AND data_fim=$3", processo_id, tipo, data_fim)
         if existe:
