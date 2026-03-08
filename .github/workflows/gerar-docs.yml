@@ -1,18 +1,9 @@
-name: Gerar Documentação Automática
+name: Gerar Documentacao Automatica
 
 on:
-  push:
-    branches: [master, main]
-    paths:
-      - 'web/app.py'
-      - 'web/onboarding.py'
-      - 'web/ia_gemini.py'
-      - 'web/zapi.py'
-      - 'database_gcp.py'
-      - 'requirements.txt'
-      - 'Dockerfile'
-      - 'cal_forense/**'
-      - 'web/templates/**'
+  schedule:
+    - cron: "0 5 * * *"
+  workflow_dispatch:
 
 jobs:
   documentar:
@@ -27,20 +18,22 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: "3.11"
 
-      - name: Instala dependências
-        run: pip install google-generativeai
+      - name: Instala dependencias
+        run: |
+          python -m pip install --upgrade pip
+          pip install google-genai
 
-      - name: Gera documentação
+      - name: Gera documentacao
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: python .github/scripts/gerar_docs.py
 
-      - name: Commit documentação
+      - name: Commit documentacao
         run: |
           git config user.name "prazu-docs-bot"
           git config user.email "docs@prazu.com.br"
           git add docs/
-          git diff --staged --quiet || git commit -m "docs: atualizacao automatica $(date +%Y-%m-%d_%H-%M)"
+          git diff --staged --quiet || git commit -m "docs: atualizacao automatica $(date +%Y-%m-%d)"
           git push
