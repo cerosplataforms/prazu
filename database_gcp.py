@@ -337,40 +337,58 @@ async def advogados_trial_expirando(dias: int = 2) -> list[dict]:
 
 async def listar_processos_com_prazos(advogado_id: int) -> list[dict]:
     """
-    Retorna processos + prazos dos últimos 90 dias + futuros.
-    Ordenados por: não cumpridos primeiro, depois por vencimento.
+    Retorna 1 linha por processo com prazos agregados em JSON array.
+    Ordenados por: prazo mais próximo primeiro.
     """
     async with _pool.acquire() as conn:
         rows = await conn.fetch(
             """
             SELECT
+                p.id,
                 p.numero,
                 p.tribunal,
                 p.vara,
                 p.comarca,
                 p.partes,
-                pr.id          AS prazo_id,
-                pr.tipo        AS tipo_prazo,
-                pr.data_inicio,
-                pr.data_fim,
-                pr.cumprido,
-                pr.decurso
+                -- prazo mais urgente do processo (para ordenação)
+                MIN(CASE WHEN pr.cumprido = false AND pr.decurso = false
+                    THEN pr.data_fim END) AS proximo_vencimento,
+                -- agrega todos os prazos relevantes em JSON
+                COALESCE(
+                    json_agg(
+                        json_build_object(
+                            'prazo_id',    pr.id,
+                            'tipo_prazo',  pr.tipo,
+                            'data_inicio', pr.data_inicio::text,
+                            'data_fim',    pr.data_fim::text,
+                            'cumprido',    pr.cumprido,
+                            'decurso',     pr.decurso
+                        ) ORDER BY pr.data_fim ASC
+                    ) FILTER (WHERE pr.id IS NOT NULL),
+                    '[]'
+                ) AS prazos
             FROM processos p
-            JOIN prazos pr ON pr.processo_id = p.id
+            LEFT JOIN prazos pr ON pr.processo_id = p.id
+                AND pr.data_fim >= NOW() - INTERVAL '90 days'
             WHERE p.advogado_id = $1
-              AND pr.data_fim >= NOW() - INTERVAL '90 days'
-            ORDER BY pr.cumprido ASC, pr.data_fim ASC NULLS LAST
+            GROUP BY p.id, p.numero, p.tribunal, p.vara, p.comarca, p.partes
+            ORDER BY proximo_vencimento ASC NULLS LAST
             """,
             advogado_id,
         )
 
+    import json
     result = []
     for r in rows:
         d = dict(r)
-        for campo in ("data_inicio", "data_fim"):
-            v = d.get(campo)
-            if v and hasattr(v, "isoformat"):
-                d[campo] = v.isoformat()
+        # proximo_vencimento é só para ordenação, não precisa ir pro front
+        d.pop("proximo_vencimento", None)
+        # prazos vem como string JSON do postgres
+        prazos = d.get("prazos")
+        if isinstance(prazos, str):
+            d["prazos"] = json.loads(prazos)
+        elif prazos is None:
+            d["prazos"] = []
         result.append(d)
     return result
 
