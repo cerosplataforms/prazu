@@ -137,10 +137,12 @@ class LoginRequest(BaseModel):
 
 @app.post("/api/auth/cadastro")
 async def cadastro(payload: CadastroRequest, request: Request):
-    # Senha forte: mínimo 8 chars, ao menos 1 letra e 1 número
+    # Senha forte: mínimo 8 chars, ao menos 1 letra e 1 número (sem import re)
     if len(payload.senha) < 8:
         raise HTTPException(400, "Senha deve ter pelo menos 8 caracteres.")
-    if not re.search(r'[A-Za-z]', payload.senha) or not re.search(r'[0-9]', payload.senha):
+    if not any(c.isalpha() for c in payload.senha):
+        raise HTTPException(400, "Senha deve conter ao menos uma letra e um número.")
+    if not any(c.isdigit() for c in payload.senha):
         raise HTTPException(400, "Senha deve conter ao menos uma letra e um número.")
 
     telefone = None
@@ -148,7 +150,7 @@ async def cadastro(payload: CadastroRequest, request: Request):
         telefone = "".join(filter(str.isdigit, payload.telefone))
         if len(telefone) < 10: telefone = None
 
-    # Verificar e-mail duplicado antes do insert (mensagem clara)
+    # Verificar e-mail duplicado antes do insert — mensagem clara com link
     existente = await db.buscar_por_email(payload.email)
     if existente:
         raise HTTPException(409, "Este e-mail já está em uso. Deseja recuperar sua senha?")
