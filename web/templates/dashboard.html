@@ -257,7 +257,7 @@
   let urgente = 0, proximo = 0;
   processos.forEach(p => {
     p.prazos.forEach(pr => {
-      if (pr.cumprido || pr.
+      if (pr.cumprido || pr.decurso) return;
       if (!pr.data_fim) return;
       const venc = new Date(pr.data_fim); venc.setHours(0,0,0,0);
       const diff = Math.ceil((venc - hoje) / 86400000);
@@ -290,14 +290,13 @@
         <div class="prazo-item">
           <span class="prazo-dot dot-vermelho"></span>
           <span class="prazo-tipo" style="flex:1">${v.numero}</span>
-          <span class="prazo-tipo">${v.tipo || 'Prazo'}</n>
+          <span class="prazo-tipo">${v.tipo || 'Prazo'}</span>
           <span class="prazo-data">${formatData(v.data_fim)}</span>
           <span class="prazo-badge badge-vermelho">Vencido há ${v.dias}d</span>
         </div>
       </div>`).join('');
   }
-  document.getElementById('count-cumprido').textContent  = cumprido;
-
+  
   // ── Renderiza lista ──
   function statusDoPrazo(pr) {
     if (pr.cumprido) return { dot: 'dot-cinza', badge: 'badge-cinza', label: 'Cumprido' };
