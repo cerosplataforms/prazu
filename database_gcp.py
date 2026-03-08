@@ -25,41 +25,28 @@ _pool: Optional[asyncpg.Pool] = None
 
 
 async def init_db() -> None:
-    """Cria o pool de conexões. Chamado no startup do FastAPI."""
     global _pool
     db_name = os.getenv("DB_NAME", "prazu")
     db_user = os.getenv("DB_USER", "prazu_user")
     db_pass = os.getenv("DB_PASSWORD", "")
 
     if os.getenv("ENVIRONMENT") == "production":
-        # Cloud Run: conecta via socket Unix do Cloud SQL Proxy
         socket_path = "/cloudsql/prazu-prod:southamerica-east1:prazu-db"
         _pool = await asyncpg.create_pool(
-            host=socket_path,
-            database=db_name,
-            user=db_user,
-            password=db_pass,
-            min_size=2,
-            max_size=10,
-            command_timeout=30,
+            host=socket_path, database=db_name, user=db_user, password=db_pass,
+            min_size=2, max_size=10, command_timeout=30,
         )
     else:
-        # Local: conecta via IP
         _pool = await asyncpg.create_pool(
             host=os.getenv("DB_HOST", "localhost"),
             port=int(os.getenv("DB_PORT", "5432")),
-            database=db_name,
-            user=db_user,
-            password=db_pass,
-            min_size=2,
-            max_size=10,
-            command_timeout=30,
+            database=db_name, user=db_user, password=db_pass,
+            min_size=2, max_size=10, command_timeout=30,
         )
     log.info("Pool PostgreSQL inicializado")
 
 
 async def close_db() -> None:
-    """Fecha o pool. Chamado no shutdown do FastAPI."""
     global _pool
     if _pool:
         await _pool.close()
@@ -68,7 +55,6 @@ async def close_db() -> None:
 
 
 async def diagnostico() -> dict:
-    """Health check básico — retorna contagem de advogados."""
     async with _pool.acquire() as conn:
         row = await conn.fetchrow("SELECT COUNT(*) AS total FROM advogados")
         return {"advogados": row["total"], "status": "ok"}
@@ -81,7 +67,6 @@ def _hash_senha(senha: str) -> str:
 
 
 def verificar_senha(senha: str, hash_guardado: str) -> bool:
-    """Compara senha com hash bcrypt. NÃO é async — pode chamar direto."""
     if not senha or not hash_guardado:
         return False
     try:
@@ -104,13 +89,9 @@ async def criar_advogado(
     oab_seccional: str,
     whatsapp: Optional[str] = None,
 ) -> Optional[int]:
-    """
-    Insere novo advogado com trial de 7 dias.
-    Retorna id criado, ou None se email/OAB já existir.
-    """
+    """Insere novo advogado com trial de 7 dias. Retorna id ou None se duplicado."""
     senha_hash = _hash_senha(senha)
     trial_fim  = datetime.now(timezone.utc) + timedelta(days=7)
-
     try:
         async with _pool.acquire() as conn:
             async with conn.transaction():
@@ -118,59 +99,115 @@ async def criar_advogado(
                     """
                     INSERT INTO advogados
                         (nome, email, senha_hash, oab_numero, oab_seccional,
-                         whatsapp, status, trial_fim, ativo,
-                         zapi_confirmado, created_at)
+                         whatsapp, status, trial_fim, ativo, zapi_confirmado, created_at)
                     VALUES ($1,$2,$3,$4,$5,$6,'trial',$7,true,false,NOW())
                     RETURNING id
                     """,
-                    nome,
-                    email.lower(),
-                    senha_hash,
-                    oab_numero,
-                    oab_seccional.upper(),
-                    whatsapp,
-                    trial_fim,
+                    nome, email.lower(), senha_hash,
+                    oab_numero, oab_seccional.upper(), whatsapp, trial_fim,
                 )
                 adv_id = row["id"]
-
                 await conn.execute(
-                    """
-                    INSERT INTO assinaturas
-                        (advogado_id, plano, status, inicio, fim)
-                    VALUES ($1,'trial','ativo',NOW(),$2)
-                    """,
+                    "INSERT INTO assinaturas (advogado_id, plano, status, inicio, fim) VALUES ($1,'trial','ativo',NOW(),$2)",
                     adv_id, trial_fim,
                 )
-
                 log.info(f"Novo advogado id={adv_id} {email} OAB {oab_numero}/{oab_seccional}")
                 return adv_id
-
     except asyncpg.UniqueViolationError:
         log.warning(f"Cadastro duplicado: {email} / {oab_numero}/{oab_seccional}")
         return None
+
+
+async def criar_advogado_minimo(
+    nome: str,
+    email: str,
+    senha: str,
+    telefone: Optional[str] = None,
+) -> Optional[int]:
+    """
+    Cadastro rápido: só nome, email, senha e telefone.
+    OAB e WhatsApp de notificação são preenchidos no onboarding.
+    Retorna id criado, ou None se email já existir.
+    """
+    senha_hash = _hash_senha(senha)
+    trial_fim  = datetime.now(timezone.utc) + timedelta(days=7)
+    try:
+        async with _pool.acquire() as conn:
+            async with conn.transaction():
+                row = await conn.fetchrow(
+                    """
+                    INSERT INTO advogados
+                        (nome, email, senha_hash, oab_numero, oab_seccional,
+                         whatsapp, status, trial_fim, ativo, zapi_confirmado, created_at)
+                    VALUES ($1,$2,$3,'','', $4,'trial',$5,true,false,NOW())
+                    RETURNING id
+                    """,
+                    nome, email.lower(), senha_hash, telefone, trial_fim,
+                )
+                adv_id = row["id"]
+                await conn.execute(
+                    "INSERT INTO assinaturas (advogado_id, plano, status, inicio, fim) VALUES ($1,'trial','ativo',NOW(),$2)",
+                    adv_id, trial_fim,
+                )
+                log.info(f"Cadastro mínimo id={adv_id} {email}")
+                return adv_id
+    except asyncpg.UniqueViolationError:
+        log.warning(f"Cadastro duplicado (mínimo): {email}")
+        return None
+
+
+async def salvar_onboarding(
+    advogado_id: int,
+    oab_numero: str,
+    oab_seccional: str,
+    tratamento: str,
+    whatsapp_notificacao: str,
+    horario_briefing: str,
+    lembrete_fds: bool,
+) -> bool:
+    """
+    Salva os dados do onboarding obrigatório.
+    Retorna False se a OAB já estiver em outra conta.
+    """
+    try:
+        async with _pool.acquire() as conn:
+            await conn.execute(
+                """
+                UPDATE advogados SET
+                    oab_numero                      = $1,
+                    oab_seccional                   = $2,
+                    tratamento                      = $3,
+                    whatsapp_notificacao            = $4,
+                    whatsapp_notificacao_confirmado = true,
+                    horario_briefing                = $5,
+                    lembrete_fds                    = $6
+                WHERE id = $7
+                """,
+                oab_numero, oab_seccional.upper(), tratamento,
+                whatsapp_notificacao, horario_briefing, lembrete_fds, advogado_id,
+            )
+            log.info(f"Onboarding salvo adv={advogado_id} OAB {oab_numero}/{oab_seccional}")
+            return True
+    except asyncpg.UniqueViolationError:
+        log.warning(f"OAB duplicada no onboarding: {oab_numero}/{oab_seccional}")
+        return False
 
 
 # ── Buscas ───────────────────────────────────────────────────────────────────
 
 async def buscar_por_id(advogado_id: int) -> Optional[dict]:
     async with _pool.acquire() as conn:
-        return _row(await conn.fetchrow(
-            "SELECT * FROM advogados WHERE id = $1", advogado_id
-        ))
+        return _row(await conn.fetchrow("SELECT * FROM advogados WHERE id = $1", advogado_id))
 
 
 async def buscar_por_email(email: str) -> Optional[dict]:
     async with _pool.acquire() as conn:
-        return _row(await conn.fetchrow(
-            "SELECT * FROM advogados WHERE email = $1", email.lower()
-        ))
+        return _row(await conn.fetchrow("SELECT * FROM advogados WHERE email = $1", email.lower()))
 
 
 async def buscar_por_whatsapp(whatsapp: str) -> Optional[dict]:
     async with _pool.acquire() as conn:
-        return _row(await conn.fetchrow(
-            "SELECT * FROM advogados WHERE whatsapp = $1", whatsapp
-        ))
+        return _row(await conn.fetchrow("SELECT * FROM advogados WHERE whatsapp = $1", whatsapp))
 
 
 async def buscar_por_oab(numero: str, seccional: str) -> Optional[dict]:
@@ -182,7 +219,6 @@ async def buscar_por_oab(numero: str, seccional: str) -> Optional[dict]:
 
 
 async def listar_advogados_ativos() -> list[dict]:
-    """Todos com trial válido ou assinatura ativa e WhatsApp confirmado."""
     async with _pool.acquire() as conn:
         rows = await conn.fetch(
             """
@@ -202,25 +238,15 @@ async def listar_advogados_ativos() -> list[dict]:
 
 async def atualizar_last_seen(advogado_id: int) -> None:
     async with _pool.acquire() as conn:
-        await conn.execute(
-            "UPDATE advogados SET last_seen = NOW() WHERE id = $1",
-            advogado_id,
-        )
+        await conn.execute("UPDATE advogados SET last_seen = NOW() WHERE id = $1", advogado_id)
 
 
 async def atualizar_comarca(advogado_id: int, comarca: str) -> None:
     async with _pool.acquire() as conn:
-        await conn.execute(
-            "UPDATE advogados SET comarca = $1 WHERE id = $2",
-            comarca, advogado_id,
-        )
+        await conn.execute("UPDATE advogados SET comarca = $1 WHERE id = $2", comarca, advogado_id)
 
 
-async def atualizar_whatsapp(
-    advogado_id: int,
-    whatsapp: str,
-    confirmado: bool = False,
-) -> None:
+async def atualizar_whatsapp(advogado_id: int, whatsapp: str, confirmado: bool = False) -> None:
     async with _pool.acquire() as conn:
         await conn.execute(
             "UPDATE advogados SET whatsapp=$1, zapi_confirmado=$2 WHERE id=$3",
@@ -230,26 +256,15 @@ async def atualizar_whatsapp(
 
 async def confirmar_whatsapp(advogado_id: int) -> None:
     async with _pool.acquire() as conn:
-        await conn.execute(
-            "UPDATE advogados SET zapi_confirmado = true WHERE id = $1",
-            advogado_id,
-        )
+        await conn.execute("UPDATE advogados SET zapi_confirmado = true WHERE id = $1", advogado_id)
 
 
 async def atualizar_ultima_busca_djen(advogado_id: int) -> None:
     async with _pool.acquire() as conn:
-        await conn.execute(
-            "UPDATE advogados SET ultima_busca_djen = NOW() WHERE id = $1",
-            advogado_id,
-        )
+        await conn.execute("UPDATE advogados SET ultima_busca_djen = NOW() WHERE id = $1", advogado_id)
 
 
-async def atualizar_dados(
-    advogado_id: int,
-    nome: str,
-    horario_briefing: str = "07:00",
-    tratamento: str = "",
-) -> None:
+async def atualizar_dados(advogado_id: int, nome: str, horario_briefing: str = "07:00", tratamento: str = "") -> None:
     async with _pool.acquire() as conn:
         await conn.execute(
             "UPDATE advogados SET nome=$1, horario_briefing=$2, tratamento=$3 WHERE id=$4",
@@ -260,28 +275,20 @@ async def atualizar_dados(
 async def atualizar_senha(advogado_id: int, nova_senha: str) -> None:
     novo_hash = _hash_senha(nova_senha)
     async with _pool.acquire() as conn:
-        await conn.execute(
-            "UPDATE advogados SET senha_hash = $1 WHERE id = $2",
-            novo_hash, advogado_id,
-        )
+        await conn.execute("UPDATE advogados SET senha_hash = $1 WHERE id = $2", novo_hash, advogado_id)
 
 
 async def atualizar_email(advogado_id: int, novo_email: str) -> None:
     async with _pool.acquire() as conn:
-        await conn.execute(
-            "UPDATE advogados SET email = $1 WHERE id = $2",
-            novo_email.lower(), advogado_id,
-        )
+        await conn.execute("UPDATE advogados SET email = $1 WHERE id = $2", novo_email.lower(), advogado_id)
 
 
 # ── Acesso / Trial ───────────────────────────────────────────────────────────
 
 async def pode_usar(advogado_id: int) -> bool:
-    """True se trial válido ou assinatura ativa."""
     async with _pool.acquire() as conn:
         row = await conn.fetchrow(
-            "SELECT status, trial_fim, ativo FROM advogados WHERE id = $1",
-            advogado_id,
+            "SELECT status, trial_fim, ativo FROM advogados WHERE id = $1", advogado_id,
         )
     if not row or not row["ativo"]:
         return False
@@ -296,17 +303,9 @@ async def pode_usar(advogado_id: int) -> bool:
 
 
 async def expirar_trials_vencidos() -> int:
-    """
-    Muda status de 'trial' → 'expirado' para quem passou da data.
-    Chamado pelo Cloud Scheduler à meia-noite.
-    """
     async with _pool.acquire() as conn:
         result = await conn.execute(
-            """
-            UPDATE advogados
-            SET status = 'expirado'
-            WHERE status = 'trial' AND trial_fim < NOW()
-            """
+            "UPDATE advogados SET status = 'expirado' WHERE status = 'trial' AND trial_fim < NOW()"
         )
     count = int(result.split()[-1])
     if count:
@@ -315,7 +314,6 @@ async def expirar_trials_vencidos() -> int:
 
 
 async def advogados_trial_expirando(dias: int = 2) -> list[dict]:
-    """Advogados com trial acabando nos próximos N dias — para lembrete."""
     limite = datetime.now(timezone.utc) + timedelta(days=dias)
     async with _pool.acquire() as conn:
         rows = await conn.fetch(
@@ -336,24 +334,13 @@ async def advogados_trial_expirando(dias: int = 2) -> list[dict]:
 # ── Processos e prazos ───────────────────────────────────────────────────────
 
 async def listar_processos_com_prazos(advogado_id: int) -> list[dict]:
-    """
-    Retorna 1 linha por processo com prazos agregados em JSON array.
-    Ordenados por: prazo mais próximo primeiro.
-    """
     async with _pool.acquire() as conn:
         rows = await conn.fetch(
             """
             SELECT
-                p.id,
-                p.numero,
-                p.tribunal,
-                p.vara,
-                p.comarca,
-                p.partes,
-                -- prazo mais urgente do processo (para ordenação)
+                p.id, p.numero, p.tribunal, p.vara, p.comarca, p.partes,
                 MIN(CASE WHEN pr.cumprido = false AND pr.decurso = false
                     THEN pr.data_fim END) AS proximo_vencimento,
-                -- agrega todos os prazos relevantes em JSON
                 COALESCE(
                     json_agg(
                         json_build_object(
@@ -381,9 +368,7 @@ async def listar_processos_com_prazos(advogado_id: int) -> list[dict]:
     result = []
     for r in rows:
         d = dict(r)
-        # proximo_vencimento é só para ordenação, não precisa ir pro front
         d.pop("proximo_vencimento", None)
-        # prazos vem como string JSON do postgres
         prazos = d.get("prazos")
         if isinstance(prazos, str):
             d["prazos"] = json.loads(prazos)
@@ -395,37 +380,24 @@ async def listar_processos_com_prazos(advogado_id: int) -> list[dict]:
 
 # ── Sessions JWT ─────────────────────────────────────────────────────────────
 
-async def criar_session(
-    advogado_id: int,
-    user_agent: str,
-    ip: str,
-    ttl_dias: int = 30,
-) -> None:
-    """Registra sessão para auditoria."""
+async def criar_session(advogado_id: int, user_agent: str, ip: str, ttl_dias: int = 30) -> None:
     import secrets
     token = secrets.token_urlsafe(32)
     expira = datetime.now(timezone.utc) + timedelta(days=ttl_dias)
     async with _pool.acquire() as conn:
         await conn.execute(
-            """
-            INSERT INTO sessions (advogado_id, token, user_agent, ip, expira_em, criado_em)
-            VALUES ($1, $2, $3, $4, $5, NOW())
-            """,
+            "INSERT INTO sessions (advogado_id, token, user_agent, ip, expira_em, criado_em) VALUES ($1,$2,$3,$4,$5,NOW())",
             advogado_id, token, (user_agent or "")[:500], ip or "", expira,
         )
 
 
 async def validar_session(token: str) -> Optional[dict]:
-    """Valida token de sessão (reservado para revogação futura)."""
     async with _pool.acquire() as conn:
         row = await conn.fetchrow(
             """
-            SELECT s.*, a.ativo
-            FROM sessions s
+            SELECT s.*, a.ativo FROM sessions s
             JOIN advogados a ON a.id = s.advogado_id
-            WHERE s.token = $1
-              AND s.expira_em > NOW()
-              AND a.ativo = true
+            WHERE s.token = $1 AND s.expira_em > NOW() AND a.ativo = true
             """,
             token,
         )
@@ -434,21 +406,11 @@ async def validar_session(token: str) -> Optional[dict]:
 
 # ── Log WhatsApp ─────────────────────────────────────────────────────────────
 
-async def log_whatsapp(
-    advogado_id: Optional[int],
-    direcao: str,    # 'inbound' | 'outbound'
-    tipo: str,       # 'mensagem' | 'briefing' | 'alerta'
-    conteudo: str,
-) -> None:
-    """Registra mensagem enviada/recebida. Nunca quebra o fluxo principal."""
+async def log_whatsapp(advogado_id: Optional[int], direcao: str, tipo: str, conteudo: str) -> None:
     try:
         async with _pool.acquire() as conn:
             await conn.execute(
-                """
-                INSERT INTO whatsapp_events
-                    (advogado_id, direcao, tipo, conteudo, criado_em)
-                VALUES ($1, $2, $3, $4, NOW())
-                """,
+                "INSERT INTO whatsapp_events (advogado_id, direcao, tipo, conteudo, criado_em) VALUES ($1,$2,$3,$4,NOW())",
                 advogado_id, direcao, tipo, (conteudo or "")[:1000],
             )
     except Exception as e:
@@ -462,51 +424,52 @@ async def criar_ou_atualizar_processo(advogado_id, numero, partes="", vara="", t
         row = await conn.fetchrow("SELECT id FROM processos WHERE advogado_id=$1 AND numero=$2", advogado_id, numero)
         if row:
             return row["id"]
-        row = await conn.fetchrow("INSERT INTO processos (advogado_id, numero, partes, vara, tribunal, comarca, fonte) VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING id", advogado_id, numero, partes, vara, tribunal, comarca, fonte)
+        row = await conn.fetchrow(
+            "INSERT INTO processos (advogado_id, numero, partes, vara, tribunal, comarca, fonte) VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING id",
+            advogado_id, numero, partes, vara, tribunal, comarca, fonte,
+        )
         return row["id"]
 
 
 async def criar_prazo_processo(processo_id, tipo, data_inicio, data_fim, fatal=False, contagem="uteis", dias_totais=15):
     from datetime import date as _date
-    if isinstance(data_fim, str):
-        data_fim = _date.fromisoformat(data_fim)
-    if isinstance(data_inicio, str):
-        data_inicio = _date.fromisoformat(data_inicio)
+    if isinstance(data_fim, str): data_fim = _date.fromisoformat(data_fim)
+    if isinstance(data_inicio, str): data_inicio = _date.fromisoformat(data_inicio)
     async with _pool.acquire() as conn:
         existe = await conn.fetchrow("SELECT id FROM prazos WHERE processo_id=$1 AND tipo=$2 AND data_fim=$3", processo_id, tipo, data_fim)
-        if existe:
-            return
-        await conn.execute("INSERT INTO prazos (processo_id, tipo, data_inicio, data_fim, fatal, contagem, dias_totais) VALUES ($1,$2,$3,$4,$5,$6,$7)", processo_id, tipo, data_inicio, data_fim, fatal, contagem, dias_totais)
+        if existe: return
+        await conn.execute(
+            "INSERT INTO prazos (processo_id, tipo, data_inicio, data_fim, fatal, contagem, dias_totais) VALUES ($1,$2,$3,$4,$5,$6,$7)",
+            processo_id, tipo, data_inicio, data_fim, fatal, contagem, dias_totais,
+        )
 
 
 async def comunicacao_djen_existe(advogado_id, numero_processo, data_disponibilizacao):
     async with _pool.acquire() as conn:
-        row = await conn.fetchrow("SELECT id FROM comunicacoes_djen WHERE advogado_id=$1 AND numero_processo=$2 AND data_disponibilizacao=$3", advogado_id, numero_processo, data_disponibilizacao)
+        row = await conn.fetchrow(
+            "SELECT id FROM comunicacoes_djen WHERE advogado_id=$1 AND numero_processo=$2 AND data_disponibilizacao=$3",
+            advogado_id, numero_processo, data_disponibilizacao,
+        )
         return row is not None
 
 
 async def salvar_comunicacao_djen(advogado_id, numero_processo, tribunal, conteudo, data_disponibilizacao, data_publicacao="", tipo_comunicacao=""):
     async with _pool.acquire() as conn:
-        await conn.execute("INSERT INTO comunicacoes_djen (advogado_id, numero_processo, tribunal, conteudo, data_disponibilizacao, data_publicacao, tipo_comunicacao) VALUES ($1,$2,$3,$4,$5,$6,$7)", advogado_id, numero_processo, tribunal, conteudo, data_disponibilizacao, data_publicacao, tipo_comunicacao)
+        await conn.execute(
+            "INSERT INTO comunicacoes_djen (advogado_id, numero_processo, tribunal, conteudo, data_disponibilizacao, data_publicacao, tipo_comunicacao) VALUES ($1,$2,$3,$4,$5,$6,$7)",
+            advogado_id, numero_processo, tribunal, conteudo, data_disponibilizacao, data_publicacao, tipo_comunicacao,
+        )
 
 
 async def marcar_prazo_cumprido(processo_id: int, tipo: str, data_fim) -> None:
     from datetime import date as _date
-    if isinstance(data_fim, str):
-        data_fim = _date.fromisoformat(data_fim)
+    if isinstance(data_fim, str): data_fim = _date.fromisoformat(data_fim)
     async with _pool.acquire() as conn:
-        await conn.execute(
-            "UPDATE prazos SET cumprido=TRUE WHERE processo_id=$1 AND tipo=$2 AND data_fim=$3",
-            processo_id, tipo, data_fim,
-        )
+        await conn.execute("UPDATE prazos SET cumprido=TRUE WHERE processo_id=$1 AND tipo=$2 AND data_fim=$3", processo_id, tipo, data_fim)
 
 
 async def marcar_prazo_decurso(processo_id: int, tipo: str, data_fim) -> None:
     from datetime import date as _date
-    if isinstance(data_fim, str):
-        data_fim = _date.fromisoformat(data_fim)
+    if isinstance(data_fim, str): data_fim = _date.fromisoformat(data_fim)
     async with _pool.acquire() as conn:
-        await conn.execute(
-            "UPDATE prazos SET decurso=TRUE WHERE processo_id=$1 AND tipo=$2 AND data_fim=$3",
-            processo_id, tipo, data_fim,
-        )
+        await conn.execute("UPDATE prazos SET decurso=TRUE WHERE processo_id=$1 AND tipo=$2 AND data_fim=$3", processo_id, tipo, data_fim)

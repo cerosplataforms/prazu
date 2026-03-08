@@ -5,6 +5,8 @@ Servidor FastAPI principal. Roda no Cloud Run.
 
 import os
 import logging
+import random
+import time as _t
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request, Depends, HTTPException
@@ -38,7 +40,7 @@ if os.path.exists("web/static"):
     app.mount("/static", StaticFiles(directory="web/static"), name="static")
 
 
-# — Auth dependencies —
+# ── Auth dependencies ────────────────────────────────────────────────────────
 
 async def advogado_logado(request: Request):
     token = request.cookies.get(TOKEN_COOKIE)
@@ -55,7 +57,7 @@ async def advogado_logado_opcional(request: Request):
     return await verificar_token(token)
 
 
-# — Páginas —
+# ── Páginas ──────────────────────────────────────────────────────────────────
 
 @app.get("/", response_class=HTMLResponse)
 async def landing(request: Request, adv=Depends(advogado_logado_opcional)):
@@ -72,9 +74,20 @@ async def pagina_login(request: Request, adv=Depends(advogado_logado_opcional)):
     if adv: return RedirectResponse("/dashboard")
     return templates.TemplateResponse("login.html", {"request": request})
 
+@app.get("/onboarding", response_class=HTMLResponse)
+async def pagina_onboarding(request: Request, adv=Depends(advogado_logado)):
+    # Se onboarding já foi concluído, vai pro dashboard
+    if adv.get("oab_numero"):
+        return RedirectResponse("/dashboard")
+    return templates.TemplateResponse("onboarding.html", {"request": request})
+
 @app.get("/dashboard", response_class=HTMLResponse)
 async def dashboard(request: Request, adv=Depends(advogado_logado)):
-    if not await db.pode_usar(adv["id"]): return RedirectResponse("/plano-expirado")
+    # Onboarding obrigatório: sem OAB = não passou pelo onboarding
+    if not adv.get("oab_numero"):
+        return RedirectResponse("/onboarding")
+    if not await db.pode_usar(adv["id"]):
+        return RedirectResponse("/plano-expirado")
     processos = await db.listar_processos_com_prazos(adv["id"])
     trial_dias = None
     if adv["status"] == "trial" and adv.get("trial_fim"):
@@ -83,7 +96,6 @@ async def dashboard(request: Request, adv=Depends(advogado_logado)):
         if hasattr(trial_fim, "tzinfo") and trial_fim.tzinfo is None:
             trial_fim = trial_fim.replace(tzinfo=timezone.utc)
         trial_dias = max(0, (trial_fim - datetime.now(timezone.utc)).days)
-    # Primeiro nome ignorando títulos
     _titulos = {'dr', 'dra', 'dr.', 'dra.', 'prof', 'prof.', 'me', 'me.', 'excelência', 'excelencia'}
     _partes = adv["nome"].split()
     primeiro_nome = next((p for p in _partes if p.lower().rstrip('.') not in _titulos), _partes[0])
@@ -108,40 +120,48 @@ async def logout():
     return r
 
 
-# — API Auth —
+# ── API Auth ─────────────────────────────────────────────────────────────────
 
 class CadastroRequest(BaseModel):
-    nome: str; email: EmailStr; senha: str
-    oab_numero: str; oab_seccional: str; whatsapp: str | None = None
+    nome: str
+    email: EmailStr
+    senha: str
+    telefone: str | None = None
 
 class LoginRequest(BaseModel):
-    email: EmailStr; senha: str
+    email: EmailStr
+    senha: str
+
 
 @app.post("/api/auth/cadastro")
 async def cadastro(payload: CadastroRequest, request: Request):
-    if len(payload.oab_seccional) != 2:
-        raise HTTPException(400, "Seccional OAB inválida.")
     if len(payload.senha) < 6:
         raise HTTPException(400, "Senha deve ter pelo menos 6 caracteres.")
-    whatsapp = None
-    if payload.whatsapp:
-        whatsapp = "".join(filter(str.isdigit, payload.whatsapp))
-        if len(whatsapp) < 10: whatsapp = None
-    advogado_id = await db.criar_advogado(
-        nome=payload.nome, email=payload.email, senha=payload.senha,
-        oab_numero=payload.oab_numero, oab_seccional=payload.oab_seccional.upper(),
-        whatsapp=whatsapp,
+
+    telefone = None
+    if payload.telefone:
+        telefone = "".join(filter(str.isdigit, payload.telefone))
+        if len(telefone) < 10: telefone = None
+
+    # Cadastro mínimo — OAB vem no onboarding
+    advogado_id = await db.criar_advogado_minimo(
+        nome=payload.nome,
+        email=payload.email,
+        senha=payload.senha,
+        telefone=telefone,
     )
     if not advogado_id:
-        raise HTTPException(409, "Email ou OAB já cadastrado")
+        raise HTTPException(409, "E-mail já cadastrado.")
+
     adv = await db.buscar_por_id(advogado_id)
     token = await criar_token_acesso(adv, request)
-    response = JSONResponse({"ok": True, "redirect": "/dashboard"})
+    response = JSONResponse({"ok": True, "redirect": "/onboarding"})
     response.set_cookie(TOKEN_COOKIE, token, httponly=True,
                         secure=ENVIRONMENT == "production", samesite="lax",
                         max_age=30 * 24 * 3600)
-    log.info(f"Novo cadastro: {payload.email} OAB {payload.oab_numero}/{payload.oab_seccional}")
+    log.info(f"Novo cadastro: {payload.email}")
     return response
+
 
 @app.post("/api/auth/login")
 async def login(payload: LoginRequest, request: Request):
@@ -152,7 +172,9 @@ async def login(payload: LoginRequest, request: Request):
         raise HTTPException(403, "Conta desativada")
     await db.atualizar_last_seen(adv["id"])
     token = await criar_token_acesso(adv, request)
-    response = JSONResponse({"ok": True, "redirect": "/dashboard"})
+    # Se não tem OAB, manda pro onboarding
+    redirect = "/onboarding" if not adv.get("oab_numero") else "/dashboard"
+    response = JSONResponse({"ok": True, "redirect": redirect})
     response.set_cookie(TOKEN_COOKIE, token, httponly=True,
                         secure=ENVIRONMENT == "production", samesite="lax",
                         max_age=30 * 24 * 3600)
@@ -160,7 +182,100 @@ async def login(payload: LoginRequest, request: Request):
     return response
 
 
-# — API Advogado —
+# ── API Onboarding ────────────────────────────────────────────────────────────
+
+# Códigos temporários em memória: chave = número limpo
+_onboarding_codigos: dict = {}
+
+
+def _zapi():
+    from web.zapi import ZAPI
+    return ZAPI(
+        instance_id=os.getenv("ZAPI_INSTANCE_ID", ""),
+        token=os.getenv("ZAPI_TOKEN", ""),
+        client_token=os.getenv("ZAPI_CLIENT_TOKEN", ""),
+    )
+
+
+@app.post("/api/onboarding/enviar-codigo")
+async def onboarding_enviar_codigo(payload: dict, adv=Depends(advogado_logado)):
+    wpp = "".join(filter(str.isdigit, payload.get("whatsapp", "")))
+    if len(wpp) < 10 or len(wpp) > 11:
+        raise HTTPException(400, "Número inválido.")
+
+    fone_api = wpp if wpp.startswith("55") else f"55{wpp}"
+    codigo = "".join(str(random.randint(0, 9)) for _ in range(6))
+    _onboarding_codigos[wpp] = {"codigo": codigo, "exp": _t.time() + 600}
+
+    enviado = await _zapi().enviar(fone_api,
+        f"*{codigo}* é o seu código de verificação Prazu.\n\nVálido por 10 minutos."
+    )
+    if not enviado:
+        raise HTTPException(500, "Não foi possível enviar o código. Verifique o número e tente novamente.")
+
+    log.info(f"Código onboarding enviado para {wpp}")
+    return {"ok": True}
+
+
+@app.post("/api/onboarding/verificar-codigo")
+async def onboarding_verificar_codigo(payload: dict, adv=Depends(advogado_logado)):
+    wpp = "".join(filter(str.isdigit, payload.get("whatsapp", "")))
+    codigo = str(payload.get("codigo", "")).strip()
+    reg = _onboarding_codigos.get(wpp)
+
+    if not reg or _t.time() > reg["exp"]:
+        raise HTTPException(400, "Código expirado. Solicite um novo.")
+    if reg["codigo"] != codigo:
+        raise HTTPException(400, "Código incorreto. Verifique e tente novamente.")
+
+    return {"ok": True}
+
+
+@app.post("/api/onboarding/salvar")
+async def onboarding_salvar(payload: dict, adv=Depends(advogado_logado)):
+    oab_numero = str(payload.get("oab_numero", "")).strip()
+    oab_seccional = str(payload.get("oab_seccional", "")).strip().upper()
+    tratamento = str(payload.get("tratamento", "Dr(a).")).strip()
+    wpp_notif = "".join(filter(str.isdigit, payload.get("whatsapp_notificacao", "")))
+    horario = str(payload.get("horario_briefing", "07:00")).strip()
+    briefing_dias = str(payload.get("briefing_dias", "uteis")).strip()
+
+    if not oab_numero or not oab_seccional or len(oab_seccional) != 2:
+        raise HTTPException(400, "OAB inválida.")
+    if len(wpp_notif) < 10:
+        raise HTTPException(400, "WhatsApp inválido.")
+
+    # Confirma que o código foi verificado
+    reg = _onboarding_codigos.get(wpp_notif)
+    if not reg or _t.time() > reg["exp"]:
+        raise HTTPException(400, "Verificação do WhatsApp expirada. Volte e reenvie o código.")
+    _onboarding_codigos.pop(wpp_notif, None)
+
+    lembrete_fds = briefing_dias == "todos"
+
+    ok = await db.salvar_onboarding(
+        advogado_id=adv["id"],
+        oab_numero=oab_numero,
+        oab_seccional=oab_seccional,
+        tratamento=tratamento,
+        whatsapp_notificacao=wpp_notif,
+        horario_briefing=horario,
+        lembrete_fds=lembrete_fds,
+    )
+    if not ok:
+        raise HTTPException(409, "OAB já cadastrada em outra conta.")
+
+    log.info(f"Onboarding salvo: adv={adv['id']} OAB {oab_numero}/{oab_seccional}")
+
+    # Dispara busca DJEN em background
+    import asyncio
+    from web.onboarding import _buscar_djen
+    asyncio.create_task(_buscar_djen(adv["id"], wpp_notif, oab_numero, oab_seccional))
+
+    return {"ok": True}
+
+
+# ── API Advogado ──────────────────────────────────────────────────────────────
 
 @app.get("/api/advogado/me")
 async def me(adv=Depends(advogado_logado)):
@@ -182,7 +297,7 @@ async def atualizar_comarca(payload: dict, adv=Depends(advogado_logado)):
     return {"ok": True}
 
 
-# — Webhook Z-API —
+# ── Webhook Z-API ─────────────────────────────────────────────────────────────
 
 @app.post("/webhook/evolution")
 async def webhook_evolution(request: Request):
@@ -198,7 +313,7 @@ async def webhook_evolution(request: Request):
     return {"ok": True}
 
 
-# — Jobs Cloud Scheduler —
+# ── Jobs Cloud Scheduler ──────────────────────────────────────────────────────
 
 SCHEDULER_SECRET = os.getenv("SCHEDULER_SECRET", "")
 
@@ -234,20 +349,17 @@ async def job_lembrete_trial(request: Request):
     return {"ok": True, "enviados": await enviar_lembrete_trial()}
 
 
-
-# ─────────────────────────────────────────────────────────
-# Config endpoints (dashboard)
-# ─────────────────────────────────────────────────────────
+# ── Config endpoints (dashboard) ──────────────────────────────────────────────
 
 @app.post("/api/advogado/dados")
 async def atualizar_dados(payload: dict, adv=Depends(advogado_logado)):
     nome = payload.get("nome", "").strip()
-    if not nome:
-        raise HTTPException(400, "Nome inválido")
+    if not nome: raise HTTPException(400, "Nome inválido")
     tratamento = payload.get("tratamento", "").strip()
-    await db.atualizar_dados(adv["id"], nome=nome, horario_briefing=payload.get("horario_briefing","07:00"), tratamento=tratamento)
+    await db.atualizar_dados(adv["id"], nome=nome,
+                             horario_briefing=payload.get("horario_briefing", "07:00"),
+                             tratamento=tratamento)
     return {"ok": True}
-
 
 @app.post("/api/advogado/senha")
 async def alterar_senha(payload: dict, adv=Depends(advogado_logado)):
@@ -260,30 +372,27 @@ async def alterar_senha(payload: dict, adv=Depends(advogado_logado)):
     await db.atualizar_senha(adv["id"], nova)
     return {"ok": True}
 
-
 _email_codigos: dict = {}
 
 @app.post("/api/advogado/solicitar-codigo-email")
 async def solicitar_codigo_email(payload: dict, adv=Depends(advogado_logado)):
-    import re, random, time as _t
+    import re
     novo_email = payload.get("novo_email", "").strip().lower()
     if not re.match(r"[^@\s]+@[^@\s]+\.[^@\s]+", novo_email):
         raise HTTPException(400, "E-mail inválido")
     existente = await db.buscar_por_email(novo_email)
     if existente and existente["id"] != adv["id"]:
         raise HTTPException(409, "E-mail já cadastrado em outra conta")
-    codigo = "".join(str(random.randint(0,9)) for _ in range(6))
-    _email_codigos[adv["id"]] = {"codigo": codigo, "novo_email": novo_email, "exp": _t.time()+600}
+    codigo = "".join(str(random.randint(0, 9)) for _ in range(6))
+    _email_codigos[adv["id"]] = {"codigo": codigo, "novo_email": novo_email, "exp": _t.time() + 600}
     from web.email_sender import enviar_codigo
     await enviar_codigo(novo_email, codigo, "alteração de e-mail")
     return {"ok": True}
 
-
 @app.post("/api/advogado/confirmar-email")
 async def confirmar_email(payload: dict, adv=Depends(advogado_logado)):
-    import time as _t
-    codigo     = payload.get("codigo","").strip()
-    novo_email = payload.get("novo_email","").strip().lower()
+    codigo     = payload.get("codigo", "").strip()
+    novo_email = payload.get("novo_email", "").strip().lower()
     reg        = _email_codigos.get(adv["id"])
     if not reg or _t.time() > reg["exp"]:
         raise HTTPException(400, "Código expirado. Solicite um novo.")
@@ -293,27 +402,22 @@ async def confirmar_email(payload: dict, adv=Depends(advogado_logado)):
     _email_codigos.pop(adv["id"], None)
     return {"ok": True}
 
-
 _wpp_codigos: dict = {}
 
 @app.post("/api/advogado/solicitar-codigo-wpp")
 async def solicitar_codigo_wpp(payload: dict, adv=Depends(advogado_logado)):
-    import random, time as _t
-    novo_wpp = "".join(filter(str.isdigit, payload.get("novo_whatsapp","")))
-    if len(novo_wpp) < 10:
-        raise HTTPException(400, "Número inválido")
-    codigo = "".join(str(random.randint(0,9)) for _ in range(6))
-    _wpp_codigos[adv["id"]] = {"codigo": codigo, "novo_wpp": novo_wpp, "exp": _t.time()+600}
+    novo_wpp = "".join(filter(str.isdigit, payload.get("novo_whatsapp", "")))
+    if len(novo_wpp) < 10: raise HTTPException(400, "Número inválido")
+    codigo = "".join(str(random.randint(0, 9)) for _ in range(6))
+    _wpp_codigos[adv["id"]] = {"codigo": codigo, "novo_wpp": novo_wpp, "exp": _t.time() + 600}
     from web.email_sender import enviar_codigo
     await enviar_codigo(adv["email"], codigo, f"vinculação do WhatsApp {novo_wpp}")
     return {"ok": True}
 
-
 @app.post("/api/advogado/confirmar-wpp")
 async def confirmar_wpp(payload: dict, adv=Depends(advogado_logado)):
-    import time as _t
-    codigo   = payload.get("codigo","").strip()
-    novo_wpp = "".join(filter(str.isdigit, payload.get("novo_whatsapp","")))
+    codigo   = payload.get("codigo", "").strip()
+    novo_wpp = "".join(filter(str.isdigit, payload.get("novo_whatsapp", "")))
     reg      = _wpp_codigos.get(adv["id"])
     if not reg or _t.time() > reg["exp"]:
         raise HTTPException(400, "Código expirado. Solicite um novo.")
@@ -323,13 +427,12 @@ async def confirmar_wpp(payload: dict, adv=Depends(advogado_logado)):
     _wpp_codigos.pop(adv["id"], None)
     return {"ok": True}
 
-
 @app.post("/api/advogado/buscar-djen")
 async def buscar_djen_api(adv=Depends(advogado_logado)):
     import asyncio
     from web.onboarding import _buscar_djen
     asyncio.create_task(
-        _buscar_djen(adv["id"], adv.get("whatsapp"), adv["oab_numero"], adv["oab_seccional"])
+        _buscar_djen(adv["id"], adv.get("whatsapp_notificacao") or adv.get("whatsapp"), adv["oab_numero"], adv["oab_seccional"])
     )
     return {"ok": True}
 
