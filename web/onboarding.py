@@ -313,6 +313,30 @@ async def _enviar_resumo(phone, adv):
         log.error(f"Erro resumo {phone}: {e}")
 
 
+
+async def enviar_boas_vindas(adv: dict) -> None:
+    """Enviada uma unica vez, ~2 min apos o primeiro acesso ao dashboard."""
+    phone = adv.get("whatsapp_notificacao") or adv.get("whatsapp")
+    if not phone:
+        return
+    tratamento = adv.get("tratamento") or "Dr(a)."
+    nome = adv["nome"].split()[0]
+    try:
+        saudacao = (
+            f"👋 Ola, {tratamento} *{nome}*!\n\n"
+            f"Acabou de chegar aqui o seu primeiro resumo de prazos da Prazu. 🎉\n\n"
+            f"Me salva na sua agenda — todo dia eu vou te enviar um resumo "
+            f"dos seus processos para que voce *nunca mais perca um prazo*. ⚖️\n\n"
+            f"──────────────────\n"
+        )
+        await _evo_client.enviar(phone, saudacao)
+        import asyncio as _asyncio
+        await _asyncio.sleep(1)
+        await _enviar_resumo(phone, adv)
+        await db.log_whatsapp(adv["id"], "outbound", "boas_vindas", "primeiro resumo enviado")
+    except Exception as e:
+        log.error(f"Erro boas_vindas {phone}: {e}")
+
 # — Jobs —
 
 async def enviar_briefing_todos() -> int:

@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Configurações — Prazu</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=Lora:ital,wght@0,600;1,600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --navy-deep:   #0A0F1C;
+      --navy-base:   #111B33;
+      --navy-border: #1e2d4d;
+      --blue:        #2563EB;
+      --blue-bright: #3B82F6;
+      --green:       #22c55e;
+      --red:         #ef4444;
+      --white:       #F8FAFF;
+      --muted:       #7a8aaa;
+      --surface:     #FFFFFF;
+      --bg:          #F4F6FB;
+    }
+    html { scroll-behavior: smooth; }
+    body { background: var(--bg); color: #1a2340; font-family: 'Sora', sans-serif; font-weight: 300; min-height: 100vh; }
+
+    .topbar {
+      background: var(--navy-deep); border-bottom: 1px solid var(--navy-border);
+      padding: 0 2rem; height: 56px;
+      display: flex; align-items: center; justify-content: space-between;
+      position: sticky; top: 0; z-index: 100;
+    }
+    .topbar-logo { font-family: 'Sora', sans-serif; font-weight: 800; font-size: 1.3rem; color: var(--blue); text-decoration: none; letter-spacing: -0.03em; }
+    .topbar-right { display: flex; align-items: center; gap: 0.75rem; }
+    .btn-back { font-size: 0.78rem; color: var(--muted); text-decoration: none; padding: 0.35rem 0.75rem; border: 1px solid var(--navy-border); border-radius: 6px; transition: color 0.2s, border-color 0.2s; display: flex; align-items: center; gap: 0.4rem; }
+    .btn-back:hover { color: var(--white); border-color: var(--muted); }
+    .btn-logout { font-size: 0.78rem; color: var(--muted); text-decoration: none; padding: 0.35rem 0.75rem; border: 1px solid var(--navy-border); border-radius: 6px; transition: color 0.2s, border-color 0.2s; }
+    .btn-logout:hover { color: var(--white); border-color: var(--muted); }
+
+    .main { max-width: 680px; margin: 0 auto; padding: 2.5rem 1.5rem; }
+
+    .page-header { margin-bottom: 2rem; }
+    .page-header h1 { font-family: 'Lora', serif; font-size: 1.5rem; font-weight: 600; color: var(--navy-deep); letter-spacing: -0.02em; margin-bottom: 0.25rem; }
+    .page-header p { font-size: 0.85rem; color: var(--muted); }
+
+    .card { background: var(--surface); border-radius: 14px; border: 1px solid #e5e9f2; padding: 1.75rem; margin-bottom: 1.5rem; }
+    .card-title { font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; color: var(--muted); margin-bottom: 1.25rem; padding-bottom: 0.75rem; border-bottom: 1px solid #f0f3fa; }
+
+    .field { margin-bottom: 1.1rem; }
+    .field:last-of-type { margin-bottom: 0; }
+    .field label { display: block; font-size: 0.75rem; color: var(--muted); margin-bottom: 0.4rem; font-weight: 500; }
+    .field input, .field select {
+      width: 100%; padding: 0.7rem 0.9rem;
+      border: 1px solid #e5e9f2; border-radius: 8px;
+      font-family: 'Sora', sans-serif; font-size: 0.88rem; color: #1a2340;
+      background: var(--bg); outline: none; transition: border-color 0.2s;
+    }
+    .field input:focus, .field select:focus { border-color: var(--blue); background: #fff; }
+    .field input[readonly] { opacity: 0.6; cursor: not-allowed; }
+
+    .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+
+    .plano-badge {
+      display: inline-flex; align-items: center; gap: 0.5rem;
+      padding: 0.5rem 1rem; border-radius: 8px; font-size: 0.83rem; font-weight: 600;
+    }
+    .plano-trial { background: rgba(37,99,235,0.1); color: var(--blue); border: 1px solid rgba(37,99,235,0.2); }
+    .plano-ativo { background: rgba(34,197,94,0.1); color: #15803d; border: 1px solid rgba(34,197,94,0.2); }
+    .plano-expirado { background: rgba(239,68,68,0.1); color: #b91c1c; border: 1px solid rgba(239,68,68,0.2); }
+    .plano-info { font-size: 0.78rem; color: var(--muted); margin-top: 0.75rem; }
+
+    .btn-assinar { display: inline-flex; align-items: center; gap: 0.5rem; margin-top: 1rem; padding: 0.6rem 1.25rem; background: var(--blue); color: #fff; border: none; border-radius: 8px; font-family: 'Sora', sans-serif; font-size: 0.83rem; font-weight: 500; cursor: pointer; text-decoration: none; transition: background 0.2s; }
+    .btn-assinar:hover { background: var(--blue-bright); }
+
+    .actions { display: flex; gap: 0.75rem; margin-top: 1.5rem; flex-wrap: wrap; }
+    .btn-save { padding: 0.65rem 1.5rem; background: var(--blue); color: #fff; border: none; border-radius: 8px; font-family: 'Sora', sans-serif; font-size: 0.85rem; font-weight: 500; cursor: pointer; transition: background 0.2s; }
+    .btn-save:hover { background: var(--blue-bright); }
+    .btn-save:disabled { opacity: 0.6; cursor: not-allowed; }
+
+    .suporte-link { display: inline-flex; align-items: center; gap: 0.5rem; font-size: 0.83rem; color: var(--blue); text-decoration: none; font-weight: 500; }
+    .suporte-link:hover { text-decoration: underline; }
+
+    .toast { position: fixed; bottom: 1.5rem; right: 1.5rem; z-index: 999; background: var(--navy-deep); color: var(--white); padding: 0.75rem 1.25rem; border-radius: 10px; font-size: 0.83rem; box-shadow: 0 8px 30px rgba(0,0,0,0.3); transform: translateY(120%); transition: transform 0.3s; max-width: 300px; }
+    .toast.show { transform: translateY(0); }
+    .toast.success { border-left: 3px solid var(--green); }
+    .toast.error   { border-left: 3px solid var(--red); }
+
+    @media (max-width: 640px) {
+      .field-row { grid-template-columns: 1fr; }
+      .main { padding: 1.5rem 1rem; }
+    }
+  </style>
+</head>
+<body>
+
+<nav class="topbar">
+  <a href="/dashboard" class="topbar-logo">prazu</a>
+  <div class="topbar-right">
+    <a href="/dashboard" class="btn-back">← Dashboard</a>
+    <a href="/logout" class="btn-logout">Sair</a>
+  </div>
+</nav>
+
+<div class="main">
+
+  <div class="page-header">
+    <h1>⚙️ Configurações</h1>
+    <p>Gerencie seu perfil, preferências e plano.</p>
+  </div>
+
+  <!-- Perfil -->
+  <div class="card">
+    <div class="card-title">Perfil</div>
+    <div class="field">
+      <label>Nome completo</label>
+      <input type="text" id="cfg-nome" value="{{ advogado.nome }}">
+    </div>
+    <div class="field">
+      <label>Como prefere ser chamado(a)</label>
+      <select id="cfg-tratamento">
+        <option value="Dr."        {% if advogado.tratamento == 'Dr.'        %}selected{% endif %}>Dr.</option>
+        <option value="Dra."       {% if advogado.tratamento == 'Dra.'       %}selected{% endif %}>Dra.</option>
+        <option value="Excelência" {% if advogado.tratamento == 'Excelência' %}selected{% endif %}>Excelência</option>
+        <option value=""           {% if not advogado.tratamento             %}selected{% endif %}>Sem título</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>E-mail</label>
+      <input type="email" value="{{ advogado.email }}" readonly>
+    </div>
+    <div class="actions">
+      <button class="btn-save" onclick="salvarPerfil(this)">Salvar perfil</button>
+    </div>
+  </div>
+
+  <!-- Notificações -->
+  <div class="card">
+    <div class="card-title">Notificações</div>
+    <div class="field-row">
+      <div class="field">
+        <label>Horário do briefing diário</label>
+        <input type="time" id="cfg-horario" value="{{ advogado.horario_briefing or '07:00' }}">
+      </div>
+      <div class="field">
+        <label>Receber nos fins de semana</label>
+        <select id="cfg-fds">
+          <option value="false" {% if not advogado.lembrete_fds %}selected{% endif %}>Não — só dias úteis</option>
+          <option value="true"  {% if advogado.lembrete_fds    %}selected{% endif %}>Sim — todos os dias</option>
+        </select>
+      </div>
+    </div>
+    <div class="field">
+      <label>WhatsApp para notificações</label>
+      <input type="text" id="cfg-whatsapp" value="{{ advogado.whatsapp_notificacao or advogado.whatsapp or '' }}" placeholder="Ex: 11999998888">
+    </div>
+    <div class="field">
+      <label>Comarca principal</label>
+      <input type="text" id="cfg-comarca" value="{{ advogado.comarca or '' }}" placeholder="Ex: Belo Horizonte">
+    </div>
+    <div class="actions">
+      <button class="btn-save" onclick="salvarNotificacoes(this)">Salvar notificações</button>
+    </div>
+  </div>
+
+  <!-- Plano -->
+  <div class="card">
+    <div class="card-title">Plano atual</div>
+    {% if advogado.status == 'trial' %}
+      <span class="plano-badge plano-trial">🕐 Trial gratuito</span>
+      <p class="plano-info">
+        {% if trial_dias is not none %}
+          Seu período gratuito termina em <strong>{{ trial_dias }} dia{{ 's' if trial_dias != 1 else '' }}</strong>.
+        {% else %}
+          Período gratuito ativo.
+        {% endif %}
+      </p>
+      <a href="https://wa.me/5511974543508?text=Quero+assinar+o+Prazu" target="_blank" class="btn-assinar">💳 Assinar agora</a>
+    {% elif advogado.status == 'ativo' %}
+      <span class="plano-badge plano-ativo">✅ Assinante ativo</span>
+      <p class="plano-info">Sua assinatura está ativa. Obrigado por ser Prazu!</p>
+    {% else %}
+      <span class="plano-badge plano-expirado">⚠️ Acesso expirado</span>
+      <p class="plano-info">Seu trial expirou. Assine para continuar usando a Prazu.</p>
+      <a href="https://wa.me/5511974543508?text=Quero+assinar+o+Prazu" target="_blank" class="btn-assinar">💳 Assinar agora</a>
+    {% endif %}
+  </div>
+
+  <!-- Suporte -->
+  <div class="card">
+    <div class="card-title">Suporte</div>
+    <p style="font-size:0.83rem;color:var(--muted);margin-bottom:1rem;">Precisa de ajuda? Fale com a gente pelo WhatsApp.</p>
+    <a href="https://wa.me/5511974543508?text=Olá%20preciso%20de%20ajuda%20com%20o%20Prazu" target="_blank" class="suporte-link">
+      💬 Falar com suporte via WhatsApp
+    </a>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  function showToast(msg, tipo='success') {
+    const t = document.getElementById('toast');
+    t.textContent = msg; t.className = `toast ${tipo} show`;
+    setTimeout(() => t.classList.remove('show'), 3500);
+  }
+
+  async function salvarPerfil(btn) {
+    btn.disabled = true; btn.textContent = 'Salvando...';
+    const nome       = document.getElementById('cfg-nome').value.trim();
+    const tratamento = document.getElementById('cfg-tratamento').value;
+    try {
+      const r = await fetch('/api/advogado/dados', {
+        method: 'POST', credentials: 'same-origin',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ nome, tratamento, horario_briefing: document.getElementById('cfg-horario').value })
+      });
+      showToast(r.ok ? '✅ Perfil salvo!' : 'Erro ao salvar.', r.ok ? 'success' : 'error');
+    } catch(e) { showToast('Erro de conexão.', 'error'); }
+    btn.disabled = false; btn.textContent = 'Salvar perfil';
+  }
+
+  async function salvarNotificacoes(btn) {
+    btn.disabled = true; btn.textContent = 'Salvando...';
+    const horario  = document.getElementById('cfg-horario').value;
+    const comarca  = document.getElementById('cfg-comarca').value.trim();
+    const lembrete_fds = document.getElementById('cfg-fds').value === 'true';
+    try {
+      const r = await fetch('/api/advogado/dados', {
+        method: 'POST', credentials: 'same-origin',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({
+          nome: document.getElementById('cfg-nome').value.trim(),
+          tratamento: document.getElementById('cfg-tratamento').value,
+          horario_briefing: horario,
+          lembrete_fds
+        })
+      });
+      if (comarca) {
+        await fetch('/api/advogado/comarca', {
+          method: 'POST', credentials: 'same-origin',
+          headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({ comarca })
+        });
+      }
+      showToast(r.ok ? '✅ Notificações salvas!' : 'Erro ao salvar.', r.ok ? 'success' : 'error');
+    } catch(e) { showToast('Erro de conexão.', 'error'); }
+    btn.disabled = false; btn.textContent = 'Salvar notificações';
+  }
+</script>
+</body>
+</html>

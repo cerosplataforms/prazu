@@ -101,12 +101,14 @@ async def dashboard(request: Request, adv=Depends(advogado_logado)):
     primeiro_nome = next((p for p in _partes if p.lower().rstrip('.') not in _titulos), _partes[0])
     tratamento = adv.get("tratamento") or "Dr(a)."
     buscar_djen_auto = not adv.get("ultima_busca_djen")
+    primeiro_acesso = not adv.get("ultima_busca_djen") and not adv.get("last_seen")
     return templates.TemplateResponse("dashboard.html", {
         "request": request, "advogado": adv,
         "processos": processos, "trial_dias": trial_dias,
         "primeiro_nome": primeiro_nome,
         "tratamento": tratamento,
         "buscar_djen_auto": buscar_djen_auto,
+        "primeiro_acesso": primeiro_acesso,
     })
 
 @app.get("/plano-expirado", response_class=HTMLResponse)
@@ -348,6 +350,15 @@ async def job_lembrete_trial(request: Request):
     from web.onboarding import enviar_lembrete_trial
     return {"ok": True, "enviados": await enviar_lembrete_trial()}
 
+
+
+@app.post("/api/advogado/boas-vindas")
+async def boas_vindas(adv=Depends(advogado_logado)):
+    """Dispara mensagem de boas-vindas + primeiro resumo via WhatsApp."""
+    import asyncio
+    from web.onboarding import enviar_boas_vindas
+    asyncio.create_task(enviar_boas_vindas(adv))
+    return {"ok": True}
 
 # ── Config endpoints (dashboard) ──────────────────────────────────────────────
 

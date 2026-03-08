@@ -16,7 +16,6 @@
       --blue:        #2563EB;
       --blue-bright: #3B82F6;
       --green:       #22c55e;
-      --green-dark:  #16a34a;
       --yellow:      #f59e0b;
       --red:         #ef4444;
       --white:       #F8FAFF;
@@ -34,9 +33,17 @@
       position: sticky; top: 0; z-index: 100;
     }
     .topbar-logo { font-family: 'Sora', sans-serif; font-weight: 800; font-size: 1.3rem; color: var(--blue); text-decoration: none; letter-spacing: -0.03em; }
-    .topbar-right { display: flex; align-items: center; gap: 1rem; }
+    .topbar-right { display: flex; align-items: center; gap: 0.75rem; }
     .topbar-nome { font-size: 0.8rem; color: var(--muted); }
     .topbar-nome span { color: var(--white); font-weight: 500; }
+    .btn-config {
+      display: flex; align-items: center; justify-content: center;
+      width: 34px; height: 34px; border-radius: 8px;
+      border: 1px solid var(--navy-border);
+      color: var(--muted); text-decoration: none; font-size: 1rem;
+      transition: color 0.2s, border-color 0.2s, background 0.2s;
+    }
+    .btn-config:hover { color: var(--white); border-color: var(--muted); background: rgba(255,255,255,0.05); }
     .btn-logout { font-size: 0.78rem; color: var(--muted); text-decoration: none; padding: 0.35rem 0.75rem; border: 1px solid var(--navy-border); border-radius: 6px; transition: color 0.2s, border-color 0.2s; }
     .btn-logout:hover { color: var(--white); border-color: var(--muted); }
 
@@ -67,8 +74,6 @@
     .btn-acao { display: flex; align-items: center; gap: 0.5rem; padding: 0.6rem 1.1rem; border-radius: 8px; border: none; font-family: 'Sora', sans-serif; font-size: 0.83rem; font-weight: 500; cursor: pointer; text-decoration: none; transition: all 0.2s; }
     .btn-primary { background: var(--blue); color: #fff; }
     .btn-primary:hover { background: var(--blue-bright); transform: translateY(-1px); box-shadow: 0 4px 14px rgba(37,99,235,0.3); }
-    .btn-secondary { background: var(--surface); color: #1a2340; border: 1px solid #e5e9f2; }
-    .btn-secondary:hover { border-color: var(--blue); color: var(--blue); }
 
     .section-title { font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin-bottom: 1rem; }
 
@@ -79,15 +84,12 @@
 
     .processo-card { background: var(--surface); border-radius: 12px; border: 1px solid #e5e9f2; margin-bottom: 1rem; overflow: hidden; transition: box-shadow 0.2s; }
     .processo-card:hover { box-shadow: 0 4px 20px rgba(0,0,0,0.07); }
-    .processo-header { padding: 1rem 1.25rem; display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; border-bottom: 1px solid #f0f3fa; cursor: pointer; }
+    .processo-header { padding: 1rem 1.25rem; display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; border-bottom: 1px solid #f0f3fa; }
     .processo-numero { font-size: 0.78rem; color: var(--muted); margin-bottom: 0.25rem; font-family: monospace; }
     .processo-partes { font-size: 0.9rem; font-weight: 600; color: var(--navy-deep); }
     .processo-info { font-size: 0.75rem; color: var(--muted); margin-top: 0.2rem; }
-    .processo-chevron { color: var(--muted); font-size: 0.8rem; padding-top: 0.2rem; transition: transform 0.2s; }
-    .processo-card.open .processo-chevron { transform: rotate(180deg); }
 
     .prazo-lista { padding: 0.5rem 1.25rem; display: block; }
-
     .prazo-item { display: flex; align-items: center; gap: 0.75rem; padding: 0.6rem 0; border-bottom: 1px solid #f0f3fa; }
     .prazo-item:last-child { border-bottom: none; }
     .prazo-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
@@ -103,14 +105,6 @@
     .badge-vermelho { background: rgba(239,68,68,0.12);  color: #b91c1c; }
     .badge-cinza    { background: #f0f3fa; color: var(--muted); }
 
-    .config-section { background: var(--surface); border-radius: 12px; border: 1px solid #e5e9f2; padding: 1.5rem; margin-top: 2rem; }
-    .config-title { font-size: 0.9rem; font-weight: 700; color: var(--navy-deep); margin-bottom: 1.25rem; padding-bottom: 0.75rem; border-bottom: 1px solid #f0f3fa; }
-    .config-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
-    .config-field label { display: block; font-size: 0.75rem; color: var(--muted); margin-bottom: 0.4rem; font-weight: 500; }
-    .config-field input, .config-field select { width: 100%; padding: 0.65rem 0.9rem; border: 1px solid #e5e9f2; border-radius: 8px; font-family: 'Sora', sans-serif; font-size: 0.88rem; color: #1a2340; background: var(--bg); outline: none; transition: border-color 0.2s; }
-    .config-field input:focus, .config-field select:focus { border-color: var(--blue); }
-    .config-actions { margin-top: 1rem; display: flex; gap: 0.75rem; }
-
     .toast { position: fixed; bottom: 1.5rem; right: 1.5rem; z-index: 999; background: var(--navy-deep); color: var(--white); padding: 0.75rem 1.25rem; border-radius: 10px; font-size: 0.83rem; box-shadow: 0 8px 30px rgba(0,0,0,0.3); transform: translateY(120%); transition: transform 0.3s; max-width: 300px; }
     .toast.show { transform: translateY(0); }
     .toast.success { border-left: 3px solid var(--green); }
@@ -118,7 +112,6 @@
 
     @media (max-width: 640px) {
       .stats { grid-template-columns: 1fr 1fr; }
-      .config-grid { grid-template-columns: 1fr; }
       .topbar-nome { display: none; }
       .main { padding: 1.25rem 1rem; }
     }
@@ -127,9 +120,10 @@
 <body>
 
 <nav class="topbar">
-  <a href="/" class="topbar-logo">prazu</a>
+  <a href="/dashboard" class="topbar-logo">prazu</a>
   <div class="topbar-right">
     <span class="topbar-nome">Olá, <span>{{ primeiro_nome }}</span></span>
+    <a href="/configuracoes" class="btn-config" title="Configurações da conta">⚙️</a>
     <a href="/logout" class="btn-logout">Sair</a>
   </div>
 </nav>
@@ -161,16 +155,12 @@
       <span class="stat-icon">🟡</span>
       <div><div class="stat-label">Próximos (≤5d)</div><div class="stat-value" id="count-proximo">–</div></div>
     </div>
-
   </div>
 
   <div class="acoes">
     <button class="btn-acao btn-primary" id="btn-djen" onclick="buscarDjen(this)">
       🔍 Buscar publicações no DJEN
     </button>
-    <a href="https://wa.me/5511974543508?text=Ol%C3%A1%20preciso%20de%20ajuda%20com%20o%20Prazu" target="_blank" class="btn-acao btn-secondary">
-      💬 Suporte via WhatsApp
-    </a>
   </div>
 
   <div class="section-title">Processos e Prazos</div>
@@ -181,47 +171,11 @@
     <div id="lista-vencidos"></div>
   </div>
 
-  <div class="config-section">
-    <div class="config-title">⚙️ Configurações da conta</div>
-    <div class="config-grid">
-      <div class="config-field">
-        <label>Nome completo</label>
-        <input type="text" id="cfg-nome" value="{{ advogado.nome }}">
-      </div>
-      <div class="config-field">
-        <label>Como prefere ser chamado(a)</label>
-        <select id="cfg-tratamento">
-          <option value="Dr." {% if advogado.tratamento == 'Dr.' %}selected{% endif %}>Dr.</option>
-          <option value="Dra." {% if advogado.tratamento == 'Dra.' %}selected{% endif %}>Dra.</option>
-          <option value="Excelência" {% if advogado.tratamento == 'Excelência' %}selected{% endif %}>Excelência</option>
-          <option value="" {% if not advogado.tratamento %}selected{% endif %}>Sem título</option>
-        </select>
-      </div>
-      <div class="config-field">
-        <label>Horário do briefing diário</label>
-        <input type="time" id="cfg-horario" value="{{ advogado.horario_briefing or '07:00' }}">
-      </div>
-      <div class="config-field">
-        <label>WhatsApp</label>
-        <input type="text" id="cfg-whatsapp" value="{{ advogado.whatsapp or '' }}" placeholder="Ex: 11999998888">
-      </div>
-      <div class="config-field">
-        <label>Comarca principal</label>
-        <input type="text" id="cfg-comarca" value="{{ advogado.comarca or '' }}" placeholder="Ex: Belo Horizonte">
-      </div>
-    </div>
-    <div class="config-actions">
-      <button class="btn-acao btn-primary" onclick="salvarConfig(this)">Salvar alterações</button>
-    </div>
-  </div>
-
 </div>
 
 <div class="toast" id="toast"></div>
 
 <script>
-  // ── Dados do servidor ──
-  // Backend retorna 1 linha por processo com prazos em JSON array (json_agg)
   const processos = ({{ processos | tojson }}).map(r => ({
     numero:   r.numero,
     partes:   r.partes,
@@ -229,17 +183,16 @@
     vara:     r.vara,
     comarca:  r.comarca,
     prazos:   Array.isArray(r.prazos) ? r.prazos.map(pr => ({
-      id:         pr.prazo_id,
-      tipo:       pr.tipo_prazo,
+      id:          pr.prazo_id,
+      tipo:        pr.tipo_prazo,
       data_inicio: pr.data_inicio,
-      data_fim:   pr.data_fim,
-      cumprido:   pr.cumprido,
-      decurso:    pr.decurso
+      data_fim:    pr.data_fim,
+      cumprido:    pr.cumprido,
+      decurso:     pr.decurso
     })) : []
   }));
   const hoje = new Date(); hoje.setHours(0,0,0,0);
 
-  // ── Contadores (só prazos ativos, não vencidos) ──
   let urgente = 0, proximo = 0;
   processos.forEach(p => {
     p.prazos.forEach(pr => {
@@ -256,7 +209,6 @@
   document.getElementById('count-urgente').textContent   = urgente;
   document.getElementById('count-proximo').textContent   = proximo;
 
-  // ── Seção vencidos (últimos 30 dias) ──
   const limite30 = new Date(hoje); limite30.setDate(limite30.getDate() - 30);
   const vencidos = [];
   processos.forEach(p => {
@@ -289,7 +241,6 @@
       </div>`).join('');
   }
 
-  // ── Status do prazo ──
   function statusDoPrazo(pr) {
     if (!pr.data_fim) return { dot: 'dot-cinza', badge: 'badge-cinza', label: '–' };
     const [_y,_m,_d] = pr.data_fim.substring(0,10).split('-'); const venc = new Date(+_y,+_m-1,+_d);
@@ -300,7 +251,6 @@
     return { dot: 'dot-verde', badge: 'badge-verde', label: diff + ' dias' };
   }
 
-  // ── Renderiza lista (só prazos ativos, sem dropdown) ──
   const lista = document.getElementById('lista-processos');
 
   if (processos.length === 0) {
@@ -343,14 +293,12 @@
     });
   }
 
-  // ── Toast ──
   function showToast(msg, tipo='success') {
     const t = document.getElementById('toast');
     t.textContent = msg; t.className = `toast ${tipo} show`;
     setTimeout(() => t.classList.remove('show'), 3500);
   }
 
-  // ── Buscar DJEN ──
   async function buscarDjen(btn) {
     btn.disabled = true; btn.textContent = '⏳ Buscando...';
     try {
@@ -361,38 +309,9 @@
     btn.disabled = false; btn.textContent = '🔍 Buscar publicações no DJEN';
   }
 
-  // ── Salvar config ──
-  async function salvarConfig(btn) {
-    btn.disabled = true; btn.textContent = 'Salvando...';
-    const nome       = document.getElementById('cfg-nome').value.trim();
-    const horario    = document.getElementById('cfg-horario').value;
-    const comarca    = document.getElementById('cfg-comarca').value.trim();
-    const tratamento = document.getElementById('cfg-tratamento').value;
-    try {
-      const r1 = await fetch('/api/advogado/dados', {
-        method: 'POST', credentials: 'same-origin',
-        headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({ nome, horario_briefing: horario, tratamento })
-      });
-      if (comarca) {
-        await fetch('/api/advogado/comarca', {
-          method: 'POST', credentials: 'same-origin',
-          headers: {'Content-Type':'application/json'},
-          body: JSON.stringify({ comarca })
-        });
-      }
-      showToast(r1.ok ? '✅ Configurações salvas!' : 'Erro ao salvar.', r1.ok ? 'success' : 'error');
-    } catch(e) { showToast('Erro de conexão.', 'error'); }
-    btn.disabled = false; btn.textContent = 'Salvar alterações';
-  }
-
-  // ── Busca automática no primeiro acesso ──
   {% if buscar_djen_auto %}
   window.addEventListener('load', () => {
-    setTimeout(() => {
-      const btn = document.getElementById('btn-djen');
-      buscarDjen(btn);
-    }, 1500);
+    setTimeout(() => { buscarDjen(document.getElementById('btn-djen')); }, 1500);
   });
   {% endif %}
 </script>
