@@ -251,25 +251,26 @@
   });
 
   const processos = Object.values(processosMap);
-
-  // ── Contadores ──
   const hoje = new Date(); hoje.setHours(0,0,0,0);
-  let urgente = 0, proximo = 0, cumprido = 0;
+
+  // ── Contadores (só prazos ativos, não vencidos) ──
+  let urgente = 0, proximo = 0;
   processos.forEach(p => {
     p.prazos.forEach(pr => {
-      if (pr.cumprido) { cumprido++; return; }
+      if (pr.cumprido || pr.decurso) return;
       if (!pr.data_fim) return;
       const venc = new Date(pr.data_fim); venc.setHours(0,0,0,0);
       const diff = Math.ceil((venc - hoje) / 86400000);
+      if (diff < 0) return;
       if (diff <= 1) urgente++;
       else if (diff <= 5) proximo++;
     });
   });
   document.getElementById('count-processos').textContent = processos.length;
   document.getElementById('count-urgente').textContent   = urgente;
-  document.getElementBy'count-proximo').textContent   = proximo;
+  document.getElementById('count-proximo').textContent   = proximo;
 
-  // Seção vencidos (últimos 30 dias)
+  // ── Seção vencidos (últimos 30 dias) ──
   const limite30 = new Date(hoje); limite30.setDate(limite30.getDate() - 30);
   const vencidos = [];
   processos.forEach(p => {
@@ -282,6 +283,12 @@
       }
     });
   });
+
+  function formatData(d) {
+    if (!d) return '–';
+    return d.substring(0,10).split('-').reverse().join('/');
+  }
+
   if (vencidos.length > 0) {
     document.getElementById('section-vencidos').style.display = 'block';
     document.getElementById('lista-vencidos').innerHTML = vencidos.map(v => `
@@ -289,31 +296,25 @@
         <div class="prazo-item">
           <span class="prazo-dot dot-vermelho"></span>
           <span class="prazo-tipo" style="flex:1">${v.numero}</span>
-          <span class="prazo-tipo">${v.tipo || 'Prazo'}</n>
+          <span class="prazo-tipo">${v.tipo || 'Prazo'}</span>
           <span class="prazo-data">${formatData(v.data_fim)}</span>
           <span class="prazo-badge badge-vermelho">Vencido há ${v.dias}d</span>
         </div>
       </div>`).join('');
   }
-  document.getElementById('count-cumprido').textContent  = cumprido;
 
-  // ── Renderiza lista ──
+  // ── Status do prazo ──
   function statusDoPrazo(pr) {
-    if (pr.cumprido) return { dot: 'dot-cinza', badge: 'badge-cinza', label: 'Cumprido' };
-    if (pr.decurso)  return { dot: 'dot-vermelho', badge: 'badge-vermelho', label: 'Decurso' };
     if (!pr.data_fim) return { dot: 'dot-cinza', badge: 'badge-cinza', label: '–' };
     const venc = new Date(pr.data_fim); venc.setHours(0,0,0,0);
     const diff = Math.ceil((venc - hoje) / 86400000);
-    if (diff <= 1) return { dot: 'dot-vermelho', badge: 'badge-vermelho', label: diff < 0 ? 'Vencido' : diff === 0 ? 'Hoje!' : 'Amanhã' };
-    if (diff <= 5) return { dot: 'dot-amarelo', badge: 'badge-amarelo', label: `${diff} dias` };
-    return { dot: 'dot-verde', badge: 'badge-verde', label: `${diff} dias` };
+    if (diff === 0) return { dot: 'dot-vermelho', badge: 'badge-vermelho', label: 'Hoje!' };
+    if (diff === 1) return { dot: 'dot-vermelho', badge: 'badge-vermelho', label: 'Amanhã' };
+    if (diff <= 5) return { dot: 'dot-amarelo', badge: 'badge-amarelo', label: diff + ' dias' };
+    return { dot: 'dot-verde', badge: 'badge-verde', label: diff + ' dias' };
   }
 
-  function formatData(d) {
-    if (!d) return '–';
-    return d.substring(0,10).split('-').reverse().join('/');
-  }
-
+  // ── Renderiza lista (só prazos ativos, sem dropdown) ──
   const lista = document.getElementById('lista-processos');
 
   if (processos.length === 0) {
@@ -334,12 +335,24 @@
       if (prazosAtivos.length === 0) return;
       const prazosHtml = prazosAtivos.map(pr => {
         const s = statusDoPrazo(pr);
-        return `<div class="prazo-item"><span class="prazo-dot ${s.dot}"></span><span class="prazo-tipo">${pr.tipo || "Prazo"}</span><span class="prazo-data">${formatData(pr.data_fim)}</span><span class="prazo-badge ${s.badge}">${s.label}</span></div>`;
-      }).join("");
-      const info = [p.tribunal, p.vara, p.comarca].filter(Boolean).join(" · ");
-      lista.innerHTML += `<div class="processo-card" id="proc-${i}"><div class="processo-header"><div><div class="processo-numero">${p.numero || "-"}</div><div class="processo-partes">${p.partes || "N/I"}</div>${info ? `<div class="processo-info">${info}</div>` : ""}</div></div><div class="prazo-lista">${prazosHtml}</div></div>`;
-    });
-  }
+        return `<div class="prazo-item">
+          <span class="prazo-dot ${s.dot}"></span>
+          <span class="prazo-tipo">${pr.tipo || 'Prazo'}</span>
+          <span class="prazo-data">${formatData(pr.data_fim)}</span>
+          <span class="prazo-badge ${s.badge}">${s.label}</span>
+        </div>`;
+      }).join('');
+      const info = [p.tribunal, p.vara, p.comarca].filter(Boolean).join(' · ');
+      lista.innerHTML += `
+        <div class="processo-card" id="proc-${i}">
+          <div class="processo-header">
+            <div>
+              <div class="processo-numero">${p.numero || '–'}</div>
+              <div class="processo-partes">${p.partes || 'N/I'}</div>
+              ${info ? `<div class="processo-info">${info}</div>` : ''}
+            </div>
+          </div>
+          <div class="prazo-lista">${prazosHtml}</div>
         </div>`;
     });
   }
