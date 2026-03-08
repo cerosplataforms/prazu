@@ -150,15 +150,16 @@ async def cadastro(payload: CadastroRequest, request: Request):
         telefone = "".join(filter(str.isdigit, payload.telefone))
         if len(telefone) < 10: telefone = None
 
-    # Verificar e-mail duplicado antes do insert — mensagem clara com link
-    existente = await db.buscar_por_email(payload.email)
+    # Verificar e-mail duplicado antes do insert — forçar str puro (EmailStr é objeto Pydantic)
+    email_str = str(payload.email).lower().strip()
+    existente = await db.buscar_por_email(email_str)
     if existente:
         raise HTTPException(409, "Este e-mail já está em uso. Deseja recuperar sua senha?")
 
     # Cadastro mínimo — OAB vem no onboarding
     advogado_id = await db.criar_advogado_minimo(
         nome=payload.nome,
-        email=payload.email,
+        email=email_str,
         senha=payload.senha,
         telefone=telefone,
     )
