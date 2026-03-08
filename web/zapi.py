@@ -42,3 +42,10 @@ class ZAPI:
             *[self.enviar(p, texto) for p in phones], return_exceptions=True
         )
         return sum(1 for r in resultados if r is True)
+
+# Singleton global
+zapi = ZAPI(
+    instance_id=os.getenv("ZAPI_INSTANCE_ID", ""),
+    token=os.getenv("ZAPI_TOKEN", ""),
+    client_token=os.getenv("ZAPI_CLIENT_TOKEN", ""),
+)

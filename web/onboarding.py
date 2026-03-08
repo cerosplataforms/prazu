@@ -9,7 +9,7 @@ import asyncio
 from datetime import datetime, timezone
 
 import database_gcp as db
-from web.evolution import evolution as _evo_client
+from web.zapi import zapi as _evo_client
 
 log = logging.getLogger(__name__)
 
@@ -195,7 +195,7 @@ async def _buscar_djen(adv_id, phone, oab_num, oab_uf):
         comunicacoes = await loop.run_in_executor(None, consultar_djen_por_oab, oab_num, oab_uf, 90)
         if not comunicacoes:
             if phone:
-                await _evo_client.send_text(phone, "Nenhuma publicacao encontrada no DJEN nos ultimos 90 dias.")
+                await _evo_client.enviar(phone, "Nenhuma publicacao encontrada no DJEN nos ultimos 90 dias.")
             return
         numeros_cnj = list({c["numero_processo"] for c in comunicacoes if c.get("numero_processo")})
         adv = await db.buscar_por_id(adv_id)
@@ -261,13 +261,13 @@ async def _buscar_djen(adv_id, phone, oab_num, oab_uf):
             if erros:
                 msg += f" {erros} sem dados no DataJud."
             msg += " Acesse o dashboard para ver seus prazos."
-            await _evo_client.send_text(phone, msg)
+            await _evo_client.enviar(phone, msg)
         log.info(f"_buscar_djen OK: {novos} novos, {erros} erros")
     except Exception as e:
         log.error(f"_buscar_djen erro: {e}", exc_info=True)
         if phone:
             try:
-                await _evo_client.send_text(phone, "Erro ao buscar processos. Tente novamente em alguns minutos.")
+                await _evo_client.enviar(phone, "Erro ao buscar processos. Tente novamente em alguns minutos.")
             except Exception:
                 pass
 
