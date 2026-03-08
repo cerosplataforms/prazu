@@ -74,7 +74,12 @@ class CalendarStore:
 
         if uf:
             filters.append(
-                "(e.abrangencia IN ('estadual','tribunal') AND e.uf = ?)")
+                "(e.abrangencia IN ('estadual','tribunal') AND (e.uf = ? OR e.uf IS NULL) AND e.tribunal_id IN (SELECT id FROM tribunais WHERE uf = ?))")
+            params.append(uf)
+            params.append(uf)
+            # Pega também suspensões do TJ (ex: Carnaval TJMG salvo como abrangencia=municipal)
+            filters.append(
+                "(e.abrangencia = 'municipal' AND e.uf = ? AND e.localidade_id IS NULL)")
             params.append(uf)
         if comarca and uf:
             filters.append(
