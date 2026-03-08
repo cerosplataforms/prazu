@@ -259,7 +259,7 @@
     p.prazos.forEach(pr => {
       if (pr.cumprido || pr.decurso) return;
       if (!pr.data_fim) return;
-      const venc = new Date(pr.data_fim); venc.setHours(0,0,0,0);
+      const [_y,_m,_d] = pr.data_fim.substring(0,10).split('-'); const venc = new Date(+_y,+_m-1,+_d);
       const diff = Math.ceil((venc - hoje) / 86400000);
       if (diff < 0) return;
       if (diff <= 1) urgente++;
@@ -276,7 +276,7 @@
   processos.forEach(p => {
     p.prazos.forEach(pr => {
       if (!pr.data_fim) return;
-      const venc = new Date(pr.data_fim); venc.setHours(0,0,0,0);
+      const [_y,_m,_d] = pr.data_fim.substring(0,10).split('-'); const venc = new Date(+_y,+_m-1,+_d);
       const diff = Math.ceil((venc - hoje) / 86400000);
       if (diff < 0 && venc >= limite30) {
         vencidos.push({ numero: p.numero, tipo: pr.tipo, data_fim: pr.data_fim, dias: Math.abs(diff) });
@@ -306,7 +306,7 @@
   // ── Status do prazo ──
   function statusDoPrazo(pr) {
     if (!pr.data_fim) return { dot: 'dot-cinza', badge: 'badge-cinza', label: '–' };
-    const venc = new Date(pr.data_fim); venc.setHours(0,0,0,0);
+    const [_y,_m,_d] = pr.data_fim.substring(0,10).split('-'); const venc = new Date(+_y,+_m-1,+_d);
     const diff = Math.ceil((venc - hoje) / 86400000);
     if (diff === 0) return { dot: 'dot-vermelho', badge: 'badge-vermelho', label: 'Hoje!' };
     if (diff === 1) return { dot: 'dot-vermelho', badge: 'badge-vermelho', label: 'Amanhã' };
@@ -329,7 +329,7 @@
       const prazosAtivos = p.prazos.filter(pr => {
         if (!pr.data_fim) return false;
         if (pr.cumprido || pr.decurso) return false;
-        const venc = new Date(pr.data_fim); venc.setHours(0,0,0,0);
+        const [_y,_m,_d] = pr.data_fim.substring(0,10).split('-'); const venc = new Date(+_y,+_m-1,+_d);
         return Math.ceil((venc - hoje) / 86400000) >= 0;
       });
       if (prazosAtivos.length === 0) return;
