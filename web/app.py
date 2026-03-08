@@ -315,6 +315,30 @@ async def webhook_zapi(request: Request):
     return {"ok": True}
 
 
+
+# ── Configurações ────────────────────────────────────────────────────────────
+
+@app.get("/configuracoes", response_class=HTMLResponse)
+async def pagina_configuracoes(request: Request, adv=Depends(advogado_logado)):
+    from datetime import datetime, timezone
+    trial_dias = 0
+    if adv.get("trial_fim"):
+        trial_fim = adv["trial_fim"]
+        if hasattr(trial_fim, "tzinfo") and trial_fim.tzinfo is None:
+            trial_fim = trial_fim.replace(tzinfo=timezone.utc)
+        trial_dias = max(0, (trial_fim - datetime.now(timezone.utc)).days)
+    return templates.TemplateResponse("configuracoes.html", {
+        "request": request, "advogado": adv, "trial_dias": trial_dias,
+    })
+
+@app.post("/api/advogado/configuracoes")
+async def salvar_configuracoATE advogados SET nome=$1, tratamento=$2, horario_briefing=$3,
+           comarca=$4, lembrete_fds=$5 WHERE id=$6""",
+        dados.get("nome"), dados.get("tratamento"), dados.get("horario_briefing"),
+        dados.get("comarca"), dados.get("lembrete_fds"), adv["id"]
+    )
+    return {"ok": True}
+
 # ── Jobs Cloud Scheduler ──────────────────────────────────────────────────────
 
 SCHEDULER_SECRET = os.getenv("SCHEDULER_SECRET", "")
