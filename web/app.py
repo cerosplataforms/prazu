@@ -480,3 +480,4 @@ async def health():
     except Exception as e:
         log.error(f"Health check falhou: {e}")
         raise HTTPException(503, "Banco indisponível")
+
