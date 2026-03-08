@@ -295,11 +295,11 @@ def parsear_processo(source: dict, tribunal: dict) -> dict:
         else:
             assuntos.append(str(assunto))
 
-    # Órgão julgador
-    orgao = dados.get("orgaoJulgador", {})
+    # Órgão julgador — campo correto é "nome", não "nomeOrgao"
+    orgao = dados.get("orgaoJulgador", source.get("orgaoJulgador", {}))
     vara = ""
     if isinstance(orgao, dict):
-        vara = orgao.get("nomeOrgao", "")
+        vara = orgao.get("nome", orgao.get("nomeOrgao", ""))
     elif isinstance(orgao, str):
         vara = orgao
 

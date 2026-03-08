@@ -125,9 +125,15 @@ async def _buscar_djen(adv_id, phone, oab_num, oab_uf):
     def _extrair_comarca_da_vara(vara):
         if not vara or vara == "N/I":
             return ""
-        m = re.search(r"[Cc]omarca\s+de\s+(.+?)(?:\s*[-/]|$)", vara)
+        # Padrão 1: "Comarca de Nova Lima"
+        m = re.search(r"[Cc]omarca\s+de\s+([A-ZÀ-Ú][^,/\-]+?)(?:\s*[,/\-]|$)", vara)
         if m:
             return m.group(1).strip().rstrip(".")
+        # Padrão 2: "de Belo Horizonte, Betim e Contagem" — pega primeira cidade
+        m = re.search(r"\bde\s+([A-ZÀ-Ú][a-zà-ú]+(?:\s+[A-ZÀ-Ú][a-zà-ú]+)*)", vara)
+        if m:
+            return m.group(1).strip().rstrip(".")
+        # Padrão 3: "Vara - Cidade" — pega última parte após " - "
         parts = vara.split(" - ")
         if len(parts) >= 2:
             last = parts[-1].strip()
