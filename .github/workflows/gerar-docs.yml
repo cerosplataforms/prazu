@@ -1,0 +1,46 @@
+name: Gerar Documentação Automática
+
+on:
+  push:
+    branches: [master, main]
+    paths:
+      - 'web/app.py'
+      - 'web/onboarding.py'
+      - 'web/ia_gemini.py'
+      - 'web/zapi.py'
+      - 'database_gcp.py'
+      - 'requirements.txt'
+      - 'Dockerfile'
+      - 'cal_forense/**'
+      - 'web/templates/**'
+
+jobs:
+  documentar:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Instala dependências
+        run: pip install google-generativeai
+
+      - name: Gera documentação
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: python .github/scripts/gerar_docs.py
+
+      - name: Commit documentação
+        run: |
+          git config user.name "prazu-docs-bot"
+  git config user.email "docs@prazu.com.br"
+          git add docs/
+          git diff --staged --quiet || git commit -m "docs: atualização automática $(date +'%Y-%m-%d %H:%M')"
+          git push
