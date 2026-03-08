@@ -254,20 +254,21 @@
 
   // ── Contadores ──
   const hoje = new Date(); hoje.setHours(0,0,0,0);
-  let urgente = 0, proximo = 0, cumprido = 0;
+  let urgente = 0, proximo = 0;
   processos.forEach(p => {
     p.prazos.forEach(pr => {
-      if (pr.cumprido) { cumprido++; return; }
+      if (pr.cumprido || pr.
       if (!pr.data_fim) return;
       const venc = new Date(pr.data_fim); venc.setHours(0,0,0,0);
       const diff = Math.ceil((venc - hoje) / 86400000);
+      if (diff < 0) return;
       if (diff <= 1) urgente++;
       else if (diff <= 5) proximo++;
     });
   });
   document.getElementById('count-processos').textContent = processos.length;
   document.getElementById('count-urgente').textContent   = urgente;
-  document.getElementBy'count-proximo').textContent   = proximo;
+  document.getElementById('count-proximo').textContent   = proximo;
 
   // Seção vencidos (últimos 30 dias)
   const limite30 = new Date(hoje); limite30.setDate(limite30.getDate() - 30);
