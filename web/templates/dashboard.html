@@ -314,6 +314,13 @@
     setTimeout(() => { buscarDjen(document.getElementById('btn-djen')); }, 1500);
   });
   {% endif %}
+  {% if primeiro_acesso %}
+  window.addEventListener('load', () => {
+    setTimeout(async () => {
+      try { await fetch('/api/advogado/boas-vindas', { method: 'POST', credentials: 'same-origin' }); } catch(e) {}
+    }, 60 * 1000);
+  });
+  {% endif %}
 </script>
 </body>
 </html>

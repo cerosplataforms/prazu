@@ -100,7 +100,7 @@ async def dashboard(request: Request, adv=Depends(advogado_logado)):
     _partes = adv["nome"].split()
     primeiro_nome = next((p for p in _partes if p.lower().rstrip('.') not in _titulos), _partes[0])
     tratamento = adv.get("tratamento") or "Dr(a)."
-    buscar_djen_auto = not adv.get("ultima_busca_djen")
+    buscar_djen_auto = not adv.get("ultima_busca_djen") and not adv.get("last_seen")
     primeiro_acesso = not adv.get("ultima_busca_djen") and not adv.get("last_seen")
     return templates.TemplateResponse("dashboard.html", {
         "request": request, "advogado": adv,
