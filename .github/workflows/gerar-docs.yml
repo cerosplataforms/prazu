@@ -40,7 +40,7 @@ jobs:
       - name: Commit documentação
         run: |
           git config user.name "prazu-docs-bot"
-  git config user.email "docs@prazu.com.br"
+          git config user.email "docs@prazu.com.br"
           git add docs/
-          git diff --staged --quiet || git commit -m "docs: atualização automática $(date +'%Y-%m-%d %H:%M')"
+          git diff --staged --quiet || git commit -m "docs: atualizacao automatica $(date +%Y-%m-%d_%H-%M)"
           git push
