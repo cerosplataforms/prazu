@@ -3,194 +3,485 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Criar conta — Prazu</title>
+  <title>Criar Conta — Prazu</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=Lora:ital,wght@0,600;1,600&display=swap" rel="stylesheet">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
-      --navy-deep: #0A0F1C; --navy-base: #111B33; --navy-border: #1e2d4d;
-      --blue: #2563EB; --blue-bright: #3B82F6; --blue-dim: rgba(59,130,246,0.12);
-      --green: #22c55e; --green-dark: #16a34a;
-      --white: #F8FAFF; --muted: #7a8aaa; --error: #f87171;
+      --navy-deep:   #0A0F1C;
+      --navy-base:   #111B33;
+      --navy-border: #1e2d4d;
+      --blue:        #2563EB;
+      --blue-bright: #3B82F6;
+      --blue-dim:    rgba(59,130,246,0.12);
+      --green:       #22c55e;
+      --green-dark:  #16a34a;
+      --white:       #F8FAFF;
+      --muted:       #7a8aaa;
+      --error:       #f87171;
+      --error-bg:    rgba(248,113,113,0.08);
+      --warning:     #fbbf24;
     }
+    html { scroll-behavior: smooth; }
     body {
-      background: var(--navy-deep); color: var(--white);
-      font-family: 'Sora', sans-serif; font-weight: 300;
-      min-height: 100vh; display: grid; grid-template-columns: 1fr 1fr;
+      background: var(--navy-deep);
+      color: var(--white);
+      font-family: 'Sora', sans-serif;
+      font-weight: 300;
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
     }
+
+    /* PAINEL ESQUERDO */
     .left-panel {
-      background: var(--navy-base); border-right: 1px solid var(--navy-border);
-      padding: 3rem; display: flex; flex-direction: column; justify-content: space-between;
+      background: var(--navy-base);
+      border-right: 1px solid var(--navy-border);
+      padding: 3rem;
+      display: flex; flex-direction: column; justify-content: space-between;
       position: sticky; top: 0; height: 100vh;
     }
-    .panel-logo { font-weight: 800; font-size: 1.6rem; color: var(--blue); text-decoration: none; letter-spacing: -0.03em; }
+    .panel-logo {
+      font-family: 'Sora', sans-serif; font-weight: 800;
+      font-size: 1.6rem; color: var(--blue); text-decoration: none;
+      letter-spacing: -0.03em;
+    }
     .panel-hero { flex: 1; display: flex; flex-direction: column; justify-content: center; }
-    .panel-hero h2 { font-family: 'Lora', serif; font-size: 2rem; font-weight: 600; line-height: 1.2; letter-spacing: -0.02em; margin-bottom: 1rem; }
-    .panel-hero h2 em { font-style: italic; color: var(--blue-bright); }
-    .panel-hero p { font-size: 0.88rem; color: var(--muted); line-height: 1.8; max-width: 36ch; }
-    .trust-items { display: flex; flex-direction: column; gap: 1rem; margin-top: 2.5rem; }
-    .trust-item { display: flex; align-items: flex-start; gap: 0.75rem; font-size: 0.82rem; color: var(--muted); }
-    .trust-icon { width: 32px; height: 32px; border-radius: 8px; background: var(--blue-dim); color: var(--blue-bright); display: flex; align-items: center; justify-content: center; font-size: 0.9rem; flex-shrink: 0; }
-    .trust-item strong { display: block; color: var(--white); font-weight: 500; margin-bottom: 0.15rem; font-size: 0.85rem; }
-    .panel-footer { font-size: 0.75rem; color: var(--muted); }
-    .panel-footer a { color: var(--muted); }
-    .right-panel { padding: 3rem; display: flex; flex-direction: column; justify-content: center; min-height: 100vh; }
-    .form-wrap { max-width: 420px; width: 100%; margin: 0 auto; }
-    h1 { font-family: 'Lora', serif; font-size: 1.75rem; font-weight: 600; letter-spacing: -0.02em; line-height: 1.2; margin-bottom: 0.5rem; }
-    h1 em { font-style: italic; color: var(--blue-bright); }
-    .form-sub { font-size: 0.85rem; color: var(--muted); margin-bottom: 2rem; line-height: 1.6; }
-    .field { margin-bottom: 1.25rem; }
-    .field label { display: block; font-size: 0.8rem; font-weight: 500; color: var(--muted); margin-bottom: 0.45rem; }
+    .panel-hero h2 {
+      font-family: 'Lora', serif; font-style: italic;
+      font-size: 2rem; line-height: 1.3; color: var(--white);
+      margin-bottom: 2rem;
+    }
+    .panel-features { list-style: none; display: flex; flex-direction: column; gap: .9rem; }
+    .panel-features li {
+      display: flex; align-items: flex-start; gap: .75rem;
+      font-size: .9rem; color: var(--muted); line-height: 1.5;
+    }
+    .panel-features li .icon {
+      width: 1.5rem; height: 1.5rem; background: var(--blue-dim);
+      border-radius: 50%; display: flex; align-items: center; justify-content: center;
+      font-size: .75rem; flex-shrink: 0; margin-top: .1rem;
+    }
+    .panel-footer { font-size: .78rem; color: var(--muted); }
+
+    /* PAINEL DIREITO */
+    .right-panel {
+      padding: 3rem 3.5rem;
+      display: flex; flex-direction: column; justify-content: center;
+      max-width: 520px; margin: 0 auto; width: 100%;
+    }
+    .form-header { margin-bottom: 2.5rem; }
+    .form-header h1 {
+      font-size: 1.75rem; font-weight: 700;
+      color: var(--white); letter-spacing: -.03em; margin-bottom: .4rem;
+    }
+    .form-header p { font-size: .9rem; color: var(--muted); }
+    .form-header p a { color: var(--blue-bright); text-decoration: none; font-weight: 500; }
+    .form-header p a:hover { text-decoration: underline; }
+
+    /* FIELD */
+    .field { margin-bottom: 1.25rem; position: relative; }
+    .field label {
+      display: block; font-size: .8rem; font-weight: 500;
+      color: var(--muted); margin-bottom: .4rem; letter-spacing: .02em; text-transform: uppercase;
+    }
     .field input {
-      width: 100%; background: var(--navy-base); border: 1px solid var(--navy-border);
-      border-radius: 8px; color: var(--white); font-family: 'Sora', sans-serif;
-      font-size: 0.92rem; padding: 0.75rem 1rem;
-      transition: border-color 0.2s, box-shadow 0.2s; outline: none;
+      width: 100%; padding: .8rem 1rem;
+      background: var(--navy-base); border: 1.5px solid var(--navy-border);
+      border-radius: 10px; color: var(--white); font-family: 'Sora', sans-serif;
+      font-size: .95rem; font-weight: 300; outline: none;
+      transition: border-color .2s, box-shadow .2s;
     }
-    .field input:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(37,99,235,0.15); }
-    .field input.error { border-color: var(--error); }
-    .field input::placeholder { color: var(--muted); }
-    .field-hint { font-size: 0.73rem; color: var(--muted); margin-top: 0.35rem; }
-    .field-error { font-size: 0.73rem; color: var(--error); margin-top: 0.35rem; display: none; }
-    .field-error.show { display: block; }
-    .input-wrap { position: relative; }
-    .toggle-senha { position: absolute; right: 0.9rem; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: var(--muted); padding: 0; font-size: 1rem; }
-    .btn-submit {
-      width: 100%; background: var(--green); color: #fff; padding: 0.9rem; border: none;
-      border-radius: 8px; font-family: 'Sora', sans-serif; font-size: 0.95rem; font-weight: 600;
-      cursor: pointer; margin-top: 0.5rem; transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
+    .field input:focus {
+      border-color: var(--blue);
+      box-shadow: 0 0 0 3px rgba(37,99,235,.15);
     }
-    .btn-submit:hover:not(:disabled) { background: var(--green-dark); transform: translateY(-1px); box-shadow: 0 6px 20px rgba(34,197,94,0.3); }
-    .btn-submit:disabled { opacity: 0.6; cursor: not-allowed; }
-    .form-footer { text-align: center; margin-top: 1.75rem; font-size: 0.8rem; color: var(--muted); }
-    .form-footer a { color: var(--blue-bright); text-decoration: none; }
-    .alert-error { background: rgba(248,113,113,0.1); border: 1px solid rgba(248,113,113,0.3); color: var(--error); border-radius: 8px; padding: 0.75rem 1rem; font-size: 0.82rem; margin-bottom: 1.25rem; display: none; }
-    .alert-error.show { display: block; }
+    .field input.invalid {
+      border-color: var(--error);
+      box-shadow: 0 0 0 3px rgba(248,113,113,.12);
+    }
+    .field input.valid {
+      border-color: var(--green);
+      box-shadow: 0 0 0 3px rgba(34,197,94,.1);
+    }
+    .field-error {
+      display: none; font-size: .8rem; color: var(--error);
+      margin-top: .35rem; padding: .4rem .7rem;
+      background: var(--error-bg); border-radius: 6px;
+      border-left: 2px solid var(--error);
+    }
+    .field-error.visible { display: block; }
+
+    /* SENHA STRENGTH */
+    .password-wrapper { position: relative; }
+    .password-toggle {
+      position: absolute; right: .9rem; top: 50%; transform: translateY(-50%);
+      background: none; border: none; cursor: pointer; color: var(--muted);
+      font-size: 1rem; padding: 0; line-height: 1;
+    }
+    .password-toggle:hover { color: var(--white); }
+    .strength-bar {
+      display: flex; gap: 4px; margin-top: .5rem; height: 4px;
+    }
+    .strength-bar span {
+      flex: 1; border-radius: 2px; background: var(--navy-border);
+      transition: background .25s;
+    }
+    .strength-label {
+      font-size: .75rem; color: var(--muted); margin-top: .3rem;
+      min-height: 1rem;
+    }
+    .strength-criteria {
+      margin-top: .5rem; display: flex; flex-wrap: wrap; gap: .4rem;
+    }
+    .criterion {
+      display: flex; align-items: center; gap: .3rem;
+      font-size: .75rem; color: var(--muted); transition: color .2s;
+    }
+    .criterion .dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--navy-border); transition: background .2s;
+    }
+    .criterion.met { color: var(--green); }
+    .criterion.met .dot { background: var(--green); }
+
+    /* ALERT GLOBAL */
+    .alert {
+      display: none; padding: .85rem 1rem; border-radius: 10px;
+      font-size: .875rem; margin-bottom: 1.2rem; border-left: 3px solid;
+      line-height: 1.5;
+    }
+    .alert.error   { background: var(--error-bg); border-color: var(--error); color: var(--error); display: block; }
+    .alert.success { background: rgba(34,197,94,.08); border-color: var(--green); color: var(--green); display: block; }
+    .alert .alert-link { color: inherit; font-weight: 600; cursor: pointer; text-decoration: underline; }
+
+    /* BUTTON */
+    .btn-primary {
+      width: 100%; padding: .9rem;
+      background: var(--blue); border: none; border-radius: 10px;
+      color: var(--white); font-family: 'Sora', sans-serif;
+      font-size: .95rem; font-weight: 600; cursor: pointer;
+      transition: background .2s, transform .1s, opacity .2s;
+      display: flex; align-items: center; justify-content: center; gap: .5rem;
+      margin-top: .5rem;
+    }
+    .btn-primary:hover:not(:disabled) { background: var(--blue-bright); }
+    .btn-primary:active:not(:disabled) { transform: scale(.99); }
+    .btn-primary:disabled { opacity: .55; cursor: not-allowed; }
+    .btn-primary .spinner {
+      display: none; width: 16px; height: 16px;
+      border: 2px solid rgba(255,255,255,.3); border-top-color: #fff;
+      border-radius: 50%; animation: spin .7s linear infinite;
+    }
+    .btn-primary.loading .spinner { display: block; }
+    .btn-primary.loading .btn-text { opacity: .7; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* DIVIDER */
+    .divider {
+      display: flex; align-items: center; gap: .75rem;
+      margin: 1.5rem 0; color: var(--muted); font-size: .8rem;
+    }
+    .divider::before, .divider::after {
+      content: ''; flex: 1; height: 1px; background: var(--navy-border);
+    }
+
+    /* TERMOS */
+    .terms { font-size: .78rem; color: var(--muted); text-align: center; margin-top: 1.2rem; line-height: 1.5; }
+    .terms a { color: var(--blue-bright); text-decoration: none; }
+    .terms a:hover { text-decoration: underline; }
+
     @media (max-width: 768px) {
       body { grid-template-columns: 1fr; }
       .left-panel { display: none; }
-      .right-panel { padding: 2rem 1.5rem; justify-content: flex-start; padding-top: 3rem; }
+      .right-panel { padding: 2rem 1.5rem; max-width: 100%; }
     }
   </style>
 </head>
 <body>
+
+<!-- PAINEL ESQUERDO -->
 <div class="left-panel">
   <a href="/" class="panel-logo">prazu</a>
   <div class="panel-hero">
-    <h2>7 dias grátis.<br><em>Sem cartão.</em></h2>
-    <p>Crie sua conta em menos de 2 minutos e comece a receber seus prazos no WhatsApp ainda hoje.</p>
-    <div class="trust-items">
-      <div class="trust-item"><div class="trust-icon">⚖️</div><div><strong>2.374 comarcas cobertas</strong>Feriados forenses calculados pelo CPC.</div></div>
-      <div class="trust-item"><div class="trust-icon">📲</div><div><strong>Aviso todo dia no WhatsApp</strong>Antes das 7h você já sabe o que vence hoje.</div></div>
-      <div class="trust-item"><div class="trust-icon">🔒</div><div><strong>Sem cartão de crédito</strong>7 dias grátis. Cancela quando quiser.</div></div>
-    </div>
+    <h2>Nunca mais perca<br>um prazo processual.</h2>
+    <ul class="panel-features">
+      <li>
+        <span class="icon">⚖️</span>
+        <span>Monitoramento automático do DJEN — publicações encontradas em segundos.</span>
+      </li>
+      <li>
+        <span class="icon">📅</span>
+        <span>Cálculo com <strong style="color:var(--white)">feriados forenses</strong> de 2.091 localidades em 51 tribunais.</span>
+      </li>
+      <li>
+        <span class="icon">📱</span>
+        <span>Briefing diário no seu WhatsApp antes do expediente começar.</span>
+      </li>
+      <li>
+        <span class="icon">✅</span>
+        <span><strong style="color:var(--white)">7 dias grátis</strong> — sem cartão de crédito.</span>
+      </li>
+    </ul>
   </div>
-  <div class="panel-footer">Já tem conta? <a href="/login">Fazer login</a></div>
+  <p class="panel-footer">prazu.com.br · Confidencial</p>
 </div>
 
+<!-- PAINEL DIREITO -->
 <div class="right-panel">
-  <div class="form-wrap">
-    <h1>Criar <em>conta</em></h1>
-    <p class="form-sub">Rápido. Seus dados básicos para começar.</p>
-
-    <div class="alert-error" id="alert-error"></div>
-
-    <div class="field">
-      <label>Nome completo</label>
-      <input type="text" id="nome" placeholder="João da Silva" autocomplete="name">
-      <div class="field-error" id="err-nome">Informe seu nome completo.</div>
-    </div>
-    <div class="field">
-      <label>E-mail</label>
-      <input type="email" id="email" placeholder="joao@escritorio.adv.br" autocomplete="email">
-      <div class="field-error" id="err-email">E-mail inválido.</div>
-    </div>
-    <div class="field">
-      <label>Telefone</label>
-      <input type="tel" id="telefone" placeholder="(11) 99999-9999" inputmode="numeric" oninput="formatarFone(this)">
-      <div class="field-hint">Número da sua conta. Para avisos, você escolhe outro no próximo passo.</div>
-      <div class="field-error" id="err-telefone">Telefone inválido.</div>
-    </div>
-    <div class="field">
-      <label>Senha</label>
-      <div class="input-wrap">
-        <input type="password" id="senha" placeholder="Mínimo 6 caracteres" autocomplete="new-password">
-        <button type="button" class="toggle-senha" onclick="toggleSenha(this)">👁</button>
-      </div>
-      <div class="field-error" id="err-senha">Mínimo 6 caracteres.</div>
-    </div>
-
-    <button class="btn-submit" id="btn-criar" onclick="criarConta()">Criar conta grátis →</button>
-
-    <div style="font-size:0.75rem;color:var(--muted);line-height:1.7;margin-top:1rem;text-align:center;">
-      Ao criar sua conta você concorda com os <a href="/termos" style="color:var(--blue-bright)">Termos de Uso</a>
-      e a <a href="/privacidade" style="color:var(--blue-bright)">Política de Privacidade</a>.
-    </div>
-    <div class="form-footer">Já tem conta? <a href="/login">Fazer login</a></div>
+  <div class="form-header">
+    <h1>Criar sua conta</h1>
+    <p>Já tem conta? <a href="/login">Entrar</a></p>
   </div>
+
+  <div id="globalAlert" class="alert" role="alert"></div>
+
+  <form id="formCadastro" novalidate autocomplete="off">
+
+    <div class="field" id="field-nome">
+      <label for="nome">Nome completo</label>
+      <input type="text" id="nome" name="nome" placeholder="Dr. Ana Lima" autocomplete="name" required>
+      <div class="field-error" id="err-nome"></div>
+    </div>
+
+    <div class="field" id="field-email">
+      <label for="email">E-mail profissional</label>
+      <input type="email" id="email" name="email" placeholder="ana@escritorio.com.br" autocomplete="email" required>
+      <div class="field-error" id="err-email"></div>
+    </div>
+
+    <div class="field" id="field-senha">
+      <label for="senha">Senha</label>
+      <div class="password-wrapper">
+        <input type="password" id="senha" name="senha" placeholder="Mínimo 8 caracteres" autocomplete="new-password" required>
+        <button type="button" class="password-toggle" id="toggleSenha" aria-label="Mostrar senha">👁</button>
+      </div>
+      <div class="strength-bar">
+        <span id="bar1"></span><span id="bar2"></span>
+        <span id="bar3"></span><span id="bar4"></span>
+      </div>
+      <div class="strength-label" id="strengthLabel"></div>
+      <div class="strength-criteria">
+        <div class="criterion" id="c-len"><span class="dot"></span> 8+ caracteres</div>
+        <div class="criterion" id="c-letra"><span class="dot"></span> Uma letra</div>
+        <div class="criterion" id="c-num"><span class="dot"></span> Um número</div>
+      </div>
+      <div class="field-error" id="err-senha"></div>
+    </div>
+
+    <button type="submit" class="btn-primary" id="btnCadastrar">
+      <span class="spinner"></span>
+      <span class="btn-text">Criar conta grátis</span>
+    </button>
+
+  </form>
+
+  <p class="terms">
+    Ao criar sua conta você concorda com os
+    <a href="/termos" target="_blank">Termos de Uso</a> e
+    <a href="/privacidade" target="_blank">Política de Privacidade</a>.
+  </p>
 </div>
 
 <script>
-  function formatarFone(input) {
-    let v = input.value.replace(/\D/g, '');
-    if (v.length > 11) v = v.slice(0, 11);
-    if (v.length > 7) input.value = `(${v.slice(0,2)}) ${v.slice(2,7)}-${v.slice(7)}`;
-    else if (v.length > 2) input.value = `(${v.slice(0,2)}) ${v.slice(2)}`;
-    else if (v.length > 0) input.value = `(${v}`;
-  }
-  function toggleSenha(btn) {
-    const inp = document.getElementById('senha');
-    if (inp.type === 'password') { inp.type = 'text'; btn.textContent = '🙈'; }
-    else { inp.type = 'password'; btn.textContent = '👁'; }
-  }
-  function campo(id, errId, cond) {
-    const el = document.getElementById(errId), inp = document.getElementById(id);
-    if (!cond) { el.classList.add('show'); inp.classList.add('error'); return false; }
-    el.classList.remove('show'); inp.classList.remove('error'); return true;
-  }
-  function mostrarAlerta(msg) { const al = document.getElementById('alert-error'); al.textContent = msg; al.classList.add('show'); }
-  function esconderAlerta() { const al = document.getElementById('alert-error'); al.classList.remove('show'); }
+// ── Helpers ──────────────────────────────────────────────────────────────
+function showFieldError(fieldId, errId, msg) {
+  const el = document.getElementById(errId);
+  const inp = document.querySelector(`#field-${fieldId} input`);
+  el.textContent = msg;
+  el.classList.add('visible');
+  if (inp) inp.classList.add('invalid');
+}
+function clearFieldError(fieldId, errId) {
+  const el = document.getElementById(errId);
+  const inp = document.querySelector(`#field-${fieldId} input`);
+  el.classList.remove('visible');
+  if (inp) inp.classList.remove('invalid');
+}
+function setFieldValid(fieldId) {
+  const inp = document.querySelector(`#field-${fieldId} input`);
+  if (inp) { inp.classList.remove('invalid'); inp.classList.add('valid'); }
+}
+function showGlobal(msg, type = 'error') {
+  const el = document.getElementById('globalAlert');
+  el.className = `alert ${type}`;
+  el.innerHTML = msg;
+  el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+function clearGlobal() {
+  const el = document.getElementById('globalAlert');
+  el.className = 'alert';
+  el.innerHTML = '';
+}
+function setLoading(loading) {
+  const btn = document.getElementById('btnCadastrar');
+  btn.disabled = loading;
+  btn.classList.toggle('loading', loading);
+  btn.querySelector('.btn-text').textContent = loading ? 'Criando conta...' : 'Criar conta grátis';
+}
 
-  async function criarConta() {
-    esconderAlerta();
-    const nome = document.getElementById('nome').value.trim();
-    const email = document.getElementById('email').value.trim();
-    const telefone = document.getElementById('telefone').value.replace(/\D/g, '');
-    const senha = document.getElementById('senha').value;
-    const ok1 = campo('nome', 'err-nome', nome.length >= 3);
-    const ok2 = campo('email', 'err-email', /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email));
-    const ok3 = campo('telefone', 'err-telefone', telefone.length >= 10);
-    const ok4 = campo('senha', 'err-senha', senha.length >= 6);
-    if (!ok1 || !ok2 || !ok3 || !ok4) return;
+// ── Toggle senha ─────────────────────────────────────────────────────────
+document.getElementById('toggleSenha').addEventListener('click', function() {
+  const input = document.getElementById('senha');
+  const show = input.type === 'password';
+  input.type = show ? 'text' : 'password';
+  this.textContent = show ? '🙈' : '👁';
+});
 
-    const btn = document.getElementById('btn-criar');
-    btn.disabled = true; btn.textContent = 'Criando conta...';
+// ── Validador de força de senha ──────────────────────────────────────────
+const STRENGTH_LEVELS = [
+  { label: '', color: 'var(--navy-border)' },
+  { label: 'Fraca', color: 'var(--error)' },
+  { label: 'Razoável', color: 'var(--warning)' },
+  { label: 'Boa', color: '#a3e635' },
+  { label: 'Forte ✓', color: 'var(--green)' },
+];
 
-    try {
-      const res = await fetch('/api/auth/cadastro', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ nome, email, senha, telefone }),
-        credentials: 'same-origin',
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        let msg = data.detail || 'Erro ao criar conta.';
-        if (res.status === 409) msg = 'E-mail já cadastrado. Tente fazer login.';
-        mostrarAlerta(msg);
-        btn.disabled = false; btn.textContent = 'Criar conta grátis →';
-        return;
-      }
-      window.location.href = '/onboarding';
-    } catch (e) {
-      mostrarAlerta('Erro de conexão. Verifique sua internet.');
-      btn.disabled = false; btn.textContent = 'Criar conta grátis →';
+function calcStrength(senha) {
+  let score = 0;
+  const criterios = {
+    len:   senha.length >= 8,
+    letra: /[A-Za-z]/.test(senha),
+    num:   /[0-9]/.test(senha),
+    spec:  /[^A-Za-z0-9]/.test(senha),
+  };
+  if (criterios.len)   score++;
+  if (criterios.letra) score++;
+  if (criterios.num)   score++;
+  if (criterios.spec)  score++;
+  return { score, criterios };
+}
+
+document.getElementById('senha').addEventListener('input', function() {
+  const val = this.value;
+  const { score, criterios } = calcStrength(val);
+
+  // Barras
+  for (let i = 1; i <= 4; i++) {
+    const bar = document.getElementById(`bar${i}`);
+    bar.style.background = i <= score
+      ? STRENGTH_LEVELS[score].color
+      : 'var(--navy-border)';
+  }
+
+  // Label
+  const lbl = document.getElementById('strengthLabel');
+  if (val.length === 0) {
+    lbl.textContent = '';
+    lbl.style.color = 'var(--muted)';
+  } else {
+    lbl.textContent = STRENGTH_LEVELS[score].label;
+    lbl.style.color = STRENGTH_LEVELS[score].color;
+  }
+
+  // Critérios individuais
+  document.getElementById('c-len').classList.toggle('met', criterios.len);
+  document.getElementById('c-letra').classList.toggle('met', criterios.letra);
+  document.getElementById('c-num').classList.toggle('met', criterios.num);
+
+  // Limpar erro se ficou válida
+  if (criterios.len && criterios.letra && criterios.num) {
+    clearFieldError('senha', 'err-senha');
+    setFieldValid('senha');
+  }
+});
+
+// ── Validação inline ao sair do campo ───────────────────────────────────
+document.getElementById('nome').addEventListener('blur', function() {
+  if (this.value.trim().length < 3) {
+    showFieldError('nome', 'err-nome', 'Informe seu nome completo.');
+  } else {
+    clearFieldError('nome', 'err-nome');
+    setFieldValid('nome');
+  }
+});
+
+document.getElementById('email').addEventListener('blur', function() {
+  const val = this.value.trim();
+  if (!val || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val)) {
+    showFieldError('email', 'err-email', 'Informe um e-mail válido.');
+  } else {
+    clearFieldError('email', 'err-email');
+    setFieldValid('email');
+  }
+});
+
+document.getElementById('senha').addEventListener('blur', function() {
+  const val = this.value;
+  if (val.length === 0) return;
+  const { criterios } = calcStrength(val);
+  if (!criterios.len) {
+    showFieldError('senha', 'err-senha', 'Mínimo de 8 caracteres.');
+  } else if (!criterios.letra || !criterios.num) {
+    showFieldError('senha', 'err-senha', 'Inclua ao menos uma letra e um número.');
+  } else {
+    clearFieldError('senha', 'err-senha');
+  }
+});
+
+// ── Submit ───────────────────────────────────────────────────────────────
+document.getElementById('formCadastro').addEventListener('submit', async function(e) {
+  e.preventDefault();
+  clearGlobal();
+
+  const nome  = document.getElementById('nome').value.trim();
+  const email = document.getElementById('email').value.trim().toLowerCase();
+  const senha = document.getElementById('senha').value;
+  let valid = true;
+
+  if (nome.length < 3) {
+    showFieldError('nome', 'err-nome', 'Informe seu nome completo.');
+    valid = false;
+  }
+  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    showFieldError('email', 'err-email', 'Informe um e-mail válido.');
+    valid = false;
+  }
+  const { criterios } = calcStrength(senha);
+  if (!criterios.len || !criterios.letra || !criterios.num) {
+    showFieldError('senha', 'err-senha', 'Senha fraca. Use 8+ caracteres com letras e números.');
+    valid = false;
+  }
+  if (!valid) return;
+
+  setLoading(true);
+
+  try {
+    const res = await fetch('/api/auth/cadastro', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ nome, email, senha })
+    });
+    const data = await res.json();
+
+    if (res.ok) {
+      showGlobal('✅ Conta criada! Redirecionando...', 'success');
+      window.location.href = data.redirect || '/onboarding';
+      return;
     }
-  }
 
-  document.addEventListener('keydown', e => { if (e.key === 'Enter') criarConta(); });
+    // Erros específicos do backend
+    const msg = data.detail || 'Erro ao criar conta.';
+    if (res.status === 409) {
+      // E-mail duplicado — mostrar inline + link
+      showFieldError('email', 'err-email', msg);
+      showGlobal(
+        `${msg} <a class="alert-link" href="/login">Entrar →</a>  <a class="alert-link" href="/recuperar-senha">Recuperar senha →</a>`
+      );
+    } else if (res.status === 400) {
+      showFieldError('senha', 'err-senha', msg);
+    } else {
+      showGlobal(msg);
+    }
+
+  } catch(err) {
+    showGlobal('Erro de conexão. Verifique sua internet e tente novamente.');
+  } finally {
+    setLoading(false);
+  }
+});
 </script>
 </body>
 </html>

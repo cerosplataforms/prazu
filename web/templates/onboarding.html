@@ -3,502 +3,700 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Configurar conta — Prazu</title>
+  <title>Configurar Conta — Prazu</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=Lora:ital,wght@0,600;1,600&display=swap" rel="stylesheet">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
-      --navy-deep: #0A0F1C; --navy-base: #111B33; --navy-border: #1e2d4d;
-      --blue: #2563EB; --blue-bright: #3B82F6; --blue-dim: rgba(59,130,246,0.12);
-      --green: #22c55e; --green-dark: #16a34a; --green-dim: rgba(34,197,94,0.1);
-      --white: #F8FAFF; --muted: #7a8aaa; --error: #f87171;
+      --navy-deep:   #0A0F1C;
+      --navy-base:   #111B33;
+      --navy-card:   #141f38;
+      --navy-border: #1e2d4d;
+      --blue:        #2563EB;
+      --blue-bright: #3B82F6;
+      --blue-dim:    rgba(59,130,246,0.12);
+      --green:       #22c55e;
+      --white:       #F8FAFF;
+      --muted:       #7a8aaa;
+      --error:       #f87171;
+      --error-bg:    rgba(248,113,113,0.08);
+      --warning:     #fbbf24;
+      --warning-bg:  rgba(251,191,36,0.08);
     }
+    html { scroll-behavior: smooth; }
     body {
-      background: var(--navy-deep); color: var(--white);
-      font-family: 'Sora', sans-serif; font-weight: 300;
-      min-height: 100vh; display: flex; align-items: center; justify-content: center;
-      padding: 2rem 1.5rem;
+      background: var(--navy-deep);
+      color: var(--white);
+      font-family: 'Sora', sans-serif;
+      font-weight: 300;
+      min-height: 100vh;
+      display: flex; flex-direction: column; align-items: center;
+      padding: 2rem 1rem 4rem;
     }
-    .wrap { max-width: 480px; width: 100%; }
 
     /* HEADER */
-    .logo { font-weight: 800; font-size: 1.4rem; color: var(--blue); letter-spacing: -0.03em; text-align: center; display: block; margin-bottom: 2.5rem; text-decoration: none; }
+    .header {
+      width: 100%; max-width: 560px;
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 2.5rem;
+    }
+    .logo {
+      font-family: 'Sora', sans-serif; font-weight: 800;
+      font-size: 1.4rem; color: var(--blue); text-decoration: none;
+    }
+    .logout-btn {
+      background: none; border: 1px solid var(--navy-border);
+      color: var(--muted); font-family: 'Sora', sans-serif; font-size: .8rem;
+      padding: .4rem .85rem; border-radius: 8px; cursor: pointer;
+      transition: border-color .2s, color .2s;
+    }
+    .logout-btn:hover { border-color: var(--error); color: var(--error); }
 
     /* PROGRESS */
-    .progress-wrap { margin-bottom: 2.5rem; }
-    .progress-label { display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--muted); margin-bottom: 0.75rem; }
-    .progress-label span { color: var(--white); font-weight: 500; }
-    .progress-steps { display: flex; gap: 0.4rem; }
-    .p-step { flex: 1; height: 3px; border-radius: 2px; background: var(--navy-border); transition: background 0.3s; }
-    .p-step.done { background: var(--green); }
-    .p-step.active { background: var(--blue-bright); }
+    .progress-wrap { width: 100%; max-width: 560px; margin-bottom: 2rem; }
+    .progress-steps {
+      display: flex; gap: .5rem; align-items: center; margin-bottom: .5rem;
+    }
+    .step-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: var(--navy-border); transition: background .3s, transform .3s;
+    }
+    .step-dot.active { background: var(--blue); transform: scale(1.35); }
+    .step-dot.done   { background: var(--green); }
+    .progress-label { font-size: .78rem; color: var(--muted); }
 
-    h1 { font-family: 'Lora', serif; font-size: 1.75rem; font-weight: 600; letter-spacing: -0.02em; line-height: 1.2; margin-bottom: 0.5rem; }
-    h1 em { font-style: italic; color: var(--blue-bright); }
-    .form-sub { font-size: 0.85rem; color: var(--muted); margin-bottom: 2rem; line-height: 1.6; }
+    /* CARD */
+    .card {
+      width: 100%; max-width: 560px;
+      background: var(--navy-card); border: 1px solid var(--navy-border);
+      border-radius: 16px; padding: 2.25rem 2.5rem;
+    }
+    .card-title {
+      font-size: 1.35rem; font-weight: 700; letter-spacing: -.02em;
+      margin-bottom: .4rem;
+    }
+    .card-subtitle { font-size: .88rem; color: var(--muted); margin-bottom: 2rem; line-height: 1.5; }
 
-    /* STEPS */
-    .step-panel { display: none; animation: slideIn 0.3s ease; }
-    .step-panel.active { display: block; }
-    @keyframes slideIn { from { opacity: 0; transform: translateX(16px); } to { opacity: 1; transform: none; } }
+    /* STEPS (display toggle) */
+    .step { display: none; }
+    .step.active { display: block; }
 
-    /* CAMPOS */
+    /* FIELD */
     .field { margin-bottom: 1.25rem; }
-    .field label { display: block; font-size: 0.8rem; font-weight: 500; color: var(--muted); margin-bottom: 0.45rem; }
+    .field label {
+      display: block; font-size: .78rem; font-weight: 500;
+      color: var(--muted); margin-bottom: .4rem;
+      letter-spacing: .02em; text-transform: uppercase;
+    }
     .field input, .field select {
-      width: 100%; background: var(--navy-base); border: 1px solid var(--navy-border);
-      border-radius: 8px; color: var(--white); font-family: 'Sora', sans-serif;
-      font-size: 0.92rem; padding: 0.75rem 1rem;
-      transition: border-color 0.2s, box-shadow 0.2s; outline: none; appearance: none;
+      width: 100%; padding: .8rem 1rem;
+      background: var(--navy-base); border: 1.5px solid var(--navy-border);
+      border-radius: 10px; color: var(--white); font-family: 'Sora', sans-serif;
+      font-size: .95rem; font-weight: 300; outline: none;
+      transition: border-color .2s, box-shadow .2s;
+      appearance: none;
     }
-    .field input:focus, .field select:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(37,99,235,0.15); }
-    .field input.error { border-color: var(--error); }
-    .field input::placeholder { color: var(--muted); }
-    .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
-    .field-hint { font-size: 0.73rem; color: var(--muted); margin-top: 0.35rem; }
-    .field-error { font-size: 0.73rem; color: var(--error); margin-top: 0.35rem; display: none; }
-    .field-error.show { display: block; }
-
-    /* TRATAMENTO */
-    .trat-group { display: flex; gap: 0.5rem; margin-bottom: 1.5rem; }
-    .trat-btn {
-      flex: 1; padding: 0.65rem; border: 1px solid var(--navy-border);
-      border-radius: 8px; background: var(--navy-base); color: var(--muted);
-      font-family: 'Sora', sans-serif; font-size: 0.85rem; cursor: pointer;
-      transition: all 0.2s; text-align: center;
+    .field input:focus, .field select:focus {
+      border-color: var(--blue);
+      box-shadow: 0 0 0 3px rgba(37,99,235,.15);
     }
-    .trat-btn:hover { border-color: var(--blue); color: var(--white); }
-    .trat-btn.selected { border-color: var(--blue); background: var(--blue-dim); color: var(--white); font-weight: 500; }
+    .field input.invalid { border-color: var(--error); box-shadow: 0 0 0 3px rgba(248,113,113,.1); }
+    .field input.valid   { border-color: var(--green);  box-shadow: 0 0 0 3px rgba(34,197,94,.08); }
+    .field-hint { font-size: .78rem; color: var(--muted); margin-top: .35rem; }
+    .field-error {
+      display: none; font-size: .8rem; color: var(--error);
+      margin-top: .35rem; padding: .4rem .7rem;
+      background: var(--error-bg); border-radius: 6px;
+      border-left: 2px solid var(--error); line-height: 1.45;
+    }
+    .field-error.visible { display: block; }
 
-    /* CÓDIGO */
-    .codigo-wrap { display: flex; gap: 0.6rem; justify-content: center; margin: 1.5rem 0; }
-    .codigo-wrap input {
-      width: 52px; height: 60px; text-align: center; font-size: 1.5rem; font-weight: 600;
-      border-radius: 10px; background: var(--navy-base); border: 2px solid var(--navy-border);
+    /* OAB row */
+    .oab-row { display: grid; grid-template-columns: 1fr auto; gap: .75rem; align-items: end; }
+    .oab-uf { width: 80px; }
+
+    /* CODE INPUT */
+    .code-wrap {
+      display: flex; gap: .5rem; margin-top: .5rem;
+    }
+    .code-wrap input {
+      flex: 1; text-align: center;
+      font-size: 1.4rem; font-weight: 600; letter-spacing: .15em;
+      padding: .75rem .5rem;
+    }
+
+    /* RESEND */
+    .resend-row {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-top: .75rem;
+    }
+    .resend-btn {
+      background: none; border: none; color: var(--blue-bright);
+      font-family: 'Sora', sans-serif; font-size: .85rem;
+      cursor: pointer; padding: 0; text-decoration: underline;
+      transition: color .2s; line-height: 1;
+    }
+    .resend-btn:disabled { color: var(--muted); text-decoration: none; cursor: not-allowed; }
+    .resend-timer { font-size: .8rem; color: var(--muted); }
+
+    /* ALERT */
+    .alert {
+      padding: .85rem 1rem; border-radius: 10px;
+      font-size: .875rem; margin-bottom: 1.2rem; border-left: 3px solid;
+      line-height: 1.5; display: none;
+    }
+    .alert.error   { background: var(--error-bg);   border-color: var(--error);   color: var(--error);   display: block; }
+    .alert.warning { background: var(--warning-bg); border-color: var(--warning); color: var(--warning); display: block; }
+    .alert.success { background: rgba(34,197,94,.08); border-color: var(--green); color: var(--green);   display: block; }
+
+    /* SUPPORT LINK */
+    .support-link {
+      display: none; text-align: center; margin-top: 1rem;
+      font-size: .82rem; color: var(--muted);
+    }
+    .support-link a { color: var(--blue-bright); font-weight: 500; text-decoration: none; }
+    .support-link a:hover { text-decoration: underline; }
+    .support-link.visible { display: block; }
+
+    /* BUTTONS */
+    .btn-primary {
+      width: 100%; padding: .9rem;
+      background: var(--blue); border: none; border-radius: 10px;
       color: var(--white); font-family: 'Sora', sans-serif;
-      transition: border-color 0.2s; outline: none;
+      font-size: .95rem; font-weight: 600; cursor: pointer;
+      transition: background .2s, transform .1s, opacity .2s;
+      display: flex; align-items: center; justify-content: center; gap: .5rem;
+      margin-top: .5rem;
     }
-    .codigo-wrap input:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(37,99,235,0.15); }
-    .codigo-wrap input.filled { border-color: var(--green); }
-    .codigo-wrap input.error { border-color: var(--error); }
-    .numero-destaque { background: var(--navy-base); border: 1px solid var(--navy-border); border-radius: 8px; padding: 0.75rem 1rem; text-align: center; font-size: 0.9rem; color: var(--blue-bright); font-weight: 500; margin-bottom: 1.5rem; }
-    .reenviar-wrap { text-align: center; margin-top: 1rem; font-size: 0.8rem; color: var(--muted); }
-    .reenviar-wrap button { background: none; border: none; color: var(--blue-bright); cursor: pointer; font-family: 'Sora', sans-serif; font-size: 0.8rem; }
-    .reenviar-wrap button:disabled { color: var(--muted); cursor: not-allowed; }
-
-    /* HORÁRIO */
-    .horario-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; margin-bottom: 1.25rem; }
-    .horario-btn {
-      padding: 0.65rem 0.5rem; border: 1px solid var(--navy-border); border-radius: 8px;
-      background: var(--navy-base); color: var(--muted); font-family: 'Sora', sans-serif;
-      font-size: 0.82rem; cursor: pointer; transition: all 0.2s; text-align: center;
+    .btn-primary:hover:not(:disabled) { background: var(--blue-bright); }
+    .btn-primary:active:not(:disabled) { transform: scale(.99); }
+    .btn-primary:disabled { opacity: .55; cursor: not-allowed; }
+    .btn-secondary {
+      width: 100%; padding: .8rem;
+      background: transparent; border: 1.5px solid var(--navy-border);
+      border-radius: 10px; color: var(--muted); font-family: 'Sora', sans-serif;
+      font-size: .9rem; font-weight: 500; cursor: pointer;
+      transition: border-color .2s, color .2s; margin-top: .6rem;
     }
-    .horario-btn:hover { border-color: var(--blue); color: var(--white); }
-    .horario-btn.selected { border-color: var(--green); background: var(--green-dim); color: var(--white); font-weight: 500; }
-
-    /* FREQUÊNCIA */
-    .freq-group { display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1.5rem; }
-    .freq-btn {
-      padding: 0.9rem 1rem; border: 1px solid var(--navy-border); border-radius: 10px;
-      background: var(--navy-base); color: var(--muted); font-family: 'Sora', sans-serif;
-      font-size: 0.87rem; cursor: pointer; transition: all 0.2s; text-align: left;
-      display: flex; align-items: center; gap: 0.75rem;
+    .btn-secondary:hover { border-color: var(--blue); color: var(--white); }
+    .spinner {
+      display: none; width: 16px; height: 16px;
+      border: 2px solid rgba(255,255,255,.3); border-top-color: #fff;
+      border-radius: 50%; animation: spin .7s linear infinite;
     }
-    .freq-btn:hover { border-color: var(--blue); color: var(--white); }
-    .freq-btn.selected { border-color: var(--green); background: var(--green-dim); color: var(--white); }
-    .freq-btn .freq-icon { font-size: 1.2rem; }
-    .freq-btn .freq-desc { font-size: 0.73rem; color: var(--muted); margin-top: 0.15rem; }
-    .freq-btn.selected .freq-desc { color: rgba(248,250,255,0.6); }
+    .btn-primary.loading .spinner { display: block; }
+    @keyframes spin { to { transform: rotate(360deg); } }
 
-    /* BOTÕES */
-    .btn-submit {
-      width: 100%; background: var(--green); color: #fff; padding: 0.9rem; border: none;
-      border-radius: 8px; font-family: 'Sora', sans-serif; font-size: 0.95rem; font-weight: 600;
-      cursor: pointer; margin-top: 0.5rem; transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
+    /* DJEN PROGRESS BANNER */
+    .djen-banner {
+      display: none;
+      background: var(--blue-dim); border: 1px solid rgba(59,130,246,.25);
+      border-radius: 12px; padding: 1.25rem 1.5rem;
+      margin-top: 1.5rem; text-align: center;
     }
-    .btn-submit:hover:not(:disabled) { background: var(--green-dark); transform: translateY(-1px); box-shadow: 0 6px 20px rgba(34,197,94,0.3); }
-    .btn-submit:disabled { opacity: 0.6; cursor: not-allowed; }
-    .btn-back {
-      width: 100%; background: transparent; color: var(--muted); padding: 0.75rem;
-      border: 1px solid var(--navy-border); border-radius: 8px; font-family: 'Sora', sans-serif;
-      font-size: 0.85rem; cursor: pointer; margin-top: 0.5rem; transition: border-color 0.2s, color 0.2s;
+    .djen-banner.visible { display: block; }
+    .djen-banner .djen-icon { font-size: 1.5rem; margin-bottom: .5rem; }
+    .djen-banner p { font-size: .88rem; color: var(--white); line-height: 1.5; margin-bottom: .75rem; }
+    .djen-progress-bar {
+      width: 100%; height: 4px; background: var(--navy-border);
+      border-radius: 2px; overflow: hidden;
     }
-    .btn-back:hover { border-color: var(--muted); color: var(--white); }
+    .djen-progress-fill {
+      height: 100%; background: var(--blue); border-radius: 2px;
+      animation: progress-indeterminate 1.8s ease-in-out infinite;
+      width: 40%;
+    }
+    @keyframes progress-indeterminate {
+      0%   { transform: translateX(-150%); }
+      100% { transform: translateX(350%); }
+    }
 
-    .alert-error { background: rgba(248,113,113,0.1); border: 1px solid rgba(248,113,113,0.3); color: var(--error); border-radius: 8px; padding: 0.75rem 1rem; font-size: 0.82rem; margin-bottom: 1.25rem; display: none; }
-    .alert-error.show { display: block; }
-
-    /* SUCESSO */
-    .success-wrap { display: none; text-align: center; padding: 2rem 0; }
-    .success-wrap.show { display: block; }
-    .success-icon { width: 72px; height: 72px; background: var(--green-dim); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 2rem; margin: 0 auto 1.5rem; animation: pop 0.5s ease; }
-    @keyframes pop { 0% { transform: scale(0); } 70% { transform: scale(1.15); } 100% { transform: scale(1); } }
-    .success-wrap h2 { font-family: 'Lora', serif; font-size: 1.5rem; margin-bottom: 0.75rem; }
-    .success-wrap p { color: var(--muted); font-size: 0.88rem; line-height: 1.7; margin-bottom: 1.75rem; }
-
-    @media (max-width: 480px) {
-      .field-row { grid-template-columns: 1fr; }
-      .horario-grid { grid-template-columns: repeat(2, 1fr); }
-      .codigo-wrap input { width: 44px; height: 52px; font-size: 1.3rem; }
+    @media (max-width: 600px) {
+      .card { padding: 1.75rem 1.25rem; }
     }
   </style>
 </head>
 <body>
-<div class="wrap">
+
+<header class="header">
   <a href="/" class="logo">prazu</a>
+  <button class="logout-btn" onclick="window.location='/logout'">Sair</button>
+</header>
 
-  <div class="progress-wrap" id="progress-wrap">
-    <div class="progress-label">
-      <span id="step-label">Passo 1 de 4</span>
-      <span id="step-name">Como quer ser chamada</span>
-    </div>
-    <div class="progress-steps">
-      <div class="p-step active" id="ps1"></div>
-      <div class="p-step" id="ps2"></div>
-      <div class="p-step" id="ps3"></div>
-      <div class="p-step" id="ps4"></div>
-    </div>
+<!-- PROGRESS -->
+<div class="progress-wrap">
+  <div class="progress-steps">
+    <div class="step-dot active" id="dot1"></div>
+    <div class="step-dot" id="dot2"></div>
+    <div class="step-dot" id="dot3"></div>
   </div>
+  <div class="progress-label" id="progressLabel">Etapa 1 de 3 — OAB e tratamento</div>
+</div>
 
-  <div class="alert-error" id="alert-error"></div>
+<div class="card">
 
-  <!-- STEP 1: TRATAMENTO + OAB -->
-  <div class="step-panel active" id="step1">
-    <h1>Quase lá, <em>doutora!</em></h1>
-    <p class="form-sub">Vamos configurar sua conta para você receber os prazos certos.</p>
+  <!-- ─── ETAPA 1: OAB + tratamento ─── -->
+  <div class="step active" id="step1">
+    <div class="card-title">Sua OAB</div>
+    <div class="card-subtitle">Usaremos para buscar seus processos no DJEN automaticamente.</div>
+
+    <div id="alert-step1" class="alert"></div>
 
     <div class="field">
-      <label>Como prefere ser chamada?</label>
-      <div class="trat-group">
-        <button type="button" class="trat-btn" onclick="selecionarTratamento(this, 'Dr.')">Dr.</button>
-        <button type="button" class="trat-btn selected" onclick="selecionarTratamento(this, 'Dra.')">Dra.</button>
-        <button type="button" class="trat-btn" onclick="selecionarTratamento(this, '')">Só o nome</button>
-      </div>
+      <label>Tratamento</label>
+      <select id="tratamento">
+        <option value="Dr.">Dr.</option>
+        <option value="Dra." selected>Dra.</option>
+        <option value="Prof.">Prof.</option>
+        <option value="Profa.">Profa.</option>
+        <option value="Me.">Me.</option>
+      </select>
     </div>
 
-    <div class="field-row">
-      <div class="field">
-        <label>Número OAB</label>
-        <input type="text" id="oab-num" placeholder="12345" inputmode="numeric">
-        <div class="field-error" id="err-oab">Número inválido.</div>
+    <div class="field" id="field-oab">
+      <label>Número da OAB</label>
+      <div class="oab-row">
+        <input type="text" id="oab_numero" placeholder="123456"
+               inputmode="numeric" maxlength="10">
+        <input type="text" id="oab_seccional" placeholder="MG"
+               maxlength="2" class="oab-uf" style="text-transform:uppercase">
       </div>
-      <div class="field">
-        <label>Estado</label>
-        <select id="oab-uf">
-          <option value="">UF</option>
-          <option>AC</option><option>AL</option><option>AM</option><option>AP</option>
-          <option>BA</option><option>CE</option><option>DF</option><option>ES</option>
-          <option>GO</option><option>MA</option><option>MG</option><option>MS</option>
-          <option>MT</option><option>PA</option><option>PB</option><option>PE</option>
-          <option>PI</option><option>PR</option><option>RJ</option><option>RN</option>
-          <option>RO</option><option>RR</option><option>RS</option><option>SC</option>
-          <option>SE</option><option>SP</option><option>TO</option>
-        </select>
-        <div class="field-error" id="err-uf">Selecione o estado.</div>
-      </div>
+      <div class="field-hint">Apenas os números e a sigla do estado</div>
+      <div class="field-error" id="err-oab"></div>
     </div>
 
-    <button class="btn-submit" onclick="irPara(2)">Continuar →</button>
-  </div>
-
-  <!-- STEP 2: WHATSAPP NOTIFICAÇÃO -->
-  <div class="step-panel" id="step2">
-    <h1>WhatsApp para <em>avisos</em></h1>
-    <p class="form-sub">Qual número vai receber o briefing diário de prazos? Pode ser diferente do seu telefone de cadastro.</p>
-
-    <div class="field">
-      <label>Número do WhatsApp</label>
-      <input type="tel" id="whatsapp-notif" placeholder="(11) 99999-9999" inputmode="numeric" oninput="formatarFone(this)">
-      <div class="field-hint">Com DDD. Vamos enviar um código para confirmar.</div>
-      <div class="field-error" id="err-whatsapp">Número inválido.</div>
-    </div>
-
-    <button class="btn-submit" id="btn-enviar-codigo" onclick="enviarCodigo()">
-      📲 Enviar código de verificação
+    <button class="btn-primary" id="btnStep1">
+      <span class="spinner"></span>
+      <span>Continuar →</span>
     </button>
-    <button class="btn-back" onclick="irPara(1)">← Voltar</button>
+
+    <div class="support-link" id="support-step1">
+      <a href="https://wa.me/5531999999999?text=Oi!%20Preciso%20de%20ajuda%20com%20o%20onboarding%20da%20Prazu." target="_blank">💬 Falar com suporte</a>
+    </div>
   </div>
 
-  <!-- STEP 3: VERIFICAÇÃO CÓDIGO -->
-  <div class="step-panel" id="step3">
-    <h1>Confirme seu <em>WhatsApp</em></h1>
-    <p class="form-sub">Digite o código de 6 dígitos enviado para:</p>
+  <!-- ─── ETAPA 2: WhatsApp + código ─── -->
+  <div class="step" id="step2">
+    <div class="card-title">WhatsApp para alertas</div>
+    <div class="card-subtitle">Enviaremos um código de 6 dígitos para verificar o número.</div>
 
-    <div class="numero-destaque" id="numero-destaque">—</div>
+    <div id="alert-step2" class="alert"></div>
 
-    <div class="codigo-wrap">
-      <input type="text" maxlength="1" inputmode="numeric" id="cod1" oninput="avancaCodigo(this, null, 'cod2')" onkeydown="retornaCodigo(event, this, null)">
-      <input type="text" maxlength="1" inputmode="numeric" id="cod2" oninput="avancaCodigo(this, 'cod1', 'cod3')" onkeydown="retornaCodigo(event, this, 'cod1')">
-      <input type="text" maxlength="1" inputmode="numeric" id="cod3" oninput="avancaCodigo(this, 'cod2', 'cod4')" onkeydown="retornaCodigo(event, this, 'cod2')">
-      <input type="text" maxlength="1" inputmode="numeric" id="cod4" oninput="avancaCodigo(this, 'cod3', 'cod5')" onkeydown="retornaCodigo(event, this, 'cod3')">
-      <input type="text" maxlength="1" inputmode="numeric" id="cod5" oninput="avancaCodigo(this, 'cod4', 'cod6')" onkeydown="retornaCodigo(event, this, 'cod4')">
-      <input type="text" maxlength="1" inputmode="numeric" id="cod6" oninput="avancaCodigo(this, 'cod5', null)" onkeydown="retornaCodigo(event, this, 'cod5')">
-    </div>
-
-    <div class="reenviar-wrap">
-      <span id="reenviar-texto">Não recebeu? </span>
-      <button id="btn-reenviar" onclick="reenviarCodigo()">Reenviar código</button>
-    </div>
-
-    <button class="btn-submit" id="btn-verificar" onclick="verificarCodigo()">Verificar →</button>
-    <button class="btn-back" onclick="irPara(2)">← Voltar</button>
-  </div>
-
-  <!-- STEP 4: HORÁRIO + FREQUÊNCIA -->
-  <div class="step-panel" id="step4">
-    <h1>Seu briefing <em>ideal</em></h1>
-    <p class="form-sub">Quando e com que frequência quer receber o resumo de prazos?</p>
-
-    <div class="field">
-      <label>Horário do briefing</label>
-      <div class="horario-grid">
-        <button type="button" class="horario-btn" onclick="selecionarHorario(this, '06:00')">06:00</button>
-        <button type="button" class="horario-btn selected" onclick="selecionarHorario(this, '07:00')">07:00</button>
-        <button type="button" class="horario-btn" onclick="selecionarHorario(this, '08:00')">08:00</button>
-        <button type="button" class="horario-btn" onclick="selecionarHorario(this, '09:00')">09:00</button>
-        <button type="button" class="horario-btn" onclick="selecionarHorario(this, '18:00')">18:00</button>
-        <button type="button" class="horario-btn" onclick="selecionarHorario(this, '20:00')">20:00</button>
+    <!-- Fase 2a: digitar número -->
+    <div id="phase-number">
+      <div class="field" id="field-wpp">
+        <label>Número com DDD</label>
+        <input type="tel" id="whatsapp" placeholder="31999990000" inputmode="numeric" maxlength="11">
+        <div class="field-hint">DDD + 9 + número (11 dígitos, sem espaços)</div>
+        <div class="field-error" id="err-wpp"></div>
+      </div>
+      <button class="btn-primary" id="btnEnviarCodigo">
+        <span class="spinner"></span>
+        <span>Enviar código</span>
+      </button>
+      <div class="support-link" id="support-step2a">
+        <a href="https://wa.me/5531999999999?text=Oi!%20Preciso%20de%20ajuda%20com%20a%20verifica%C3%A7%C3%A3o%20do%20WhatsApp." target="_blank">💬 Falar com suporte</a>
       </div>
     </div>
 
-    <div class="field">
-      <label>Frequência</label>
-      <div class="freq-group">
-        <button type="button" class="freq-btn selected" onclick="selecionarFreq(this, 'uteis')">
-          <span class="freq-icon">📅</span>
-          <div><div>Apenas dias úteis</div><div class="freq-desc">Segunda a sexta, sem fins de semana</div></div>
-        </button>
-        <button type="button" class="freq-btn" onclick="selecionarFreq(this, 'todos')">
-          <span class="freq-icon">📆</span>
-          <div><div>Todos os dias</div><div class="freq-desc">Incluindo sábados e domingos</div></div>
-        </button>
+    <!-- Fase 2b: digitar código -->
+    <div id="phase-code" style="display:none">
+      <p style="font-size:.88rem;color:var(--muted);margin-bottom:1rem;" id="codeHint">
+        Código enviado para <strong id="wppDisplay"></strong>. Verifique sua conversa com o número da Prazu.
+      </p>
+      <div class="field" id="field-code">
+        <label>Código de 6 dígitos</label>
+        <input type="text" id="codigo" placeholder="· · · · · ·"
+               inputmode="numeric" maxlength="6" autocomplete="one-time-code"
+               style="text-align:center;letter-spacing:.25em;font-size:1.3rem;font-weight:600">
+        <div class="field-error" id="err-code"></div>
+      </div>
+
+      <div class="resend-row">
+        <button class="resend-btn" id="btnReenviar" disabled>Reenviar código</button>
+        <span class="resend-timer" id="resendTimer">Reenviar em <strong id="timerCount">60</strong>s</span>
+      </div>
+
+      <button class="btn-primary" id="btnVerificar" style="margin-top:1.25rem">
+        <span class="spinner"></span>
+        <span>Verificar →</span>
+      </button>
+      <button class="btn-secondary" id="btnVoltarNumero">← Alterar número</button>
+
+      <div class="support-link" id="support-step2b">
+        <a href="https://wa.me/5531999999999?text=Oi!%20N%C3%A3o%20recebi%20o%20c%C3%B3digo%20da%20Prazu." target="_blank">💬 Não recebi o código — falar com suporte</a>
       </div>
     </div>
+  </div>
 
-    <button class="btn-submit" id="btn-finalizar" onclick="finalizar()">
-      ✅ Ir para meu painel
+  <!-- ─── ETAPA 3: preferências + finalizar ─── -->
+  <div class="step" id="step3">
+    <div class="card-title">Preferências de briefing</div>
+    <div class="card-subtitle">Personalize quando e como receber seus alertas de prazos.</div>
+
+    <div id="alert-step3" class="alert"></div>
+
+    <div class="field">
+      <label>Horário do briefing diário</label>
+      <select id="horario_briefing">
+        <option value="06:00">06:00</option>
+        <option value="07:00" selected>07:00</option>
+        <option value="08:00">08:00</option>
+        <option value="09:00">09:00</option>
+        <option value="10:00">10:00</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <label>Enviar briefing em</label>
+      <select id="briefing_dias">
+        <option value="uteis" selected>Dias úteis (seg–sex)</option>
+        <option value="todos">Todos os dias (incluindo fim de semana)</option>
+      </select>
+    </div>
+
+    <button class="btn-primary" id="btnFinalizar">
+      <span class="spinner"></span>
+      <span>Concluir configuração 🎉</span>
     </button>
-    <button class="btn-back" onclick="irPara(3)">← Voltar</button>
+
+    <div class="support-link" id="support-step3">
+      <a href="https://wa.me/5531999999999?text=Oi!%20Preciso%20de%20ajuda%20para%20finalizar%20meu%20cadastro%20na%20Prazu." target="_blank">💬 Falar com suporte</a>
+    </div>
   </div>
 
-  <!-- SUCESSO -->
-  <div class="success-wrap" id="success">
-    <div class="success-icon">🎉</div>
-    <h2>Tudo pronto!</h2>
-    <p>Buscando seus processos no DJEN...<br>Redirecionando para seu painel.</p>
+</div>
+
+<!-- DJEN progress banner (aparece após finalizar) -->
+<div class="djen-banner" id="djenBanner">
+  <div class="djen-icon">⚖️</div>
+  <p><strong>Estamos lendo o DJEN para você</strong><br>
+  Isso leva um minutinho — estamos buscando suas publicações dos últimos 90 dias.</p>
+  <div class="djen-progress-bar">
+    <div class="djen-progress-fill"></div>
   </div>
 </div>
 
 <script>
-  let currentStep = 1;
-  let tratamentoSelecionado = 'Dra.';
-  let horarioSelecionado = '07:00';
-  let freqSelecionada = 'uteis';
-  const STEP_NAMES = ['', 'Como quer ser chamada', 'WhatsApp para avisos', 'Verificação', 'Seu briefing'];
+// ── Estado global ─────────────────────────────────────────────────────────
+const state = {
+  oab_numero: '',
+  oab_seccional: '',
+  tratamento: 'Dra.',
+  whatsapp: '',
+  horario_briefing: '07:00',
+  briefing_dias: 'uteis',
+  errorCount: {}  // { step: count } para exibir botão de suporte
+};
 
-  function updateProgress(step) {
-    document.getElementById('step-label').textContent = `Passo ${step} de 4`;
-    document.getElementById('step-name').textContent = STEP_NAMES[step];
-    for (let i = 1; i <= 4; i++) {
-      document.getElementById(`ps${i}`).className = 'p-step' + (i < step ? ' done' : i === step ? ' active' : '');
-    }
-  }
-
-  function mostrarStep(n) {
-    document.querySelectorAll('.step-panel').forEach(el => el.classList.remove('active'));
-    document.getElementById(`step${n}`).classList.add('active');
-    updateProgress(n); currentStep = n; window.scrollTo(0, 0);
-  }
-
-  function esconderAlerta() { const al = document.getElementById('alert-error'); al.classList.remove('show'); al.textContent = ''; }
-  function mostrarAlerta(msg) { const al = document.getElementById('alert-error'); al.textContent = msg; al.classList.add('show'); }
-
-  function campo(id, errId, cond) {
-    const el = document.getElementById(errId), inp = document.getElementById(id);
-    if (!cond) { el.classList.add('show'); if (inp) inp.classList.add('error'); return false; }
-    el.classList.remove('show'); if (inp) inp.classList.remove('error'); return true;
-  }
-
-  function selecionarTratamento(btn, valor) {
-    document.querySelectorAll('.trat-btn').forEach(b => b.classList.remove('selected'));
-    btn.classList.add('selected'); tratamentoSelecionado = valor;
-  }
-
-  function selecionarHorario(btn, valor) {
-    document.querySelectorAll('.horario-btn').forEach(b => b.classList.remove('selected'));
-    btn.classList.add('selected'); horarioSelecionado = valor;
-  }
-
-  function selecionarFreq(btn, valor) {
-    document.querySelectorAll('.freq-btn').forEach(b => b.classList.remove('selected'));
-    btn.classList.add('selected'); freqSelecionada = valor;
-  }
-
-  function formatarFone(input) {
-    let v = input.value.replace(/\D/g, '');
-    if (v.length > 11) v = v.slice(0, 11);
-    if (v.length > 7) input.value = `(${v.slice(0,2)}) ${v.slice(2,7)}-${v.slice(7)}`;
-    else if (v.length > 2) input.value = `(${v.slice(0,2)}) ${v.slice(2)}`;
-    else if (v.length > 0) input.value = `(${v}`;
-  }
-
-  function getPhoneRaw() { return document.getElementById('whatsapp-notif').value.replace(/\D/g, ''); }
-
-  function irPara(n) {
-    esconderAlerta();
-    if (n === 2) {
-      const num = document.getElementById('oab-num').value.trim();
-      const uf = document.getElementById('oab-uf').value;
-      const ok1 = campo('oab-num', 'err-oab', /^\d{3,7}$/.test(num));
-      const ok2 = campo('oab-uf', 'err-uf', uf !== '');
-      if (!ok1 || !ok2) return;
-    }
-    mostrarStep(n);
-  }
-
-  async function enviarCodigo() {
-    const raw = getPhoneRaw();
-    const ok = campo('whatsapp-notif', 'err-whatsapp', raw.length >= 10 && raw.length <= 11);
-    if (!ok) return;
-
-    const btn = document.getElementById('btn-enviar-codigo');
-    btn.disabled = true; btn.textContent = 'Enviando...';
-    esconderAlerta();
-
-    try {
-      const res = await fetch('/api/onboarding/enviar-codigo', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ whatsapp: raw }), credentials: 'same-origin',
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        mostrarAlerta(data.detail || 'Erro ao enviar código.');
-        btn.disabled = false; btn.textContent = '📲 Enviar código de verificação';
-        return;
-      }
-      document.getElementById('numero-destaque').textContent = document.getElementById('whatsapp-notif').value;
-      for (let i = 1; i <= 6; i++) { const el = document.getElementById(`cod${i}`); el.value = ''; el.className = ''; }
-      iniciarTimerReenvio();
-      mostrarStep(3);
-      setTimeout(() => document.getElementById('cod1').focus(), 300);
-    } catch (e) {
-      mostrarAlerta('Erro de conexão.');
-      btn.disabled = false; btn.textContent = '📲 Enviar código de verificação';
-    }
-  }
-
-  let timerReenvio = null;
-  function iniciarTimerReenvio() {
-    const btn = document.getElementById('btn-reenviar');
-    const txt = document.getElementById('reenviar-texto');
-    btn.disabled = true; let seg = 60;
-    txt.textContent = `Reenviar em ${seg}s `;
-    if (timerReenvio) clearInterval(timerReenvio);
-    timerReenvio = setInterval(() => {
-      seg--;
-      if (seg <= 0) { clearInterval(timerReenvio); txt.textContent = 'Não recebeu? '; btn.disabled = false; }
-      else { txt.textContent = `Reenviar em ${seg}s `; }
-    }, 1000);
-  }
-
-  async function reenviarCodigo() {
-    const btn = document.getElementById('btn-reenviar');
-    btn.disabled = true;
-    try {
-      await fetch('/api/onboarding/enviar-codigo', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ whatsapp: getPhoneRaw() }), credentials: 'same-origin',
-      });
-      iniciarTimerReenvio();
-    } catch (e) { btn.disabled = false; }
-  }
-
-  function avancaCodigo(input, prevId, nextId) {
-    input.value = input.value.replace(/\D/g, '');
-    if (input.value) {
-      input.classList.add('filled');
-      if (nextId) document.getElementById(nextId).focus();
-      else verificarCodigoAuto();
-    } else { input.classList.remove('filled'); }
-  }
-
-  function retornaCodigo(e, input, prevId) {
-    if (e.key === 'Backspace' && !input.value && prevId) document.getElementById(prevId).focus();
-  }
-
-  function getCodigo() { return [1,2,3,4,5,6].map(i => document.getElementById(`cod${i}`).value).join(''); }
-  function verificarCodigoAuto() { if (getCodigo().length === 6) verificarCodigo(); }
-
-  async function verificarCodigo() {
-    const cod = getCodigo();
-    if (cod.length < 6) { mostrarAlerta('Digite os 6 dígitos do código.'); return; }
-
-    const btn = document.getElementById('btn-verificar');
-    btn.disabled = true; btn.textContent = 'Verificando...';
-    esconderAlerta();
-
-    try {
-      const res = await fetch('/api/onboarding/verificar-codigo', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ whatsapp: getPhoneRaw(), codigo: cod }), credentials: 'same-origin',
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        [1,2,3,4,5,6].forEach(i => document.getElementById(`cod${i}`).classList.add('error'));
-        mostrarAlerta(data.detail || 'Código incorreto.');
-        btn.disabled = false; btn.textContent = 'Verificar →';
-        return;
-      }
-      mostrarStep(4);
-    } catch (e) {
-      mostrarAlerta('Erro de conexão.');
-      btn.disabled = false; btn.textContent = 'Verificar →';
-    }
-  }
-
-  async function finalizar() {
-    const btn = document.getElementById('btn-finalizar');
-    btn.disabled = true; btn.textContent = 'Salvando...';
-    esconderAlerta();
-
-    try {
-      const res = await fetch('/api/onboarding/salvar', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          oab_numero: document.getElementById('oab-num').value.trim(),
-          oab_seccional: document.getElementById('oab-uf').value,
-          tratamento: tratamentoSelecionado,
-          whatsapp_notificacao: getPhoneRaw(),
-          horario_briefing: horarioSelecionado,
-          briefing_dias: freqSelecionada,
-        }),
-        credentials: 'same-origin',
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        mostrarAlerta(data.detail || 'Erro ao salvar. Tente novamente.');
-        btn.disabled = false; btn.textContent = '✅ Ir para meu painel';
-        return;
-      }
-      document.querySelectorAll('.step-panel').forEach(el => el.classList.remove('active'));
-      document.getElementById('progress-wrap').style.display = 'none';
-      document.getElementById('success').classList.add('show');
-      setTimeout(() => { window.location.href = '/dashboard'; }, 2000);
-    } catch (e) {
-      mostrarAlerta('Erro de conexão.');
-      btn.disabled = false; btn.textContent = '✅ Ir para meu painel';
-    }
-  }
-
-  document.addEventListener('keydown', e => {
-    if (e.key === 'Enter') {
-      if (currentStep === 1) irPara(2);
-      else if (currentStep === 2) enviarCodigo();
-      else if (currentStep === 4) finalizar();
-    }
+// ── Helpers de UI ─────────────────────────────────────────────────────────
+function goStep(n) {
+  document.querySelectorAll('.step').forEach((s, i) => s.classList.toggle('active', i + 1 === n));
+  ['dot1','dot2','dot3'].forEach((id, i) => {
+    const dot = document.getElementById(id);
+    dot.className = 'step-dot' + (i + 1 < n ? ' done' : i + 1 === n ? ' active' : '');
   });
+  const labels = ['OAB e tratamento','Verificação do WhatsApp','Preferências de briefing'];
+  document.getElementById('progressLabel').textContent = `Etapa ${n} de 3 — ${labels[n-1]}`;
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function showAlert(stepId, msg, type = 'error') {
+  const el = document.getElementById(`alert-${stepId}`);
+  el.className = `alert ${type}`;
+  el.innerHTML = msg;
+}
+function clearAlert(stepId) {
+  const el = document.getElementById(`alert-${stepId}`);
+  el.className = 'alert';
+  el.innerHTML = '';
+}
+
+function showFieldErr(fieldId, errId, msg) {
+  const el = document.getElementById(errId);
+  el.textContent = msg;
+  el.classList.add('visible');
+  const inp = document.getElementById(fieldId);
+  if (inp) inp.classList.add('invalid');
+}
+function clearFieldErr(fieldId, errId) {
+  const el = document.getElementById(errId);
+  el.classList.remove('visible');
+  const inp = document.getElementById(fieldId);
+  if (inp) { inp.classList.remove('invalid'); }
+}
+
+function setLoading(btnId, loading) {
+  const btn = document.getElementById(btnId);
+  btn.disabled = loading;
+  btn.classList.toggle('loading', loading);
+}
+
+function trackError(step) {
+  state.errorCount[step] = (state.errorCount[step] || 0) + 1;
+  if (state.errorCount[step] >= 2) {
+    const map = { 'step1': 'support-step1', 'step2a': 'support-step2a', 'step2b': 'support-step2b', 'step3': 'support-step3' };
+    const el = document.getElementById(map[step]);
+    if (el) el.classList.add('visible');
+  }
+}
+
+// ── Formatação OAB ────────────────────────────────────────────────────────
+document.getElementById('oab_numero').addEventListener('input', function() {
+  this.value = this.value.replace(/\D/g, '');
+});
+document.getElementById('oab_seccional').addEventListener('input', function() {
+  this.value = this.value.toUpperCase().replace(/[^A-Z]/g, '');
+});
+
+// ── Formatação WhatsApp ───────────────────────────────────────────────────
+document.getElementById('whatsapp').addEventListener('input', function() {
+  this.value = this.value.replace(/\D/g, '').slice(0, 11);
+  const val = this.value;
+  if (val.length === 10 && val[2] !== '9' && parseInt(val[2]) >= 6) {
+    showFieldErr('whatsapp', 'err-wpp', 'Celular: não esqueça o "9" após o DDD. Ex: 31 9 9999-0000 → 31999990000');
+  } else {
+    clearFieldErr('whatsapp', 'err-wpp');
+  }
+});
+
+// ── ETAPA 1: OAB ─────────────────────────────────────────────────────────
+document.getElementById('btnStep1').addEventListener('click', async () => {
+  clearAlert('step1');
+  clearFieldErr('oab_numero', 'err-oab');
+
+  const num = document.getElementById('oab_numero').value.trim().replace(/\D/g,'');
+  const uf  = document.getElementById('oab_seccional').value.trim().toUpperCase();
+
+  if (!num || num.length < 3) {
+    showFieldErr('oab_numero', 'err-oab', 'Informe o número da OAB.');
+    return;
+  }
+  if (!uf || uf.length !== 2) {
+    showFieldErr('oab_seccional', 'err-oab', 'Informe a seccional (ex: MG, SP, RJ).');
+    return;
+  }
+
+  state.oab_numero = num;
+  state.oab_seccional = uf;
+  state.tratamento = document.getElementById('tratamento').value;
+
+  goStep(2);
+});
+
+// ── ETAPA 2a: Enviar código ───────────────────────────────────────────────
+document.getElementById('btnEnviarCodigo').addEventListener('click', async () => {
+  clearAlert('step2');
+  clearFieldErr('whatsapp', 'err-wpp');
+
+  const wpp = document.getElementById('whatsapp').value.trim();
+
+  if (wpp.length < 10 || wpp.length > 11) {
+    showFieldErr('whatsapp', 'err-wpp', 'Número inválido. Informe DDD + número (10 ou 11 dígitos).');
+    return;
+  }
+  if (wpp.length === 10 && parseInt(wpp[2]) >= 6) {
+    showFieldErr('whatsapp', 'err-wpp', 'Parece que falta o "9" após o DDD. Verifique o número.');
+    return;
+  }
+
+  state.whatsapp = wpp;
+  setLoading('btnEnviarCodigo', true);
+
+  try {
+    const res = await fetch('/api/onboarding/enviar-codigo', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ whatsapp: wpp })
+    });
+    const data = await res.json();
+
+    if (res.ok) {
+      document.getElementById('wppDisplay').textContent = wpp;
+      document.getElementById('phase-number').style.display = 'none';
+      document.getElementById('phase-code').style.display = 'block';
+      startResendTimer();
+    } else {
+      const msg = data.detail || 'Erro ao enviar código.';
+      if (res.status === 422) {
+        showFieldErr('whatsapp', 'err-wpp', msg);
+      } else if (res.status === 503) {
+        showAlert('step2', `⚠️ ${msg}`, 'warning');
+      } else {
+        showFieldErr('whatsapp', 'err-wpp', msg);
+      }
+      trackError('step2a');
+    }
+  } catch(e) {
+    showAlert('step2', 'Erro de conexão. Verifique sua internet.', 'error');
+    trackError('step2a');
+  } finally {
+    setLoading('btnEnviarCodigo', false);
+  }
+});
+
+// ── Resend timer ──────────────────────────────────────────────────────────
+let _timerInterval = null;
+function startResendTimer(seconds = 60) {
+  const btn   = document.getElementById('btnReenviar');
+  const count = document.getElementById('timerCount');
+  const row   = document.getElementById('resendTimer');
+  btn.disabled = true;
+  row.style.display = 'block';
+  let left = seconds;
+  count.textContent = left;
+  clearInterval(_timerInterval);
+  _timerInterval = setInterval(() => {
+    left--;
+    count.textContent = left;
+    if (left <= 0) {
+      clearInterval(_timerInterval);
+      btn.disabled = false;
+      row.style.display = 'none';
+    }
+  }, 1000);
+}
+
+// Reenviar código
+document.getElementById('btnReenviar').addEventListener('click', async () => {
+  clearAlert('step2');
+  const wpp = state.whatsapp;
+  document.getElementById('btnReenviar').disabled = true;
+
+  try {
+    const res = await fetch('/api/onboarding/reenviar-codigo', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ whatsapp: wpp })
+    });
+    const data = await res.json();
+    if (res.ok) {
+      showAlert('step2', '✅ Novo código enviado!', 'success');
+      startResendTimer(60);
+      setTimeout(() => clearAlert('step2'), 4000);
+    } else {
+      const msg = data.detail || 'Erro ao reenviar.';
+      if (res.status === 429) {
+        showAlert('step2', `⏳ ${msg}`, 'warning');
+        startResendTimer(60);
+      } else {
+        showAlert('step2', msg);
+        trackError('step2b');
+      }
+    }
+  } catch(e) {
+    showAlert('step2', 'Erro de conexão ao reenviar.', 'error');
+    trackError('step2b');
+  }
+});
+
+// Voltar para número
+document.getElementById('btnVoltarNumero').addEventListener('click', () => {
+  document.getElementById('phase-code').style.display = 'none';
+  document.getElementById('phase-number').style.display = 'block';
+  document.getElementById('whatsapp').value = '';
+  document.getElementById('codigo').value = '';
+  clearAlert('step2');
+  clearInterval(_timerInterval);
+});
+
+// ── Verificar código ──────────────────────────────────────────────────────
+document.getElementById('btnVerificar').addEventListener('click', async () => {
+  clearAlert('step2');
+  clearFieldErr('codigo', 'err-code');
+
+  const codigo = document.getElementById('codigo').value.trim();
+  if (codigo.length !== 6 || !/^\d{6}$/.test(codigo)) {
+    showFieldErr('codigo', 'err-code', 'Digite os 6 dígitos do código.');
+    return;
+  }
+
+  setLoading('btnVerificar', true);
+
+  try {
+    const res = await fetch('/api/onboarding/verificar-codigo', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ whatsapp: state.whatsapp, codigo })
+    });
+    const data = await res.json();
+
+    if (res.ok) {
+      clearInterval(_timerInterval);
+      goStep(3);
+    } else {
+      const msg = data.detail || 'Código incorreto.';
+      showFieldErr('codigo', 'err-code', msg);
+      trackError('step2b');
+    }
+  } catch(e) {
+    showAlert('step2', 'Erro de conexão ao verificar o código.', 'error');
+    trackError('step2b');
+  } finally {
+    setLoading('btnVerificar', false);
+  }
+});
+
+// ── ETAPA 3: Finalizar ────────────────────────────────────────────────────
+document.getElementById('btnFinalizar').addEventListener('click', async () => {
+  clearAlert('step3');
+  setLoading('btnFinalizar', true);
+
+  const payload = {
+    oab_numero:           state.oab_numero,
+    oab_seccional:        state.oab_seccional,
+    tratamento:           state.tratamento,
+    whatsapp_notificacao: state.whatsapp,
+    horario_briefing:     document.getElementById('horario_briefing').value,
+    briefing_dias:        document.getElementById('briefing_dias').value,
+  };
+
+  try {
+    const res = await fetch('/api/onboarding/salvar', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+
+    if (res.ok) {
+      // Mostrar banner DJEN e redirecionar
+      document.querySelector('.card').style.display = 'none';
+      document.querySelector('.progress-wrap').style.display = 'none';
+      document.getElementById('djenBanner').classList.add('visible');
+
+      // Redirecionar após 2.5s (tempo para o usuário ver o banner)
+      setTimeout(() => window.location.href = '/dashboard', 2500);
+    } else {
+      const msg = data.detail || 'Erro ao salvar configurações.';
+      if (res.status === 409) {
+        // OAB duplicada — mostrar com link de suporte
+        showAlert('step3',
+          `⚠️ ${msg} <a href="mailto:suporte@prazu.com.br" style="color:inherit;font-weight:600">Contatar suporte →</a>`,
+          'warning'
+        );
+      } else if (res.status === 400 && msg.includes('WhatsApp')) {
+        // Código expirado — voltar para etapa 2
+        showAlert('step3', 'Verificação do WhatsApp expirada. Vamos pedir um novo código.', 'warning');
+        setTimeout(() => {
+          goStep(2);
+          document.getElementById('phase-code').style.display = 'none';
+          document.getElementById('phase-number').style.display = 'block';
+        }, 2000);
+      } else {
+        showAlert('step3', msg);
+      }
+      trackError('step3');
+    }
+  } catch(e) {
+    showAlert('step3', 'Erro de conexão. Verifique sua internet e tente novamente.', 'error');
+    trackError('step3');
+  } finally {
+    setLoading('btnFinalizar', false);
+  }
+});
 </script>
 </body>
 </html>
