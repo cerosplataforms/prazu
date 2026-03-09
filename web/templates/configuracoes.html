@@ -103,15 +103,9 @@
         <label>WhatsApp para notificações</label>
         <input type="text" value="{{ advogado.whatsapp_notificacao or advogado.whatsapp or '—' }}" readonly>
       </div>
-      <div class="field-row">
-        <div class="field">
-          <label>Horário do briefing diário</label>
-          <input type="time" id="horario_briefing" value="{{ advogado.horario_briefing or '07:00' }}">
-        </div>
-        <div class="field">
-          <label>Comarca principal</label>
-          <input type="text" id="comarca" value="{{ advogado.comarca or '' }}" placeholder="Ex: Belo Horizonte">
-        </div>
+      <div class="field">
+        <label>Horário do briefing diário</label>
+        <input type="time" id="horario_briefing" value="{{ advogado.horario_briefing or '07:00' }}">
       </div>
       <div class="toggle-row">
         <div>
@@ -163,7 +157,6 @@
             nome: document.getElementById('nome').value.trim(),
             tratamento: document.getElementById('tratamento').value,
             horario_briefing: document.getElementById('horario_briefing').value,
-            comarca: document.getElementById('comarca').value.trim(),
             lembrete_fds: document.getElementById('lembrete_fds').checked,
           })
         });

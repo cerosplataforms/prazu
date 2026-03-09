@@ -358,12 +358,6 @@
       </select>
     </div>
 
-    <div class="field">
-      <label>Comarca principal</label>
-      <input type="text" id="comarca" placeholder="Ex: Belo Horizonte">
-      <div class="field-hint">Usada para calcular feriados forenses nos seus prazos</div>
-    </div>
-
     <button class="btn-secondary" id="btnVoltarStep3" style="margin-bottom:.5rem" onclick="goStep(2);document.getElementById('phase-code').style.display='none';document.getElementById('phase-number').style.display='block';">← Voltar</button>
     <button class="btn-primary" id="btnFinalizar">
       <span class="spinner"></span>
@@ -687,7 +681,7 @@ document.getElementById('btnFinalizar').addEventListener('click', async () => {
     whatsapp_notificacao: state.whatsapp,
     horario_briefing:     document.getElementById('horario_briefing').value,
     briefing_dias:        document.getElementById('briefing_dias').value,
-    comarca:              document.getElementById('comarca').value.trim(),
+    comarca:              '',
   };
 
   try {

@@ -141,51 +141,28 @@ async def _buscar_djen(adv_id, phone, oab_num, oab_uf):
                 return last.rstrip(".")
         return ""
 
-    def _calcular_prazos_djen(comunicacoes, comarca, uf=""):
+    def _calcular_prazo_comunicacao(comunicacao, uf, comarca_processo):
+        """Calcula prazo de UMA comunicação usando a comarca do PROCESSO."""
         from prazos_calc import calcular_prazo_completo
-        hoje = date.today()
-        resultados = []
-        for c in comunicacoes:
-            tipo = (c.get("tipo") or "").lower()
-            tipo_norm = tipo.replace("\xe7\xe3o","cao").replace("\xe3o","ao")
-            dias = PRAZOS_POR_TIPO.get(tipo_norm, 15)
-            if dias == 0:
-                c["prazo_info"] = None
-                resultados.append(c)
-                continue
-            data_disp_str = c.get("data_disponibilizacao", "")
-            if not data_disp_str:
-                c["prazo_info"] = None
-                resultados.append(c)
-                continue
-            try:
-                data_disp = datetime.strptime(data_disp_str, "%Y-%m-%d").date()
-            except ValueError:
-                c["prazo_info"] = None
-                resultados.append(c)
-                continue
-            resultado = calcular_prazo_completo(data_disp, dias, uf=uf, comarca_processo=comarca)
-            venc = datetime.strptime(resultado["data_vencimento"], "%Y-%m-%d").date()
-            dias_restantes = (venc - hoje).days
-            if dias_restantes < 0:
-                status, emoji = f"VENCIDO ha {abs(dias_restantes)}d", "🔴"
-            elif dias_restantes == 0:
-                status, emoji = "VENCE HOJE", "🔴"
-            elif dias_restantes <= 3:
-                status, emoji = f"Vence em {dias_restantes}d", "🟡"
-            else:
-                status, emoji = f"Vence em {dias_restantes}d", "🟢"
-            c["prazo_info"] = {
-                "dias_prazo": dias,
-                "data_publicacao": resultado["data_publicacao"],
-                "data_inicio": resultado["data_inicio_prazo"],
-                "data_vencimento": resultado["data_vencimento"],
-                "dias_restantes": dias_restantes,
-                "status": status,
-                "emoji": emoji,
-            }
-            resultados.append(c)
-        return resultados
+        tipo = (comunicacao.get("tipo") or "").lower()
+        tipo_norm = tipo.replace("\xe7\xe3o","cao").replace("\xe3o","ao")
+        dias = PRAZOS_POR_TIPO.get(tipo_norm, 15)
+        if dias == 0:
+            return None
+        data_disp_str = comunicacao.get("data_disponibilizacao", "")
+        if not data_disp_str:
+            return None
+        try:
+            data_disp = datetime.strptime(data_disp_str, "%Y-%m-%d").date()
+        except ValueError:
+            return None
+        resultado = calcular_prazo_completo(data_disp, dias, uf=uf, comarca_processo=comarca_processo)
+        return {
+            "dias_prazo": dias,
+            "data_publicacao": resultado["data_publicacao"],
+            "data_inicio": resultado["data_inicio_prazo"],
+            "data_vencimento": resultado["data_vencimento"],
+        }
 
     log.info(f"_buscar_djen: adv_id={adv_id} oab={oab_num}/{oab_uf}")
     try:
@@ -196,10 +173,6 @@ async def _buscar_djen(adv_id, phone, oab_num, oab_uf):
         if not comunicacoes:
             return
         numeros_cnj = list({c["numero_processo"] for c in comunicacoes if c.get("numero_processo")})
-        adv = await db.buscar_por_id(adv_id)
-        comarca = adv.get("comarca", "") if adv else ""
-        uf = adv.get("oab_seccional", oab_uf) if adv else oab_uf
-        comunicacoes_com_prazo = _calcular_prazos_djen(comunicacoes, comarca, uf)
         processos_existentes = {p["numero"] for p in await db.listar_processos_com_prazos(adv_id)}
         novos = 0
         erros = 0
@@ -223,14 +196,15 @@ async def _buscar_djen(adv_id, phone, oab_num, oab_uf):
                 partes = pub.get("classe") or pub.get("tipo", "N/I")
                 tribunal = pub.get("tribunal", "")
             comarca_proc = _extrair_comarca_da_vara(vara)
+            uf_proc = _extrair_uf_do_cnj(num_cnj) or oab_uf
             processo_id = await db.criar_ou_atualizar_processo(
                 advogado_id=adv_id, numero=num_cnj, partes=partes,
                 vara=vara, tribunal=tribunal,
-                comarca=comarca_proc or comarca, fonte="djen",
+                comarca=comarca_proc, fonte="djen",
             )
             novos += 1
-            pub = next((c for c in comunicacoes_com_prazo if c.get("numero_processo") == num_cnj), {})
-            prazo_info = pub.get("prazo_info")
+            pub = next((c for c in comunicacoes if c.get("numero_processo") == num_cnj), {})
+            prazo_info = _calcular_prazo_comunicacao(pub, uf_proc, comarca_proc)
             if prazo_info and prazo_info.get("data_vencimento"):
                 tipo_prazo = (pub.get("tipo") or "intimacao").lower()
                 await db.criar_prazo_processo(

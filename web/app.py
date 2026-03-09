@@ -416,10 +416,10 @@ async def pagina_configuracoes(request: Request, adv=Depends(advogado_logado)):
 @app.post("/api/advogado/configuracoes")
 async def salvar_configuracoes(request: Request, adv=Depends(advogado_logado)):
     dados = await request.json()
-    await db.pool.execute(
-        "UPDATE advogados SET nome=$1, tratamento=$2, horario_briefing=$3, comarca=$4, lembrete_fds=$5 WHERE id=$6",
+    await db._pool.execute(
+        "UPDATE advogados SET nome=$1, tratamento=$2, horario_briefing=$3, lembrete_fds=$4 WHERE id=$5",
         dados.get("nome"), dados.get("tratamento"), dados.get("horario_briefing"),
-        dados.get("comarca"), dados.get("lembrete_fds"), adv["id"]
+        dados.get("lembrete_fds", False), adv["id"]
     )
     return {"ok": True}
 
