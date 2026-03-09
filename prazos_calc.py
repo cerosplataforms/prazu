@@ -86,10 +86,13 @@ def calcular_prazo_completo(
     data_pub = calcular_data_publicacao(data_disponibilizacao, uf, comarca_processo)
     data_ini = calcular_inicio_prazo(data_pub, uf, comarca_processo)
 
+    # CPC art. 224: "exclui o dia do começo" = publicação. O primeiro dia
+    # útil após a publicação (data_ini) já é dia 1 da contagem.
+    # calcular_prazo_dias_uteis exclui seu input, então passamos data_pub.
     if contagem == "uteis":
-        data_venc = calcular_prazo_dias_uteis(data_ini, dias_efetivo, uf, comarca_processo)
+        data_venc = calcular_prazo_dias_uteis(data_pub, dias_efetivo, uf, comarca_processo)
     else:
-        data_venc = calcular_prazo_dias_corridos(data_ini, dias_efetivo, uf, comarca_processo)
+        data_venc = calcular_prazo_dias_corridos(data_pub, dias_efetivo, uf, comarca_processo)
 
     confidence = _get_resolver().get_confidence_for(uf, comarca_processo)
 

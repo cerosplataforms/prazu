@@ -280,12 +280,11 @@ def parsear_processo(source: dict, tribunal: dict) -> dict:
     numero = dados.get("numero", "")
     numero_formatado = formatar_numero_cnj(numero) if numero else ""
 
-    classe = dados.get("classeProcessual", "")
-    # Às vezes vem como código, às vezes como nome
+    classe = dados.get("classe", dados.get("classeProcessual", ""))
     classe_nome = ""
     if isinstance(classe, dict):
         classe_nome = classe.get("nome", str(classe.get("codigo", "")))
-    else:
+    elif classe:
         classe_nome = str(classe)
 
     assuntos = []

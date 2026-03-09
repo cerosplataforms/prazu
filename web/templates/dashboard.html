@@ -182,6 +182,8 @@
     tribunal: r.tribunal,
     vara:     r.vara,
     comarca:  r.comarca,
+    classe:   r.classe || '',
+    assunto:  r.assunto || '',
     prazos:   Array.isArray(r.prazos) ? r.prazos.map(pr => ({
       id:          pr.prazo_id,
       tipo:        pr.tipo_prazo,
@@ -279,12 +281,14 @@
         </div>`;
       }).join('');
       const info = [p.tribunal, p.vara, p.comarca].filter(Boolean).join(' · ');
+      const classeAssunto = [p.classe, p.assunto].filter(Boolean).join(' — ');
       lista.innerHTML += `
         <div class="processo-card" id="proc-${i}">
           <div class="processo-header">
             <div>
               <div class="processo-numero">${p.numero || '–'}</div>
-              <div class="processo-partes">${p.partes || 'N/I'}</div>
+              <div class="processo-partes">${p.partes || (p.classe || 'N/I')}</div>
+              ${classeAssunto ? `<div class="processo-info" style="color:var(--blue);font-weight:500">${classeAssunto}</div>` : ''}
               ${info ? `<div class="processo-info">${info}</div>` : ''}
             </div>
           </div>

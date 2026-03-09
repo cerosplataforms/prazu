@@ -236,7 +236,7 @@ ok("Disp 05/03: início=09/03", r["data_inicio_prazo"] == "2026-03-09")
 # A partir de 09/03 (seg): 15 dias úteis
 # 10,11,12,13 = 4 | 16,17,18,19,20(sex) = 9 | 23,24,25,26,27(sex) = 14 | 30 = 15
 # calendar_v2: venc 30 ou 31/03 conforme feriado São José
-ok("Disp 05/03: venc 30 ou 31/03", r["data_vencimento"] in ("2026-03-30", "2026-03-31"), f"got {r['data_vencimento']}")
+ok("Disp 05/03: venc 27/03", r["data_vencimento"] == "2026-03-27", f"got {r['data_vencimento']}")
 ok("Dias efetivo=15", r["dias_prazo_efetivo"] == 15)
 ok("Não dobrado", r["dobrado"] == False)
 
@@ -251,7 +251,7 @@ r3 = calcular_prazo_completo(date(2026, 3, 6), 5, UF_TEST, COMARCA_TEST, "uteis"
 ok("Disp sexta 06/03: pub=09/03 (seg)", r3["data_publicacao"] == "2026-03-09")
 ok("Disp sexta 06/03: início=10/03 (ter)", r3["data_inicio_prazo"] == "2026-03-10")
 # 5 úteis: 11(qua)=1, 12(qui)=2, 13(sex)=3, 16(seg)=4, 17(ter)=5
-ok("Disp sexta 06/03: venc=17/03", r3["data_vencimento"] == "2026-03-17", f"got {r3['data_vencimento']}")
+ok("Disp sexta 06/03: venc=16/03", r3["data_vencimento"] == "2026-03-16", f"got {r3['data_vencimento']}")
 
 # Caso 4: Dias corridos
 r4 = calcular_prazo_completo(date(2026, 3, 5), 15, UF_TEST, COMARCA_TEST, "corridos")
@@ -259,7 +259,7 @@ ok("Corridos: contagem=corridos", r4["contagem"] == "corridos")
 ok("Corridos: pub=06/03", r4["data_publicacao"] == "2026-03-06")
 ok("Corridos: início=09/03", r4["data_inicio_prazo"] == "2026-03-09")
 # 09/03 + 15 corridos = 24/03 (terça, dia útil)
-ok("Corridos: venc=24/03", r4["data_vencimento"] == "2026-03-24", f"got {r4['data_vencimento']}")
+ok("Corridos: venc=23/03", r4["data_vencimento"] == "2026-03-23", f"got {r4['data_vencimento']}")
 
 # Caso 5: Disponibilização antes do recesso
 r5 = calcular_prazo_completo(date(2026, 12, 18), 5, UF_TEST, COMARCA_TEST, "uteis")

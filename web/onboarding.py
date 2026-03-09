@@ -183,24 +183,30 @@ async def _buscar_djen(adv_id, phone, oab_num, oab_uf):
                 dados = await loop.run_in_executor(None, consultar_processo, num_cnj)
             except Exception:
                 dados = None
+            pub_djen = next((c for c in comunicacoes if c.get("numero_processo") == num_cnj), {})
+            classe_djen = pub_djen.get("classe", "")
             if dados:
                 autor = ", ".join(dados.get("partes_ativo", [])) or ""
                 reu = ", ".join(dados.get("partes_passivo", [])) or ""
-                partes = f"{autor} vs {reu}" if autor and reu else autor or reu or "N/I"
+                partes = f"{autor} vs {reu}" if autor and reu else autor or reu or ""
                 vara = dados.get("vara", "N/I")
                 tribunal = dados.get("tribunal", "")
+                classe = dados.get("classe", "") or classe_djen
+                assunto = ", ".join(dados.get("assuntos", [])) or ""
             else:
                 erros += 1
-                pub = next((c for c in comunicacoes if c.get("numero_processo") == num_cnj), {})
-                vara = pub.get("orgao") or pub.get("classe") or "N/I"
-                partes = pub.get("classe") or pub.get("tipo", "N/I")
-                tribunal = pub.get("tribunal", "")
+                vara = pub_djen.get("orgao") or "N/I"
+                partes = ""
+                tribunal = pub_djen.get("tribunal", "")
+                classe = classe_djen
+                assunto = ""
             comarca_proc = _extrair_comarca_da_vara(vara)
             uf_proc = _extrair_uf_do_cnj(num_cnj) or oab_uf
             processo_id = await db.criar_ou_atualizar_processo(
                 advogado_id=adv_id, numero=num_cnj, partes=partes,
                 vara=vara, tribunal=tribunal,
                 comarca=comarca_proc, fonte="djen",
+                classe=classe, assunto=assunto,
             )
             novos += 1
             pub = next((c for c in comunicacoes if c.get("numero_processo") == num_cnj), {})
