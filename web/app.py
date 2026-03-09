@@ -312,6 +312,7 @@ async def onboarding_salvar(payload: dict, adv=Depends(advogado_logado)):
 
     # Verificar OAB duplicada ANTES do insert (mensagem clara)
     existente_oab = await db.buscar_por_oab(oab_numero, oab_seccional)
+    log.warning(f"DEBUG 409 — oab={oab_numero}/{oab_seccional} adv_id={adv['id']} existente_oab={existente_oab}")
     if existente_oab and existente_oab["id"] != adv["id"]:
         raise HTTPException(409, "Esta OAB já possui um monitoramento ativo. Entre em contato com o suporte se for você.")
 
