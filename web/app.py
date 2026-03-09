@@ -1,3 +1,4 @@
+import re
 """
 web/app.py — Prazu Fase 2
 Servidor FastAPI principal. Roda no Cloud Run.
