@@ -455,6 +455,13 @@ async def criar_prazo_processo(processo_id, tipo, data_inicio, data_fim, fatal=F
 
 
 async def comunicacao_djen_existe(advogado_id, numero_processo, data_disponibilizacao):
+    from datetime import date
+    # asyncpg exige datetime.date, não str
+    if isinstance(data_disponibilizacao, str):
+        try:
+            data_disponibilizacao = date.fromisoformat(data_disponibilizacao[:10])
+        except (ValueError, TypeError):
+            data_disponibilizacao = date.today()
     async with _pool.acquire() as conn:
         row = await conn.fetchrow(
             "SELECT id FROM comunicacoes_djen WHERE advogado_id=$1 AND numero_processo=$2 AND data_disponibilizacao=$3",
@@ -464,6 +471,12 @@ async def comunicacao_djen_existe(advogado_id, numero_processo, data_disponibili
 
 
 async def salvar_comunicacao_djen(advogado_id, numero_processo, tribunal, conteudo, data_disponibilizacao, data_publicacao="", tipo_comunicacao=""):
+    from datetime import date
+    if isinstance(data_disponibilizacao, str):
+        try:
+            data_disponibilizacao = date.fromisoformat(data_disponibilizacao[:10])
+        except (ValueError, TypeError):
+            data_disponibilizacao = date.today()
     async with _pool.acquire() as conn:
         await conn.execute(
             "INSERT INTO comunicacoes_djen (advogado_id, numero_processo, tribunal, conteudo, data_disponibilizacao, data_publicacao, tipo_comunicacao) VALUES ($1,$2,$3,$4,$5,$6,$7)",
