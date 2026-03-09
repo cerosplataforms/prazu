@@ -407,6 +407,15 @@ async def validar_session(token: str) -> Optional[dict]:
 
 # ── Log WhatsApp ─────────────────────────────────────────────────────────────
 
+
+async def delete_session(token: str) -> None:
+    """Remove sessão do banco no logout."""
+    try:
+        async with _pool.acquire() as conn:
+            await conn.execute("DELETE FROM sessions WHERE token = $1", token)
+    except Exception as e:
+        log.warning(f"Erro ao deletar sessão: {e}")
+
 async def log_whatsapp(advogado_id: Optional[int], direcao: str, tipo: str, conteudo: str) -> None:
     try:
         async with _pool.acquire() as conn:

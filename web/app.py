@@ -116,9 +116,13 @@ async def plano_expirado(request: Request):
     return templates.TemplateResponse("plano_expirado.html", {"request": request})
 
 @app.get("/logout")
-async def logout():
+async def logout(request: Request):
+    token = request.cookies.get(TOKEN_COOKIE)
+    if token:
+        await db.delete_session(token)
     r = RedirectResponse("/login")
-    r.delete_cookie(TOKEN_COOKIE)
+    r.delete_cookie(TOKEN_COOKIE, path="/")
+    r.headers["Cache-Control"] = "no-store"
     return r
 
 
@@ -545,3 +549,13 @@ async def health():
         raise HTTPException(503, "Banco indisponível")
 
  
+@app.middleware("http")
+async def no_cache_html(request, call_next):
+    response = await call_next(request)
+    if "text/html" in response.headers.get("content-type", ""):
+        response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate"
+        response.headers["Pragma"] = "no-cache"
+        response.headers["Expires"] = "0"
+    return response
+
+
