@@ -508,6 +508,7 @@ document.getElementById('btnEnviarCodigo').addEventListener('click', async () =>
   try {
     const res = await fetch('/api/onboarding/enviar-codigo', {
       method: 'POST',
+      credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ whatsapp: wpp })
     });
@@ -568,6 +569,7 @@ document.getElementById('btnReenviar').addEventListener('click', async () => {
   try {
     const res = await fetch('/api/onboarding/reenviar-codigo', {
       method: 'POST',
+      credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ whatsapp: wpp })
     });
@@ -618,6 +620,7 @@ document.getElementById('btnVerificar').addEventListener('click', async () => {
   try {
     const res = await fetch('/api/onboarding/verificar-codigo', {
       method: 'POST',
+      credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ whatsapp: state.whatsapp, codigo })
     });
@@ -656,6 +659,7 @@ document.getElementById('btnFinalizar').addEventListener('click', async () => {
   try {
     const res = await fetch('/api/onboarding/salvar', {
       method: 'POST',
+      credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
     });
