@@ -190,7 +190,7 @@ async def salvar_onboarding(
             log.info(f"Onboarding salvo adv={advogado_id} OAB {oab_numero}/{oab_seccional}")
             return True
     except asyncpg.UniqueViolationError:
-        log.warning(f"OAB duplicada no onboarding: {oab_numero}/{oab_seccional}")
+        log.warning(f"UniqueViolation onboarding: {e}", exc_info=True)
         return False
 
 
