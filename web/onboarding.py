@@ -295,7 +295,7 @@ async def _enviar_resumo(phone, adv):
         hoje = datetime.now(timezone.utc).strftime("%d/%m/%Y")
         header = f"☀️ Bom dia, Dr(a). *{adv['nome']}*! ({hoje})\n\n"
         if not processos:
-            await _zapi_client.enviar(phone, header + "Você não tem processos monitorados ainda.\nDigite *buscar* para importar pela OAB."); return
+            await _zapi_client.enviar(phone, header + "Você não tem processos monitorados ainda. Acesse o dashboard para verificar."); return
         from ia import gerar_briefing
         loop = asyncio.get_event_loop()
         texto = await loop.run_in_executor(None, gerar_briefing, adv["nome"], processos, adv.get("comarca", ""))

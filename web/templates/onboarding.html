@@ -292,6 +292,7 @@
         <div class="field-hint">DDD + 9 + número (11 dígitos, sem espaços)</div>
         <div class="field-error" id="err-wpp"></div>
       </div>
+      <button class="btn-secondary" id="btnVoltarStep2" style="margin-bottom:.5rem" onclick="goStep(1);">← Voltar</button>
       <button class="btn-primary" id="btnEnviarCodigo">
         <span class="spinner"></span>
         <span>Enviar código</span>
@@ -357,6 +358,7 @@
       </select>
     </div>
 
+    <button class="btn-secondary" id="btnVoltarStep3" style="margin-bottom:.5rem" onclick="goStep(2);document.getElementById('phase-code').style.display='none';document.getElementById('phase-number').style.display='block';">← Voltar</button>
     <button class="btn-primary" id="btnFinalizar">
       <span class="spinner"></span>
       <span>Concluir configuração 🎉</span>
@@ -483,7 +485,32 @@ document.getElementById('btnStep1').addEventListener('click', async () => {
   state.oab_seccional = uf;
   state.tratamento = document.getElementById('tratamento').value;
 
-  goStep(2);
+  // Verificar OAB duplicada antes de avançar
+  setLoading('btnStep1', true);
+  try {
+    const res = await fetch('/api/onboarding/verificar-oab', {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ oab_numero: num, oab_seccional: uf })
+    });
+    const data = await res.json();
+    if (res.ok) {
+      goStep(2);
+    } else if (res.status === 409) {
+      showAlert('step1',
+        `⚠️ ${data.detail} <a href="mailto:suporte@prazu.com.br" style="color:inherit;font-weight:600">Contatar suporte →</a>`,
+        'warning'
+      );
+      document.getElementById('support-step1').classList.add('visible');
+    } else {
+      showAlert('step1', data.detail || 'Erro ao verificar OAB.', 'error');
+    }
+  } catch(e) {
+    showAlert('step1', 'Erro de conexão. Verifique sua internet.', 'error');
+  } finally {
+    setLoading('btnStep1', false);
+  }
 });
 
 // ── ETAPA 2a: Enviar código ───────────────────────────────────────────────

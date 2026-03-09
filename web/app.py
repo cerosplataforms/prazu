@@ -215,6 +215,18 @@ def _zapi():
     )
 
 
+@app.post("/api/onboarding/verificar-oab")
+async def onboarding_verificar_oab(payload: dict, adv=Depends(advogado_logado)):
+    """Verifica se OAB já está cadastrada — chamado na etapa 1 antes de avançar."""
+    oab_numero = re.sub(r'\D', '', str(payload.get("oab_numero", "")).strip())
+    oab_seccional = str(payload.get("oab_seccional", "")).strip().upper()
+    if not oab_numero or not oab_seccional or len(oab_seccional) != 2:
+        raise HTTPException(400, "OAB inválida.")
+    existente = await db.buscar_por_oab(oab_numero, oab_seccional)
+    if existente and existente["id"] != adv["id"]:
+        raise HTTPException(409, "Esta OAB já possui um monitoramento ativo. Entre em contato com o suporte se for você.")
+    return {"ok": True}
+
 @app.post("/api/onboarding/enviar-codigo")
 async def onboarding_enviar_codigo(payload: dict, adv=Depends(advogado_logado)):
     wpp = "".join(filter(str.isdigit, payload.get("whatsapp", "")))
