@@ -31,7 +31,8 @@ async def init_db() -> None:
     db_pass = os.getenv("DB_PASSWORD", "")
 
     if os.getenv("ENVIRONMENT") == "production":
-        socket_path = "/cloudsql/prazu-prod:southamerica-east1:prazu-db"
+        db_host = os.getenv("DB_HOST", "prazu-prod:southamerica-east1:prazu-db")
+        socket_path = f"/cloudsql/{db_host}"
         _pool = await asyncpg.create_pool(
             host=socket_path, database=db_name, user=db_user, password=db_pass,
             min_size=2, max_size=10, command_timeout=30,
