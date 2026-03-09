@@ -194,8 +194,6 @@ async def _buscar_djen(adv_id, phone, oab_num, oab_uf):
         from datajud import consultar_processo
         comunicacoes = await loop.run_in_executor(None, consultar_djen_por_oab, oab_num, oab_uf, 90)
         if not comunicacoes:
-            if phone:
-                await _zapi_client.enviar(phone, "Nenhuma publicacao encontrada no DJEN nos ultimos 90 dias.")
             return
         numeros_cnj = list({c["numero_processo"] for c in comunicacoes if c.get("numero_processo")})
         adv = await db.buscar_por_id(adv_id)
@@ -256,18 +254,12 @@ async def _buscar_djen(adv_id, phone, oab_num, oab_uf):
                     tipo_comunicacao=c.get("tipo", ""),
                 )
         await db.atualizar_ultima_busca_djen(adv_id)
-        if phone:
-            msg = f"Busca DJEN concluida! {len(numeros_cnj)} processo(s) encontrado(s), {novos} novo(s) importado(s)."
-            if erros:
-                msg += f" {erros} sem dados no DataJud."
-            msg += " Acesse o dashboard para ver seus prazos."
-            await _zapi_client.enviar(phone, msg)
         log.info(f"_buscar_djen OK: {novos} novos, {erros} erros")
     except Exception as e:
         log.error(f"_buscar_djen erro: {e}", exc_info=True)
-        if phone:
+        if False:
             try:
-                await _zapi_client.enviar(phone, "Erro ao buscar processos. Tente novamente em alguns minutos.")
+                pass  # mensagens de erro DJEN removidas — busca é silenciosa
             except Exception:
                 pass
 
