@@ -486,6 +486,11 @@ async def salvar_comunicacao_djen(advogado_id, numero_processo, tribunal, conteu
             data_disponibilizacao = date.fromisoformat(data_disponibilizacao[:10])
         except (ValueError, TypeError):
             data_disponibilizacao = date.today()
+    if isinstance(data_publicacao, str):
+        try:
+            data_publicacao = date.fromisoformat(data_publicacao[:10]) if data_publicacao.strip() else None
+        except (ValueError, TypeError):
+            data_publicacao = None
     async with _pool.acquire() as conn:
         await conn.execute(
             "INSERT INTO comunicacoes_djen (advogado_id, numero_processo, tribunal, conteudo, data_disponibilizacao, data_publicacao, tipo_comunicacao) VALUES ($1,$2,$3,$4,$5,$6,$7)",
