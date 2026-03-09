@@ -1,7 +1,7 @@
 # ── Fase 1 (legado — não remover) ───────────────────────────────────────────
 python-telegram-bot>=20.0
 APScheduler>=3.10.0
-groq>=0.9.0
+google-generativeai>=0.8.0
 requests>=2.31.0
 
 # ── Fase 2 — Web / API ───────────────────────────────────────────────────────

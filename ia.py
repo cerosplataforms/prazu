@@ -1,37 +1,30 @@
 """
-Módulo de IA — Integração com Groq (Llama 3.3 70B)
+Módulo de IA — Integração com Gemini 2.0 Flash
 Gera briefings e responde perguntas sobre processos.
-Atualizado com contexto de cálculo de prazos e feriados MG.
 """
 
 import os
+import google.generativeai as genai
 from datetime import date
-from openai import OpenAI
-from dotenv import load_dotenv
 
-load_dotenv()
-
-client = OpenAI(
-    api_key=os.getenv("GROQ_API_KEY"),
-    base_url="https://api.groq.com/openai/v1",
-)
-MODEL = "llama-3.3-70b-versatile"
+genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
+model = genai.GenerativeModel("gemini-2.0-flash")
 
 SYSTEM_PROMPT = """Você é o PrazoBot, assistente jurídico especializado em controle de prazos processuais para advogados brasileiros.
 
 Regras para o briefing:
 - Trate o advogado como Dr(a).
-- Use formato Markdown compatível com Telegram (*negrito*, _itálico_, `código`)
+- Use formato Markdown compatível com WhatsApp (*negrito*, _itálico_)
 - Organize o briefing EXATAMENTE nesta ordem:
   1. 🔴 *Prazos que vencem HOJE* (lista ou "Nenhum")
   2. ⚠️ *Prazos VENCIDOS* (lista ou "Nenhum")
   3. 🟡 *Prazos próximos 7 dias* (lista com número do processo, tipo e data)
-  4. 🟢 *Prazos em aberto* (todos os outros prazos futuros além de 7 dias, com número do processo, tipo e data)
-  5. ✅ *Prazos cumpridos* (se houver, com número do processo e data da manifestação)
+  4. 🟢 *Prazos em aberto* (todos os outros prazos futuros além de 7 dias)
+  5. ✅ *Prazos cumpridos* (se houver)
   6. Resumo da carteira (total processos e prazos pendentes)
-  7. Frase motivacional
+  7. Frase motivacional curta
 
-- IMPORTANTE: Sempre liste TODOS os prazos em cada categoria, não omita nenhum
+- Liste TODOS os prazos em cada categoria, não omita nenhum
 - Seja conciso, profissional e amigável
 - Sempre informe: número do processo, tipo de prazo e data de vencimento
 - Data de hoje: {data_hoje}
@@ -83,12 +76,9 @@ def gerar_briefing(nome_advogado, processos, comarca="Belo Horizonte"):
     dia = dias_pt.get(date.today().strftime("%A"), "")
     ctx = _formatar_processos_contexto(processos)
 
-    try:
-        r = client.chat.completions.create(
-            model=MODEL,
-            messages=[
-                {"role": "system", "content": SYSTEM_PROMPT.format(data_hoje=data_hoje, comarca=comarca)},
-                {"role": "user", "content": f"""Gere briefing matinal para Dr(a). {nome_advogado}.
+    prompt = f"""{SYSTEM_PROMPT.format(data_hoje=data_hoje, comarca=comarca)}
+
+Gere briefing matinal para Dr(a). {nome_advogado}.
 Hoje: {dia}, {data_hoje}. Comarca: {comarca}.
 
 Processos:
@@ -101,19 +91,18 @@ Instruções:
 4. Prazos próximos 7 dias com 🟡
 5. Resumo da carteira
 6. Frase motivacional curta
-7. Seja conciso — leitura rápida tomando café"""},
-            ],
-            max_tokens=1500,
-            temperature=0.7,
-        )
-        return r.choices[0].message.content
+7. Seja conciso — leitura rápida no WhatsApp"""
+
+    try:
+        r = model.generate_content(prompt)
+        return r.text
     except Exception as e:
-        print(f"Erro briefing: {e}")
+        print(f"Erro briefing Gemini: {e}")
         return (
             f"Bom dia, Dr(a). {nome_advogado}!\n\n"
-            f"Não consegui gerar seu briefing completo, "
+            f"Não consegui gerar seu briefing completo agora, "
             f"mas você tem *{len(processos)} processo(s)* monitorados.\n"
-            f"Use /meus\\_processos para ver."
+            f"Tente novamente em alguns minutos."
         )
 
 
@@ -121,24 +110,20 @@ def responder_pergunta(pergunta, nome_advogado, processos, comarca="Belo Horizon
     data_hoje = date.today().strftime("%d/%m/%Y")
     ctx = _formatar_processos_contexto(processos)
 
-    try:
-        r = client.chat.completions.create(
-            model=MODEL,
-            messages=[
-                {"role": "system", "content": SYSTEM_PROMPT.format(data_hoje=data_hoje, comarca=comarca)},
-                {"role": "user", "content": f"""Dr(a). {nome_advogado} perguntou: "{pergunta}"
+    prompt = f"""{SYSTEM_PROMPT.format(data_hoje=data_hoje, comarca=comarca)}
+
+Dr(a). {nome_advogado} perguntou: "{pergunta}"
 
 Processos:
 {ctx}
 
 Responda de forma clara e objetiva. Se perguntarem sobre cálculo de prazo,
 explique as datas (disponibilização -> publicação -> início do prazo -> vencimento).
-Considere feriados de MG e a comarca {comarca}."""},
-            ],
-            max_tokens=1000,
-            temperature=0.5,
-        )
-        return r.choices[0].message.content
+Considere feriados de MG e a comarca {comarca}."""
+
+    try:
+        r = model.generate_content(prompt)
+        return r.text
     except Exception as e:
-        print(f"Erro pergunta: {e}")
-        return "Desculpe, tive um problema. Tente novamente."
+        print(f"Erro pergunta Gemini: {e}")
+        return "Desculpe, tive um problema ao processar sua pergunta. Tente novamente."

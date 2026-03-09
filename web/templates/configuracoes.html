@@ -84,7 +84,7 @@
             <option value="Dr." {% if advogado.tratamento == 'Dr.' %}selected{% endif %}>Dr.</option>
             <option value="Dra." {% if advogado.tratamento == 'Dra.' %}selected{% endif %}>Dra.</option>
             <option value="Excelência" {% if advogado.tratamento == 'Excelência' %}selected{% endif %}>Excelência</option>
-            <option value not advogado.tratamento %}selected{% endif %}>Sem título</option>
+            <option value="" {% if not advogado.tratamento %}selected{% endif %}>Sem título</option>
           </select>
         </div>
       </div>

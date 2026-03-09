@@ -431,11 +431,19 @@ async def log_whatsapp(advogado_id: Optional[int], direcao: str, tipo: str, cont
 
 async def criar_ou_atualizar_processo(advogado_id, numero, partes="", vara="", tribunal="", comarca="", fonte="djen"):
     async with _pool.acquire() as conn:
-        row = await conn.fetchrow("SELECT id FROM processos WHERE advogado_id=$1 AND numero=$2", advogado_id, numero)
-        if row:
-            return row["id"]
+        # ON CONFLICT evita race condition quando duas buscas DJEN rodam em paralelo
         row = await conn.fetchrow(
-            "INSERT INTO processos (advogado_id, numero, partes, vara, tribunal, comarca, fonte) VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING id",
+            """
+            INSERT INTO processos (advogado_id, numero, partes, vara, tribunal, comarca, fonte)
+            VALUES ($1,$2,$3,$4,$5,$6,$7)
+            ON CONFLICT (advogado_id, numero) DO UPDATE
+                SET partes = EXCLUDED.partes,
+                    vara = EXCLUDED.vara,
+                    tribunal = EXCLUDED.tribunal,
+                    comarca = EXCLUDED.comarca,
+                    atualizado_em = NOW()
+            RETURNING id
+            """,
             advogado_id, numero, partes, vara, tribunal, comarca, fonte,
         )
         return row["id"]
