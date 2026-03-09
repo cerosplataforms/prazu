@@ -165,6 +165,7 @@ async def salvar_onboarding(
     whatsapp_notificacao: str,
     horario_briefing: str,
     lembrete_fds: bool,
+    comarca: str = "",
 ) -> bool:
     """
     Salva os dados do onboarding obrigatório.
@@ -182,15 +183,18 @@ async def salvar_onboarding(
                     whatsapp_notificacao_confirmado = true,
                     zapi_confirmado                 = true,
                     horario_briefing                = $5,
-                    lembrete_fds                    = $6
-                WHERE id = $7
+                    lembrete_fds                    = $6,
+                    comarca                         = $7,
+                    ultima_busca_djen               = NOW()
+                WHERE id = $8
                 """,
                 oab_numero, oab_seccional.upper(), tratamento,
-                whatsapp_notificacao, horario_briefing, lembrete_fds, advogado_id,
+                whatsapp_notificacao, horario_briefing, lembrete_fds,
+                comarca, advogado_id,
             )
-            log.info(f"Onboarding salvo adv={advogado_id} OAB {oab_numero}/{oab_seccional}")
+            log.info(f"Onboarding salvo adv={advogado_id} OAB {oab_numero}/{oab_seccional} comarca={comarca}")
             return True
-    except asyncpg.UniqueViolationError:
+    except asyncpg.UniqueViolationError as e:
         log.warning(f"UniqueViolation onboarding: {e}", exc_info=True)
         return False
 

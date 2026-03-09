@@ -316,6 +316,7 @@ async def onboarding_salvar(payload: dict, adv=Depends(advogado_logado)):
     wpp_notif     = "".join(filter(str.isdigit, payload.get("whatsapp_notificacao", "")))
     horario       = str(payload.get("horario_briefing", "07:00")).strip()
     briefing_dias = str(payload.get("briefing_dias", "uteis")).strip()
+    comarca       = str(payload.get("comarca", "")).strip()
 
     if not oab_numero or not oab_seccional or len(oab_seccional) != 2:
         raise HTTPException(400, "OAB inválida. Informe número e estado (ex: 12345/MG).")
@@ -343,6 +344,7 @@ async def onboarding_salvar(payload: dict, adv=Depends(advogado_logado)):
         whatsapp_notificacao=wpp_notif,
         horario_briefing=horario,
         lembrete_fds=lembrete_fds,
+        comarca=comarca,
     )
     if not ok:
         raise HTTPException(409, "Esta OAB já possui um monitoramento ativo.")

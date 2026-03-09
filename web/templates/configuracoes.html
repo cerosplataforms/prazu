@@ -15,7 +15,7 @@
       --white:#F8FAFF;--muted:#7a8aaa;--surface:#FFFFFF;--bg:#F4F6FB;
     }
     body{background:var(--bg);color:#1a2340;font-family:'Sora',sans-serif;font-weight:300;min-height:100vh;}
-    .topbar{background:var(--navy-deep)der-bottom:1px solid var(--navy-border);padding:0 2rem;height:56px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;}
+    .topbar{background:var(--navy-deep);border-bottom:1px solid var(--navy-border);padding:0 2rem;height:56px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;}
     .topbar-logo{font-family:'Sora',sans-serif;font-weight:800;font-size:1.3rem;color:var(--blue);text-decoration:none;letter-spacing:-0.03em;}
     .topbar-right{display:flex;align-items:center;gap:0.75rem;}
     .btn-back,.btn-logout{font-size:0.78rem;color:var(--muted);text-decoration:none;padding:0.35rem 0.75rem;border:1px solid var(--navy-border);border-radius:6px;transition:color 0.2s,border-color 0.2s;}
@@ -143,7 +143,7 @@
       <div class="card-title">Suporte</div>
       <a href="https://wa.me/5531999537005?text=Olá,%20preciso%20de%20ajuda%20com%20a%20Prazu" target="_blank" class="suporte-link">💬 Falar com o suporte via WhatsApp</a>
     </div>
-    <button class="btn-save" id="btn-save" onclick="salvar()">Sa alterações</button>
+    <button class="btn-save" id="btn-save" onclick="salvar()">Salvar alterações</button>
   </main>
   <div class="toast" id="toast"></div>
   <script>
@@ -164,7 +164,7 @@
             tratamento: document.getElementById('tratamento').value,
             horario_briefing: document.getElementById('horario_briefing').value,
             comarca: document.getElementById('comarca').value.trim(),
-            lembrete_fds: document.getElementById('lembrete_fds'checked,
+            lembrete_fds: document.getElementById('lembrete_fds').checked,
           })
         });
         if (res.ok) showToast('✅ Configurações salvas!');

@@ -358,6 +358,12 @@
       </select>
     </div>
 
+    <div class="field">
+      <label>Comarca principal</label>
+      <input type="text" id="comarca" placeholder="Ex: Belo Horizonte">
+      <div class="field-hint">Usada para calcular feriados forenses nos seus prazos</div>
+    </div>
+
     <button class="btn-secondary" id="btnVoltarStep3" style="margin-bottom:.5rem" onclick="goStep(2);document.getElementById('phase-code').style.display='none';document.getElementById('phase-number').style.display='block';">← Voltar</button>
     <button class="btn-primary" id="btnFinalizar">
       <span class="spinner"></span>
@@ -681,6 +687,7 @@ document.getElementById('btnFinalizar').addEventListener('click', async () => {
     whatsapp_notificacao: state.whatsapp,
     horario_briefing:     document.getElementById('horario_briefing').value,
     briefing_dias:        document.getElementById('briefing_dias').value,
+    comarca:              document.getElementById('comarca').value.trim(),
   };
 
   try {
@@ -693,13 +700,31 @@ document.getElementById('btnFinalizar').addEventListener('click', async () => {
     const data = await res.json();
 
     if (res.ok) {
-      // Mostrar banner DJEN e redirecionar
       document.querySelector('.card').style.display = 'none';
       document.querySelector('.progress-wrap').style.display = 'none';
       document.getElementById('djenBanner').classList.add('visible');
 
-      // Redirecionar após 2.5s (tempo para o usuário ver o banner)
-      setTimeout(() => window.location.href = '/dashboard', 2500);
+      const maxWait = 60000;
+      const interval = 3000;
+      const start = Date.now();
+      const poll = async () => {
+        try {
+          const r = await fetch('/api/advogado/processos', { credentials: 'include' });
+          if (r.ok) {
+            const d = await r.json();
+            if (d.processos && d.processos.length > 0) {
+              window.location.href = '/dashboard';
+              return;
+            }
+          }
+        } catch(e) {}
+        if (Date.now() - start >= maxWait) {
+          window.location.href = '/dashboard';
+          return;
+        }
+        setTimeout(poll, interval);
+      };
+      setTimeout(poll, interval);
     } else {
       const msg = data.detail || 'Erro ao salvar configurações.';
       if (res.status === 409) {
