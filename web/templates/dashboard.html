@@ -3,6 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
   <title>Dashboard — Prazu</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -451,7 +454,14 @@
     setTimeout(() => { buscarDjen(document.getElementById('btn-djen')); }, 1500);
   });
   {% endif %}
-  /* boas-vindas agora é disparado server-side após onboarding */
+
+  window.addEventListener('pageshow', function(e) {
+    if (e.persisted) {
+      fetch('/api/advogado/processos', { credentials: 'same-origin' })
+        .then(r => { if (!r.ok) window.location.replace('/login'); })
+        .catch(() => window.location.replace('/login'));
+    }
+  });
 </script>
 </body>
 </html>

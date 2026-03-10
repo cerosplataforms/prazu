@@ -77,14 +77,18 @@ async def pagina_login(request: Request, adv=Depends(advogado_logado_opcional)):
 
 @app.get("/onboarding", response_class=HTMLResponse)
 async def pagina_onboarding(request: Request, adv=Depends(advogado_logado)):
-    # Se onboarding já foi concluído, vai pro dashboard
     if adv.get("oab_numero"):
         return RedirectResponse("/dashboard")
-    return templates.TemplateResponse("onboarding.html", {"request": request})
+    return _no_cache(templates.TemplateResponse("onboarding.html", {"request": request}))
+
+def _no_cache(response):
+    response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+    response.headers["Pragma"] = "no-cache"
+    response.headers["Expires"] = "0"
+    return response
 
 @app.get("/dashboard", response_class=HTMLResponse)
 async def dashboard(request: Request, adv=Depends(advogado_logado)):
-    # Onboarding obrigatório: sem OAB = não passou pelo onboarding
     if not adv.get("oab_numero"):
         return RedirectResponse("/onboarding")
     if not await db.pode_usar(adv["id"]):
@@ -103,14 +107,14 @@ async def dashboard(request: Request, adv=Depends(advogado_logado)):
     tratamento = adv.get("tratamento") or "Dr(a)."
     buscar_djen_auto = not adv.get("ultima_busca_djen") and not adv.get("last_seen")
     primeiro_acesso = not adv.get("ultima_busca_djen") and not adv.get("last_seen")
-    return templates.TemplateResponse("dashboard.html", {
+    return _no_cache(templates.TemplateResponse("dashboard.html", {
         "request": request, "advogado": adv,
         "processos": processos, "trial_dias": trial_dias,
         "primeiro_nome": primeiro_nome,
         "tratamento": tratamento,
         "buscar_djen_auto": buscar_djen_auto,
         "primeiro_acesso": primeiro_acesso,
-    })
+    }))
 
 @app.get("/plano-expirado", response_class=HTMLResponse)
 async def plano_expirado(request: Request):
@@ -121,9 +125,12 @@ async def logout(request: Request):
     token = request.cookies.get(TOKEN_COOKIE)
     if token:
         await db.delete_session(token)
-    r = RedirectResponse("/login")
-    r.delete_cookie(TOKEN_COOKIE, path="/")
-    r.headers["Cache-Control"] = "no-store"
+    r = RedirectResponse("/login", status_code=302)
+    r.delete_cookie(TOKEN_COOKIE, path="/", domain=None, secure=ENVIRONMENT == "production", samesite="lax")
+    r.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+    r.headers["Pragma"] = "no-cache"
+    r.headers["Expires"] = "0"
+    r.headers["Clear-Site-Data"] = '"cache"'
     return r
 
 
@@ -418,9 +425,9 @@ async def pagina_configuracoes(request: Request, adv=Depends(advogado_logado)):
         if hasattr(trial_fim, "tzinfo") and trial_fim.tzinfo is None:
             trial_fim = trial_fim.replace(tzinfo=timezone.utc)
         trial_dias = max(0, (trial_fim - datetime.now(timezone.utc)).days)
-    return templates.TemplateResponse("configuracoes.html", {
+    return _no_cache(templates.TemplateResponse("configuracoes.html", {
         "request": request, "advogado": adv, "trial_dias": trial_dias,
-    })
+    }))
 
 @app.post("/api/advogado/configuracoes")
 async def salvar_configuracoes(request: Request, adv=Depends(advogado_logado)):
