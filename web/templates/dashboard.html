@@ -199,7 +199,19 @@
     <button class="btn-acao btn-primary" id="btn-djen" onclick="buscarDjen(this)">
       🔍 Buscar publicações no DJEN
     </button>
+    <button class="btn-acao" style="background:#e5e9f2;color:var(--navy-deep)" onclick="location.reload()">
+      🔄 Atualizar
+    </button>
   </div>
+
+  <div id="loading-banner" style="display:none;background:linear-gradient(135deg,#eef2ff,#e0e7ff);border:1px solid #c7d2fe;border-radius:12px;padding:1.25rem 1.5rem;margin-bottom:1.5rem;align-items:center;gap:1rem;">
+    <div style="font-size:1.5rem" class="loading-spin">⏳</div>
+    <div>
+      <div style="font-weight:600;font-size:0.9rem;color:#3730a3">Importando seus processos...</div>
+      <div style="font-size:0.8rem;color:#6366f1;margin-top:0.15rem">Estamos buscando suas publicações no DJEN. Em breve todos aparecerão aqui.</div>
+    </div>
+  </div>
+  <style>.loading-spin{animation:spin 2s linear infinite}@keyframes spin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}</style>
 
   <div class="section-title">Processos e Prazos</div>
   <div id="lista-processos"></div>
@@ -342,13 +354,37 @@
   const lista = document.getElementById('lista-processos');
 
   if (processos.length === 0) {
+    document.getElementById('loading-banner').style.display = 'flex';
     lista.innerHTML = `
       <div class="empty-state">
         <div class="icon">📬</div>
-        <h3>Buscando seus processos...</h3>
-        <p>Estamos importando suas publicações do DJEN pela OAB. Aguarde alguns instantes e recarregue a página.</p>
+        <h3>Aguarde...</h3>
+        <p>Seus processos estão sendo importados do DJEN. A página atualizará automaticamente.</p>
       </div>`;
+    let pollCount = 0;
+    const maxPolls = 20;
+    const pollInterval = 5000;
+    const autoPoll = setInterval(async () => {
+      pollCount++;
+      try {
+        const r = await fetch('/api/advogado/processos', { credentials: 'same-origin' });
+        if (r.ok) {
+          const d = await r.json();
+          if (d.processos && d.processos.length > 0) {
+            clearInterval(autoPoll);
+            location.reload();
+            return;
+          }
+        }
+      } catch(e) {}
+      if (pollCount >= maxPolls) {
+        clearInterval(autoPoll);
+        document.getElementById('loading-banner').querySelector('div:last-child div:first-child').textContent = 'Demora mais que o esperado...';
+        document.getElementById('loading-banner').querySelector('div:last-child div:last-child').textContent = 'Clique em "Atualizar" para verificar novamente.';
+      }
+    }, pollInterval);
   } else {
+    document.getElementById('loading-banner').style.display = 'none';
     processos.forEach((p, i) => {
       const prazosAtivos = p.prazos.filter(pr => {
         if (!pr.data_fim) return false;
