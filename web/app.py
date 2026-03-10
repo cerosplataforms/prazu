@@ -351,10 +351,17 @@ async def onboarding_salvar(payload: dict, adv=Depends(advogado_logado)):
 
     log.info(f"Onboarding salvo: adv={adv['id']} OAB {oab_numero}/{oab_seccional}")
 
-    # Dispara busca DJEN em background
     import asyncio
-    from web.onboarding import _buscar_djen
-    asyncio.create_task(_buscar_djen(adv["id"], wpp_notif, oab_numero, oab_seccional))
+    from web.onboarding import _buscar_djen, enviar_boas_vindas
+
+    async def _onboarding_background():
+        await _buscar_djen(adv["id"], wpp_notif, oab_numero, oab_seccional)
+        await asyncio.sleep(120)
+        adv_atualizado = await db.buscar_por_id(adv["id"])
+        if adv_atualizado:
+            await enviar_boas_vindas(adv_atualizado)
+
+    asyncio.create_task(_onboarding_background())
 
     return {"ok": True}
 
