@@ -255,7 +255,7 @@
         return;
       }
 
-      window.location.href = data.redirect || '/dashboard';
+      window.location.replace(data.redirect || '/dashboard');
     } catch (e) {
       mostrarErro('Erro de conexão. Tente novamente.');
       btn.disabled = false; btn.textContent = 'Entrar';

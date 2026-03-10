@@ -62,23 +62,23 @@ async def advogado_logado_opcional(request: Request):
 
 @app.get("/", response_class=HTMLResponse)
 async def landing(request: Request, adv=Depends(advogado_logado_opcional)):
-    if adv: return RedirectResponse("/dashboard")
+    if adv: return RedirectResponse("/dashboard", status_code=302)
     return templates.TemplateResponse("landing.html", {"request": request})
 
 @app.get("/cadastro", response_class=HTMLResponse)
 async def pagina_cadastro(request: Request, adv=Depends(advogado_logado_opcional)):
-    if adv: return RedirectResponse("/dashboard")
+    if adv: return RedirectResponse("/dashboard", status_code=302)
     return templates.TemplateResponse("cadastro.html", {"request": request})
 
 @app.get("/login", response_class=HTMLResponse)
 async def pagina_login(request: Request, adv=Depends(advogado_logado_opcional)):
-    if adv: return RedirectResponse("/dashboard")
+    if adv: return RedirectResponse("/dashboard", status_code=302)
     return templates.TemplateResponse("login.html", {"request": request})
 
 @app.get("/onboarding", response_class=HTMLResponse)
 async def pagina_onboarding(request: Request, adv=Depends(advogado_logado)):
     if adv.get("oab_numero"):
-        return RedirectResponse("/dashboard")
+        return RedirectResponse("/dashboard", status_code=302)
     return _no_cache(templates.TemplateResponse("onboarding.html", {"request": request}))
 
 def _no_cache(response):

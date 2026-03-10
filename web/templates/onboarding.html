@@ -710,13 +710,13 @@ document.getElementById('btnFinalizar').addEventListener('click', async () => {
           if (r.ok) {
             const d = await r.json();
             if (d.processos && d.processos.length > 0) {
-              window.location.href = '/dashboard';
+              window.location.replace('/dashboard');
               return;
             }
           }
         } catch(e) {}
         if (Date.now() - start >= maxWait) {
-          window.location.href = '/dashboard';
+          window.location.replace('/dashboard');
           return;
         }
         setTimeout(poll, interval);

@@ -458,7 +458,7 @@ document.getElementById('formCadastro').addEventListener('submit', async functio
 
     if (res.ok) {
       showGlobal('✅ Conta criada! Redirecionando...', 'success');
-      window.location.href = data.redirect || '/onboarding';
+      window.location.replace(data.redirect || '/onboarding');
       return;
     }
 
