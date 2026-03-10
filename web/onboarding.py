@@ -272,18 +272,69 @@ async def _handle_conversa(phone, adv, texto):
 
 async def _enviar_resumo(phone, adv):
     try:
+        log.info(f"_enviar_resumo: iniciando para {phone} adv={adv.get('id')}")
         processos = await db.listar_processos_com_prazos(adv["id"])
+        log.info(f"_enviar_resumo: {len(processos)} processos encontrados")
         hoje = datetime.now(timezone.utc).strftime("%d/%m/%Y")
-        header = f"☀️ Bom dia, Dr(a). *{adv['nome']}*! ({hoje})\n\n"
+        nome = adv.get("nome", "").split()[0] if adv.get("nome") else ""
+        tratamento = adv.get("tratamento") or "Dr(a)."
+        header = f"☀️ Bom dia, {tratamento} *{nome}*! ({hoje})\n\n"
         if not processos:
-            await _zapi_client.enviar(phone, header + "Você não tem processos monitorados ainda. Acesse o dashboard para verificar."); return
-        from ia import gerar_briefing
-        loop = asyncio.get_event_loop()
-        texto = await loop.run_in_executor(None, gerar_briefing, adv["nome"], processos, adv.get("comarca", ""))
+            await _zapi_client.enviar(phone, header + "Você não tem processos monitorados ainda. Acesse o dashboard para verificar.")
+            return
+
+        texto = _gerar_resumo_simples(processos)
+        try:
+            from ia import gerar_briefing
+            loop = asyncio.get_event_loop()
+            texto_ia = await loop.run_in_executor(None, gerar_briefing, adv.get("nome", ""), processos, adv.get("comarca", ""))
+            if texto_ia and len(texto_ia) > 20:
+                texto = texto_ia
+        except Exception as e:
+            log.warning(f"_enviar_resumo: Gemini falhou, usando resumo simples: {e}")
+
         await _zapi_client.enviar(phone, header + texto)
+        log.info(f"_enviar_resumo: enviado para {phone} ({len(texto)} chars)")
         await db.log_whatsapp(adv["id"], "outbound", "resumo", texto[:200])
     except Exception as e:
-        log.error(f"Erro resumo {phone}: {e}")
+        log.error(f"Erro resumo {phone}: {e}", exc_info=True)
+
+
+def _gerar_resumo_simples(processos):
+    from datetime import date as _date
+    hoje = _date.today()
+    urgentes, proximos, abertos = [], [], []
+    for p in processos:
+        for pr in (p.get("prazos") or []):
+            df = pr.get("data_fim") or ""
+            if not df or pr.get("cumprido") or pr.get("decurso"):
+                continue
+            try:
+                venc = _date.fromisoformat(df[:10])
+            except (ValueError, TypeError):
+                continue
+            diff = (venc - hoje).days
+            item = f"  • `{p['numero']}` — {pr.get('tipo_prazo','prazo')} — {venc.strftime('%d/%m')}"
+            if diff < 0:
+                continue
+            elif diff <= 1:
+                urgentes.append(item)
+            elif diff <= 7:
+                proximos.append(item)
+            else:
+                abertos.append(item)
+
+    partes = []
+    if urgentes:
+        partes.append(f"🔴 *Urgentes (hoje/amanhã):*\n" + "\n".join(urgentes))
+    if proximos:
+        partes.append(f"🟡 *Próximos 7 dias:*\n" + "\n".join(proximos))
+    if abertos:
+        partes.append(f"🟢 *Em aberto:*\n" + "\n".join(abertos))
+    if not partes:
+        return f"Você tem *{len(processos)} processo(s)* monitorados. Nenhum prazo pendente no momento."
+    partes.append(f"\n📊 *{len(processos)} processo(s)* monitorados.")
+    return "\n\n".join(partes)
 
 
 
@@ -291,9 +342,11 @@ async def enviar_boas_vindas(adv: dict) -> None:
     """Enviada uma unica vez, ~2 min apos o primeiro acesso ao dashboard."""
     phone = adv.get("whatsapp_notificacao") or adv.get("whatsapp")
     if not phone:
+        log.warning("enviar_boas_vindas: sem telefone, abortando")
         return
     tratamento = adv.get("tratamento") or "Dr(a)."
-    nome = adv["nome"].split()[0]
+    nome = adv["nome"].split()[0] if adv.get("nome") else ""
+    log.info(f"enviar_boas_vindas: iniciando para {phone} ({nome})")
     try:
         saudacao = (
             f"👋 Ola, {tratamento} *{nome}*!\n\n"
@@ -303,12 +356,13 @@ async def enviar_boas_vindas(adv: dict) -> None:
             f"──────────────────\n"
         )
         await _zapi_client.enviar(phone, saudacao)
-        import asyncio as _asyncio
-        await _asyncio.sleep(1)
+        log.info(f"enviar_boas_vindas: saudacao enviada para {phone}")
+        await asyncio.sleep(2)
         await _enviar_resumo(phone, adv)
         await db.log_whatsapp(adv["id"], "outbound", "boas_vindas", "primeiro resumo enviado")
+        log.info(f"enviar_boas_vindas: completo para {phone}")
     except Exception as e:
-        log.error(f"Erro boas_vindas {phone}: {e}")
+        log.error(f"Erro boas_vindas {phone}: {e}", exc_info=True)
 
 # — Jobs —
 
