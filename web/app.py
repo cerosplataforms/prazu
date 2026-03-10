@@ -75,6 +75,11 @@ async def pagina_login(request: Request, adv=Depends(advogado_logado_opcional)):
     if adv: return RedirectResponse("/dashboard", status_code=302)
     return templates.TemplateResponse("login.html", {"request": request})
 
+@app.get("/esqueci-senha", response_class=HTMLResponse)
+@app.get("/recuperar-senha", response_class=HTMLResponse)
+async def pagina_esqueci_senha(request: Request):
+    return templates.TemplateResponse("esqueci_senha.html", {"request": request})
+
 @app.get("/onboarding", response_class=HTMLResponse)
 async def pagina_onboarding(request: Request, adv=Depends(advogado_logado)):
     if adv.get("oab_numero"):
@@ -119,6 +124,18 @@ async def dashboard(request: Request, adv=Depends(advogado_logado)):
 @app.get("/plano-expirado", response_class=HTMLResponse)
 async def plano_expirado(request: Request):
     return templates.TemplateResponse("plano_expirado.html", {"request": request})
+
+@app.get("/termos", response_class=HTMLResponse)
+async def pagina_termos(request: Request):
+    return templates.TemplateResponse("termos.html", {"request": request})
+
+@app.get("/privacidade", response_class=HTMLResponse)
+async def pagina_privacidade(request: Request):
+    return templates.TemplateResponse("privacidade.html", {"request": request})
+
+@app.get("/assinar")
+async def assinar():
+    return RedirectResponse("https://wa.me/5531999537005?text=Quero+assinar+o+Prazu", status_code=302)
 
 @app.get("/logout", response_class=HTMLResponse)
 async def logout(request: Request):
@@ -207,6 +224,59 @@ async def login(payload: LoginRequest, request: Request):
                         max_age=30 * 24 * 3600)
     log.info(f"Login: {payload.email}")
     return response
+
+
+# ── Recuperação de senha ──────────────────────────────────────────────────────
+
+_reset_codigos: dict = {}
+
+@app.post("/api/auth/recuperar-senha/enviar")
+async def recuperar_senha_enviar(payload: dict):
+    email = (payload.get("email") or "").strip().lower()
+    if not email:
+        raise HTTPException(400, "Informe o e-mail.")
+    adv = await db.buscar_por_email(email)
+    if not adv:
+        return {"ok": True}
+    codigo = "".join(str(random.randint(0, 9)) for _ in range(6))
+    _reset_codigos[email] = {"codigo": codigo, "exp": _t.time() + 600}
+    from web.email_sender import enviar_codigo
+    await enviar_codigo(email, codigo, "recuperação de senha")
+    log.info(f"Código de recuperação enviado para {email}")
+    return {"ok": True}
+
+@app.post("/api/auth/recuperar-senha/verificar")
+async def recuperar_senha_verificar(payload: dict):
+    email = (payload.get("email") or "").strip().lower()
+    codigo = (payload.get("codigo") or "").strip()
+    reg = _reset_codigos.get(email)
+    if not reg or _t.time() > reg["exp"]:
+        raise HTTPException(400, "Código expirado. Solicite um novo.")
+    if reg["codigo"] != codigo:
+        raise HTTPException(400, "Código incorreto.")
+    return {"ok": True}
+
+@app.post("/api/auth/recuperar-senha/redefinir")
+async def recuperar_senha_redefinir(payload: dict):
+    email = (payload.get("email") or "").strip().lower()
+    codigo = (payload.get("codigo") or "").strip()
+    nova_senha = payload.get("nova_senha", "")
+    reg = _reset_codigos.get(email)
+    if not reg or _t.time() > reg["exp"]:
+        raise HTTPException(400, "Código expirado. Solicite um novo.")
+    if reg["codigo"] != codigo:
+        raise HTTPException(400, "Código incorreto.")
+    if len(nova_senha) < 8:
+        raise HTTPException(400, "Senha deve ter pelo menos 8 caracteres.")
+    if not any(c.isalpha() for c in nova_senha) or not any(c.isdigit() for c in nova_senha):
+        raise HTTPException(400, "Senha deve conter ao menos uma letra e um número.")
+    adv = await db.buscar_por_email(email)
+    if not adv:
+        raise HTTPException(400, "E-mail não encontrado.")
+    await db.atualizar_senha(adv["id"], nova_senha)
+    _reset_codigos.pop(email, None)
+    log.info(f"Senha redefinida: {email}")
+    return {"ok": True}
 
 
 # ── API Onboarding ────────────────────────────────────────────────────────────

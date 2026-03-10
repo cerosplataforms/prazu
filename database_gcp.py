@@ -3,11 +3,7 @@ database_gcp.py — Prazu Fase 2
 Camada de acesso ao PostgreSQL (Cloud SQL via asyncpg).
 Todas as senhas hasheadas com bcrypt.
 
-.env necessário:
-  DB_HOST     → 34.39.197.67
-  DB_NAME     → prazu
-  DB_USER     → prazu_user
-  DB_PASSWORD → Prazu@2026!
+.env necessário: DB_HOST, DB_NAME, DB_USER, DB_PASSWORD
 """
 
 import os

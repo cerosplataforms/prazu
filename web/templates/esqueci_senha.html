@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Recuperar senha — Prazu</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=Lora:ital,wght@0,600;1,600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --navy-deep:   #0A0F1C;
+      --navy-base:   #111B33;
+      --navy-border: #1e2d4d;
+      --blue:        #2563EB;
+      --blue-bright: #3B82F6;
+      --blue-dim:    rgba(59,130,246,0.12);
+      --green:       #22c55e;
+      --white:       #F8FAFF;
+      --muted:       #7a8aaa;
+      --error:       #f87171;
+    }
+    body {
+      background: var(--navy-deep);
+      color: var(--white);
+      font-family: 'Sora', sans-serif;
+      font-weight: 300;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+    }
+    .card {
+      background: var(--navy-base);
+      border: 1px solid var(--navy-border);
+      border-radius: 16px;
+      padding: 2.5rem;
+      max-width: 440px;
+      width: 100%;
+    }
+    .logo { font-weight: 800; font-size: 1.4rem; color: var(--blue); text-decoration: none; letter-spacing: -0.03em; display: block; margin-bottom: 2rem; }
+    h1 { font-family: 'Lora', serif; font-size: 1.6rem; font-weight: 600; margin-bottom: 0.5rem; }
+    .sub { font-size: 0.85rem; color: var(--muted); margin-bottom: 2rem; line-height: 1.6; }
+    .field { margin-bottom: 1.25rem; }
+    .field label { display: block; font-size: 0.8rem; font-weight: 500; color: var(--muted); margin-bottom: 0.45rem; }
+    .field input {
+      width: 100%; background: var(--navy-deep);
+      border: 1px solid var(--navy-border); border-radius: 8px;
+      color: var(--white); font-family: 'Sora', sans-serif;
+      font-size: 0.92rem; padding: 0.75rem 1rem;
+      transition: border-color 0.2s; outline: none;
+    }
+    .field input:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(37,99,235,0.15); }
+    .field input.error { border-color: var(--error); }
+    .btn {
+      width: 100%; padding: 0.8rem; border: none; border-radius: 8px;
+      font-family: 'Sora', sans-serif; font-size: 0.95rem; font-weight: 600;
+      cursor: pointer; transition: all 0.2s; margin-top: 0.5rem;
+      background: var(--blue); color: #fff;
+    }
+    .btn:hover { background: var(--blue-bright); transform: translateY(-1px); }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+    .alert { padding: 0.75rem 1rem; border-radius: 8px; font-size: 0.82rem; margin-bottom: 1rem; display: none; }
+    .alert.error { background: rgba(248,113,113,0.12); color: var(--error); border: 1px solid rgba(248,113,113,0.2); }
+    .alert.success { background: rgba(34,197,94,0.12); color: var(--green); border: 1px solid rgba(34,197,94,0.2); }
+    .alert.show { display: block; }
+    .back-link { display: block; text-align: center; margin-top: 1.5rem; font-size: 0.85rem; color: var(--muted); }
+    .back-link a { color: var(--blue-bright); text-decoration: none; }
+    .back-link a:hover { text-decoration: underline; }
+    .password-wrapper { position: relative; }
+    .password-wrapper input { padding-right: 3rem; }
+    .toggle-senha { position: absolute; right: 0.75rem; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; font-size: 1.1rem; color: var(--muted); }
+
+    #step-email, #step-codigo, #step-nova-senha { display: none; }
+    #step-email.active, #step-codigo.active, #step-nova-senha.active { display: block; }
+  </style>
+</head>
+<body>
+<div class="card">
+  <a href="/" class="logo">prazu</a>
+  <div class="alert error" id="alert-error"></div>
+  <div class="alert success" id="alert-success"></div>
+
+  <!-- STEP 1: Email -->
+  <div id="step-email" class="active">
+    <h1>Recuperar senha</h1>
+    <p class="sub">Digite seu e-mail e enviaremos um código de verificação.</p>
+    <div class="field">
+      <label for="email">E-mail cadastrado</label>
+      <input type="email" id="email" placeholder="voce@email.com.br" autocomplete="email" required>
+    </div>
+    <button class="btn" id="btn-enviar" onclick="enviarCodigo()">Enviar código</button>
+  </div>
+
+  <!-- STEP 2: Código -->
+  <div id="step-codigo">
+    <h1>Verificação</h1>
+    <p class="sub">Enviamos um código de 6 dígitos para <strong id="email-display"></strong>.</p>
+    <div class="field">
+      <label for="codigo">Código</label>
+      <input type="text" id="codigo" placeholder="000000" maxlength="6" inputmode="numeric" autocomplete="one-time-code">
+    </div>
+    <button class="btn" id="btn-verificar" onclick="verificarCodigo()">Verificar</button>
+  </div>
+
+  <!-- STEP 3: Nova senha -->
+  <div id="step-nova-senha">
+    <h1>Nova senha</h1>
+    <p class="sub">Defina sua nova senha (mínimo 8 caracteres, com letra e número).</p>
+    <div class="field">
+      <label for="nova-senha">Nova senha</label>
+      <div class="password-wrapper">
+        <input type="password" id="nova-senha" placeholder="Mínimo 8 caracteres" autocomplete="new-password">
+        <button type="button" class="toggle-senha" onclick="toggleSenha('nova-senha', this)" aria-label="Mostrar senha">👁</button>
+      </div>
+    </div>
+    <div class="field">
+      <label for="confirmar-senha">Confirmar senha</label>
+      <div class="password-wrapper">
+        <input type="password" id="confirmar-senha" placeholder="Repita a senha" autocomplete="new-password">
+        <button type="button" class="toggle-senha" onclick="toggleSenha('confirmar-senha', this)" aria-label="Mostrar senha">👁</button>
+      </div>
+    </div>
+    <button class="btn" id="btn-redefinir" onclick="redefinirSenha()">Redefinir senha</button>
+  </div>
+
+  <div class="back-link"><a href="/login">← Voltar para o login</a></div>
+</div>
+
+<script>
+  let _email = '';
+
+  function showStep(step) {
+    document.querySelectorAll('#step-email,#step-codigo,#step-nova-senha').forEach(el => el.classList.remove('active'));
+    document.getElementById('step-' + step).classList.add('active');
+    hideAlerts();
+  }
+
+  function showError(msg) {
+    const el = document.getElementById('alert-error');
+    el.textContent = msg; el.className = 'alert error show';
+    document.getElementById('alert-success').className = 'alert success';
+  }
+
+  function showSuccess(msg) {
+    const el = document.getElementById('alert-success');
+    el.textContent = msg; el.className = 'alert success show';
+    document.getElementById('alert-error').className = 'alert error';
+  }
+
+  function hideAlerts() {
+    document.getElementById('alert-error').className = 'alert error';
+    document.getElementById('alert-success').className = 'alert success';
+  }
+
+  function toggleSenha(id, btn) {
+    const inp = document.getElementById(id);
+    if (inp.type === 'password') { inp.type = 'text'; btn.textContent = '🙈'; }
+    else { inp.type = 'password'; btn.textContent = '👁'; }
+  }
+
+  async function enviarCodigo() {
+    const btn = document.getElementById('btn-enviar');
+    _email = document.getElementById('email').value.trim();
+    if (!_email) { showError('Informe seu e-mail.'); return; }
+
+    btn.disabled = true; btn.textContent = 'Enviando...';
+    try {
+      const res = await fetch('/api/auth/recuperar-senha/enviar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: _email }),
+      });
+      const data = await res.json();
+      if (!res.ok) { showError(data.detail || 'Erro ao enviar.'); return; }
+      document.getElementById('email-display').textContent = _email;
+      showStep('codigo');
+      showSuccess('Código enviado! Verifique seu e-mail.');
+    } catch (e) { showError('Erro de conexão.'); }
+    finally { btn.disabled = false; btn.textContent = 'Enviar código'; }
+  }
+
+  async function verificarCodigo() {
+    const btn = document.getElementById('btn-verificar');
+    const codigo = document.getElementById('codigo').value.trim();
+    if (codigo.length !== 6) { showError('Código deve ter 6 dígitos.'); return; }
+
+    btn.disabled = true; btn.textContent = 'Verificando...';
+    try {
+      const res = await fetch('/api/auth/recuperar-senha/verificar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: _email, codigo }),
+      });
+      const data = await res.json();
+      if (!res.ok) { showError(data.detail || 'Código incorreto.'); return; }
+      showStep('nova-senha');
+    } catch (e) { showError('Erro de conexão.'); }
+    finally { btn.disabled = false; btn.textContent = 'Verificar'; }
+  }
+
+  async function redefinirSenha() {
+    const btn = document.getElementById('btn-redefinir');
+    const nova = document.getElementById('nova-senha').value;
+    const confirmar = document.getElementById('confirmar-senha').value;
+    const codigo = document.getElementById('codigo').value.trim();
+
+    if (nova.length < 8) { showError('Mínimo 8 caracteres.'); return; }
+    if (!nova.split('').some(c => /[a-zA-Z]/.test(c))) { showError('Inclua pelo menos uma letra.'); return; }
+    if (!nova.split('').some(c => /[0-9]/.test(c))) { showError('Inclua pelo menos um número.'); return; }
+    if (nova !== confirmar) { showError('As senhas não conferem.'); return; }
+
+    btn.disabled = true; btn.textContent = 'Redefinindo...';
+    try {
+      const res = await fetch('/api/auth/recuperar-senha/redefinir', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: _email, codigo, nova_senha: nova }),
+      });
+      const data = await res.json();
+      if (!res.ok) { showError(data.detail || 'Erro ao redefinir.'); return; }
+      showSuccess('Senha redefinida com sucesso! Redirecionando...');
+      setTimeout(() => window.location.replace('/login'), 2000);
+    } catch (e) { showError('Erro de conexão.'); }
+    finally { btn.disabled = false; btn.textContent = 'Redefinir senha'; }
+  }
+
+  document.addEventListener('keydown', e => {
+    if (e.key !== 'Enter') return;
+    if (document.getElementById('step-email').classList.contains('active')) enviarCodigo();
+    else if (document.getElementById('step-codigo').classList.contains('active')) verificarCodigo();
+    else if (document.getElementById('step-nova-senha').classList.contains('active')) redefinirSenha();
+  });
+</script>
+</body>
+</html>
