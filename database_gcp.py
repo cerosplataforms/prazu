@@ -345,7 +345,7 @@ async def listar_processos_com_prazos(advogado_id: int) -> list[dict]:
             """
             SELECT
                 p.id, p.numero, p.tribunal, p.vara, p.comarca, p.partes,
-                p.classe, p.assunto,
+                p.classe, p.assunto, p.link_pje,
                 MIN(CASE WHEN pr.cumprido = false AND pr.decurso = false
                     THEN pr.data_fim END) AS proximo_vencimento,
                 COALESCE(
@@ -366,7 +366,7 @@ async def listar_processos_com_prazos(advogado_id: int) -> list[dict]:
                 AND pr.data_fim >= NOW() - INTERVAL '90 days'
             WHERE p.advogado_id = $1
             GROUP BY p.id, p.numero, p.tribunal, p.vara, p.comarca, p.partes,
-                     p.classe, p.assunto
+                     p.classe, p.assunto, p.link_pje
             ORDER BY proximo_vencimento ASC NULLS LAST
             """,
             advogado_id,
@@ -441,8 +441,8 @@ async def criar_ou_atualizar_processo(advogado_id, numero, partes="", vara="", t
     async with _pool.acquire() as conn:
         row = await conn.fetchrow(
             """
-            INSERT INTO processos (advogado_id, numero, partes, vara, tribunal, comarca, fonte, classe, assunto)
-            VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
+            INSERT INTO processos (advogado_id, numero, partes, vara, tribunal, comarca, fonte, classe, assunto, link_pje)
+            VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
             ON CONFLICT (advogado_id, numero) DO UPDATE
                 SET partes    = CASE WHEN EXCLUDED.partes != '' AND EXCLUDED.partes != 'N/I' THEN EXCLUDED.partes ELSE processos.partes END,
                     vara      = EXCLUDED.vara,
@@ -450,10 +450,11 @@ async def criar_ou_atualizar_processo(advogado_id, numero, partes="", vara="", t
                     comarca   = EXCLUDED.comarca,
                     classe    = CASE WHEN EXCLUDED.classe != '' THEN EXCLUDED.classe ELSE processos.classe END,
                     assunto   = CASE WHEN EXCLUDED.assunto != '' THEN EXCLUDED.assunto ELSE processos.assunto END,
+                    link_pje  = CASE WHEN EXCLUDED.link_pje != '' THEN EXCLUDED.link_pje ELSE processos.link_pje END,
                     atualizado_em = NOW()
             RETURNING id
             """,
-            advogado_id, numero, partes, vara, tribunal, comarca, fonte, classe, assunto,
+            advogado_id, numero, partes, vara, tribunal, comarca, fonte, classe, assunto, link_pje,
         )
         return row["id"]
 

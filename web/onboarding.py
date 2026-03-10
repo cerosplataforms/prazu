@@ -169,7 +169,7 @@ async def _buscar_djen(adv_id, phone, oab_num, oab_uf):
         loop = asyncio.get_event_loop()
         from djen import consultar_djen_por_oab
         from datajud import consultar_processo
-        comunicacoes = await loop.run_in_executor(None, consultar_djen_por_oab, oab_num, oab_uf, 90)
+        comunicacoes = await loop.run_in_executor(None, consultar_djen_por_oab, oab_num, oab_uf, 30)
         if not comunicacoes:
             return
         numeros_cnj = list({c["numero_processo"] for c in comunicacoes if c.get("numero_processo")})
@@ -202,11 +202,12 @@ async def _buscar_djen(adv_id, phone, oab_num, oab_uf):
                 assunto = ""
             comarca_proc = _extrair_comarca_da_vara(vara)
             uf_proc = _extrair_uf_do_cnj(num_cnj) or oab_uf
+            link_pje = pub_djen.get("link", "")
             processo_id = await db.criar_ou_atualizar_processo(
                 advogado_id=adv_id, numero=num_cnj, partes=partes,
                 vara=vara, tribunal=tribunal,
                 comarca=comarca_proc, fonte="djen",
-                classe=classe, assunto=assunto,
+                classe=classe, assunto=assunto, link_pje=link_pje,
             )
             novos += 1
             pub = next((c for c in comunicacoes if c.get("numero_processo") == num_cnj), {})
@@ -312,13 +313,25 @@ async def enviar_boas_vindas(adv: dict) -> None:
 # — Jobs —
 
 async def enviar_briefing_todos() -> int:
+    from datetime import timezone, timedelta
+    agora_utc = datetime.now(timezone.utc)
+    agora_br = agora_utc - timedelta(hours=3)
+    hora_atual = agora_br.strftime("%H:00")
     advogados = await db.listar_advogados_ativos()
     enviados = 0
     for adv in advogados:
         if not adv.get("whatsapp") or not adv.get("zapi_confirmado"): continue
         if not await db.pode_usar(adv["id"]): continue
+        horario = adv.get("horario_briefing") or "07:00"
+        if horario[:2] + ":00" != hora_atual:
+            continue
+        if not adv.get("lembrete_fds", True):
+            dia_semana = agora_br.weekday()
+            if dia_semana >= 5:
+                continue
         try:
-            await _enviar_resumo(adv["whatsapp"], adv)
+            phone = adv.get("whatsapp_notificacao") or adv["whatsapp"]
+            await _enviar_resumo(phone, adv)
             enviados += 1
             await asyncio.sleep(0.5)
         except Exception as e:

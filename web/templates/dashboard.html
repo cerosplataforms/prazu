@@ -82,12 +82,26 @@
     .empty-state h3 { font-size: 1rem; font-weight: 600; margin-bottom: 0.5rem; color: var(--navy-deep); }
     .empty-state p { font-size: 0.83rem; color: var(--muted); line-height: 1.7; max-width: 32ch; margin: 0 auto 1.5rem; }
 
-    .processo-card { background: var(--surface); border-radius: 12px; border: 1px solid #e5e9f2; margin-bottom: 1rem; overflow: hidden; transition: box-shadow 0.2s; }
+    .processo-card {
+      background: var(--surface); border-radius: 12px;
+      border: 1px solid #e5e9f2; margin-bottom: 1rem; overflow: hidden;
+      transition: box-shadow 0.2s;
+      border-left: 4px solid #e5e9f2;
+    }
     .processo-card:hover { box-shadow: 0 4px 20px rgba(0,0,0,0.07); }
+    .processo-card.card-verde    { border-left-color: var(--green); }
+    .processo-card.card-amarelo  { border-left-color: var(--yellow); }
+    .processo-card.card-vermelho { border-left-color: var(--red); }
+    .processo-card.card-neutro   { border-left-color: #d1d5db; }
+
     .processo-header { padding: 1rem 1.25rem; display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; border-bottom: 1px solid #f0f3fa; }
+    .processo-header-left { flex: 1; min-width: 0; }
     .processo-numero { font-size: 0.78rem; color: var(--muted); margin-bottom: 0.25rem; font-family: monospace; }
     .processo-partes { font-size: 0.9rem; font-weight: 600; color: var(--navy-deep); }
     .processo-info { font-size: 0.75rem; color: var(--muted); margin-top: 0.2rem; }
+    .processo-link { font-size: 0.75rem; margin-top: 0.35rem; }
+    .processo-link a { color: var(--blue); text-decoration: none; font-weight: 500; }
+    .processo-link a:hover { text-decoration: underline; }
 
     .prazo-lista { padding: 0.5rem 1.25rem; display: block; }
     .prazo-item { display: flex; align-items: center; gap: 0.75rem; padding: 0.6rem 0; border-bottom: 1px solid #f0f3fa; }
@@ -104,6 +118,30 @@
     .badge-amarelo  { background: rgba(245,158,11,0.12); color: #b45309; }
     .badge-vermelho { background: rgba(239,68,68,0.12);  color: #b91c1c; }
     .badge-cinza    { background: #f0f3fa; color: var(--muted); }
+
+    .vencidos-toggle {
+      cursor: pointer; display: flex; align-items: center; gap: 0.5rem;
+      padding: 0.75rem 0; user-select: none;
+    }
+    .vencidos-toggle .arrow { transition: transform 0.2s; font-size: 0.7rem; }
+    .vencidos-toggle.open .arrow { transform: rotate(90deg); }
+    .vencidos-body { display: none; }
+    .vencidos-body.open { display: block; }
+    .vencido-card {
+      background: var(--surface); border-radius: 10px; border: 1px solid #e5e9f2;
+      margin-bottom: 0.5rem; overflow: hidden; border-left: 4px solid #d1d5db;
+    }
+    .vencido-header {
+      padding: 0.75rem 1rem; cursor: pointer; display: flex; align-items: center; gap: 0.75rem;
+      user-select: none;
+    }
+    .vencido-header:hover { background: #f9fafb; }
+    .vencido-header .arrow { transition: transform 0.2s; font-size: 0.65rem; color: var(--muted); }
+    .vencido-header.open .arrow { transform: rotate(90deg); }
+    .vencido-detail { display: none; padding: 0 1rem 0.75rem; font-size: 0.8rem; color: #555; border-top: 1px solid #f0f3fa; }
+    .vencido-detail.open { display: block; }
+    .vencido-detail .info-row { padding: 0.3rem 0; display: flex; gap: 0.5rem; }
+    .vencido-detail .info-label { color: var(--muted); font-weight: 500; min-width: 80px; }
 
     .toast { position: fixed; bottom: 1.5rem; right: 1.5rem; z-index: 999; background: var(--navy-deep); color: var(--white); padding: 0.75rem 1.25rem; border-radius: 10px; font-size: 0.83rem; box-shadow: 0 8px 30px rgba(0,0,0,0.3); transform: translateY(120%); transition: transform 0.3s; max-width: 300px; }
     .toast.show { transform: translateY(0); }
@@ -167,8 +205,12 @@
   <div id="lista-processos"></div>
 
   <div id="section-vencidos" style="display:none;margin-top:2rem;">
-    <div class="section-title">Prazos Vencidos (últimos 30 dias)</div>
-    <div id="lista-vencidos"></div>
+    <div class="vencidos-toggle" id="toggle-vencidos" onclick="toggleVencidos()">
+      <span class="arrow">▶</span>
+      <span class="section-title" style="margin-bottom:0">Prazos Vencidos (últimos 30 dias)</span>
+      <span id="count-vencidos" style="font-size:0.75rem;color:var(--muted);margin-left:0.25rem"></span>
+    </div>
+    <div class="vencidos-body" id="lista-vencidos"></div>
   </div>
 
 </div>
@@ -184,6 +226,7 @@
     comarca:  r.comarca,
     classe:   r.classe || '',
     assunto:  r.assunto || '',
+    link_pje: r.link_pje || '',
     prazos:   Array.isArray(r.prazos) ? r.prazos.map(pr => ({
       id:          pr.prazo_id,
       tipo:        pr.tipo_prazo,
@@ -219,7 +262,13 @@
       const [_y,_m,_d] = pr.data_fim.substring(0,10).split('-'); const venc = new Date(+_y,+_m-1,+_d);
       const diff = Math.ceil((venc - hoje) / 86400000);
       if (diff < 0 && venc >= limite30) {
-        vencidos.push({ numero: p.numero, tipo: pr.tipo, data_fim: pr.data_fim, dias: Math.abs(diff) });
+        vencidos.push({
+          numero: p.numero, tipo: pr.tipo, data_fim: pr.data_fim,
+          data_inicio: pr.data_inicio, dias: Math.abs(diff),
+          tribunal: p.tribunal, vara: p.vara, comarca: p.comarca,
+          classe: p.classe, assunto: p.assunto, link_pje: p.link_pje,
+          partes: p.partes
+        });
       }
     });
   });
@@ -229,28 +278,65 @@
     return d.substring(0,10).split('-').reverse().join('/');
   }
 
+  function toggleVencidos() {
+    const t = document.getElementById('toggle-vencidos');
+    const b = document.getElementById('lista-vencidos');
+    t.classList.toggle('open');
+    b.classList.toggle('open');
+  }
+
+  function toggleVencidoDetail(idx) {
+    const h = document.getElementById('vh-'+idx);
+    const d = document.getElementById('vd-'+idx);
+    h.classList.toggle('open');
+    d.classList.toggle('open');
+  }
+
   if (vencidos.length > 0) {
     document.getElementById('section-vencidos').style.display = 'block';
-    document.getElementById('lista-vencidos').innerHTML = vencidos.map(v => `
-      <div class="processo-card" style="padding:1rem 1.25rem;">
-        <div class="prazo-item">
-          <span class="prazo-dot dot-vermelho"></span>
-          <span class="prazo-tipo" style="flex:1">${v.numero}</span>
-          <span class="prazo-tipo">${v.tipo || 'Prazo'}</span>
-          <span class="prazo-data">${formatData(v.data_fim)}</span>
-          <span class="prazo-badge badge-vermelho">Vencido há ${v.dias}d</span>
+    document.getElementById('count-vencidos').textContent = `(${vencidos.length})`;
+    document.getElementById('lista-vencidos').innerHTML = vencidos.map((v, i) => {
+      const info = [v.tribunal, v.vara, v.comarca].filter(Boolean).join(' · ');
+      const classeAssunto = [v.classe, v.assunto].filter(Boolean).join(' — ');
+      return `
+      <div class="vencido-card">
+        <div class="vencido-header" id="vh-${i}" onclick="toggleVencidoDetail(${i})">
+          <span class="arrow">▶</span>
+          <span class="prazo-dot dot-cinza"></span>
+          <span style="flex:1;font-size:0.82rem;font-weight:500">${v.numero}</span>
+          <span style="font-size:0.78rem;color:var(--muted)">${v.tipo || 'Prazo'}</span>
+          <span style="font-size:0.78rem;color:var(--muted)">${formatData(v.data_fim)}</span>
+          <span class="prazo-badge badge-cinza">Vencido há ${v.dias}d</span>
         </div>
-      </div>`).join('');
+        <div class="vencido-detail" id="vd-${i}">
+          ${v.partes ? `<div class="info-row"><span class="info-label">Partes:</span><span>${v.partes}</span></div>` : ''}
+          ${classeAssunto ? `<div class="info-row"><span class="info-label">Classe:</span><span>${classeAssunto}</span></div>` : ''}
+          ${info ? `<div class="info-row"><span class="info-label">Local:</span><span>${info}</span></div>` : ''}
+          <div class="info-row"><span class="info-label">Início:</span><span>${formatData(v.data_inicio)}</span></div>
+          <div class="info-row"><span class="info-label">Venceu:</span><span>${formatData(v.data_fim)}</span></div>
+          ${v.link_pje ? `<div class="info-row"><span class="info-label">Processo:</span><a href="${v.link_pje}" target="_blank" style="color:var(--blue);font-weight:500">Ver no PJe ↗</a></div>` : ''}
+        </div>
+      </div>`;
+    }).join('');
   }
 
   function statusDoPrazo(pr) {
-    if (!pr.data_fim) return { dot: 'dot-cinza', badge: 'badge-cinza', label: '–' };
+    if (!pr.data_fim) return { dot: 'dot-cinza', badge: 'badge-cinza', label: '–', card: 'card-neutro', priority: 99 };
     const [_y,_m,_d] = pr.data_fim.substring(0,10).split('-'); const venc = new Date(+_y,+_m-1,+_d);
     const diff = Math.ceil((venc - hoje) / 86400000);
-    if (diff === 0) return { dot: 'dot-vermelho', badge: 'badge-vermelho', label: 'Hoje!' };
-    if (diff === 1) return { dot: 'dot-vermelho', badge: 'badge-vermelho', label: 'Amanhã' };
-    if (diff <= 5) return { dot: 'dot-amarelo', badge: 'badge-amarelo', label: diff + ' dias' };
-    return { dot: 'dot-verde', badge: 'badge-verde', label: diff + ' dias' };
+    if (diff === 0) return { dot: 'dot-vermelho', badge: 'badge-vermelho', label: 'Hoje!', card: 'card-vermelho', priority: 0 };
+    if (diff === 1) return { dot: 'dot-vermelho', badge: 'badge-vermelho', label: 'Amanhã', card: 'card-vermelho', priority: 1 };
+    if (diff <= 5) return { dot: 'dot-amarelo', badge: 'badge-amarelo', label: diff + ' dias', card: 'card-amarelo', priority: 2 };
+    return { dot: 'dot-verde', badge: 'badge-verde', label: diff + ' dias', card: 'card-verde', priority: 3 };
+  }
+
+  function cardColorClass(prazosAtivos) {
+    let best = { priority: 99, card: 'card-neutro' };
+    prazosAtivos.forEach(pr => {
+      const s = statusDoPrazo(pr);
+      if (s.priority < best.priority) best = s;
+    });
+    return best.card;
   }
 
   const lista = document.getElementById('lista-processos');
@@ -271,6 +357,7 @@
         return Math.ceil((venc - hoje) / 86400000) >= 0;
       });
       if (prazosAtivos.length === 0) return;
+      const colorCls = cardColorClass(prazosAtivos);
       const prazosHtml = prazosAtivos.map(pr => {
         const s = statusDoPrazo(pr);
         return `<div class="prazo-item">
@@ -282,14 +369,18 @@
       }).join('');
       const info = [p.tribunal, p.vara, p.comarca].filter(Boolean).join(' · ');
       const classeAssunto = [p.classe, p.assunto].filter(Boolean).join(' — ');
+      const linkHtml = p.link_pje
+        ? `<div class="processo-link"><a href="${p.link_pje}" target="_blank">Ver no PJe ↗</a></div>`
+        : '';
       lista.innerHTML += `
-        <div class="processo-card" id="proc-${i}">
+        <div class="processo-card ${colorCls}" id="proc-${i}">
           <div class="processo-header">
-            <div>
+            <div class="processo-header-left">
               <div class="processo-numero">${p.numero || '–'}</div>
               <div class="processo-partes">${p.partes || (p.classe || 'N/I')}</div>
               ${classeAssunto ? `<div class="processo-info" style="color:var(--blue);font-weight:500">${classeAssunto}</div>` : ''}
               ${info ? `<div class="processo-info">${info}</div>` : ''}
+              ${linkHtml}
             </div>
           </div>
           <div class="prazo-lista">${prazosHtml}</div>
@@ -322,7 +413,7 @@
   window.addEventListener('load', () => {
     setTimeout(async () => {
       try { await fetch('/api/advogado/boas-vindas', { method: 'POST', credentials: 'same-origin' }); } catch(e) {}
-    }, 60 * 1000);
+    }, 2 * 60 * 1000);
   });
   {% endif %}
 </script>

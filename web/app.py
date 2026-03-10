@@ -387,11 +387,13 @@ async def atualizar_comarca(payload: dict, adv=Depends(advogado_logado)):
 async def webhook_zapi(request: Request):
     zapi_key = os.getenv("ZAPI_WEBHOOK_SECRET", "")
     if zapi_key and request.headers.get("x-zapi-secret", "") != zapi_key:
+        log.warning("Webhook Z-API: token invalido")
         raise HTTPException(401, "Token inválido")
     try:
         payload = await request.json()
     except Exception:
         raise HTTPException(400, "Payload inválido")
+    log.info(f"Webhook Z-API recebido: type={payload.get('type')} phone={payload.get('phone','?')}")
     from web.onboarding import processar_mensagem_zapi
     await processar_mensagem_zapi(payload)
     return {"ok": True}
