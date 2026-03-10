@@ -120,17 +120,19 @@ async def dashboard(request: Request, adv=Depends(advogado_logado)):
 async def plano_expirado(request: Request):
     return templates.TemplateResponse("plano_expirado.html", {"request": request})
 
-@app.get("/logout")
+@app.get("/logout", response_class=HTMLResponse)
 async def logout(request: Request):
     token = request.cookies.get(TOKEN_COOKIE)
     if token:
         await db.delete_session(token)
-    r = RedirectResponse("/login", status_code=302)
-    r.delete_cookie(TOKEN_COOKIE, path="/", domain=None, secure=ENVIRONMENT == "production", samesite="lax")
+    r = HTMLResponse("""<!DOCTYPE html><html><head>
+<script>
+document.cookie="prazu_token=;path=/;expires=Thu,01 Jan 1970 00:00:00 GMT;SameSite=Lax";
+document.cookie="prazu_token=;path=/;expires=Thu,01 Jan 1970 00:00:00 GMT;Secure;SameSite=Lax";
+window.location.replace("/login");
+</script></head><body></body></html>""")
+    r.delete_cookie(TOKEN_COOKIE, path="/")
     r.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
-    r.headers["Pragma"] = "no-cache"
-    r.headers["Expires"] = "0"
-    r.headers["Clear-Site-Data"] = '"cache"'
     return r
 
 
