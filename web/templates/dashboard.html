@@ -193,6 +193,10 @@
       <span class="stat-icon">🟡</span>
       <div><div class="stat-label">Próximos (≤5d)</div><div class="stat-value" id="count-proximo">–</div></div>
     </div>
+    <div class="stat-card">
+      <span class="stat-icon">🟢</span>
+      <div><div class="stat-label">Em aberto</div><div class="stat-value" id="count-aberto">–</div></div>
+    </div>
   </div>
 
   <div class="acoes">
@@ -250,7 +254,7 @@
   }));
   const hoje = new Date(); hoje.setHours(0,0,0,0);
 
-  let urgente = 0, proximo = 0;
+  let urgente = 0, proximo = 0, aberto = 0;
   processos.forEach(p => {
     p.prazos.forEach(pr => {
       if (pr.cumprido || pr.decurso) return;
@@ -260,11 +264,13 @@
       if (diff < 0) return;
       if (diff <= 1) urgente++;
       else if (diff <= 5) proximo++;
+      else aberto++;
     });
   });
   document.getElementById('count-processos').textContent = processos.length;
   document.getElementById('count-urgente').textContent   = urgente;
   document.getElementById('count-proximo').textContent   = proximo;
+  document.getElementById('count-aberto').textContent    = aberto;
 
   const limite30 = new Date(hoje); limite30.setDate(limite30.getDate() - 30);
   const vencidos = [];

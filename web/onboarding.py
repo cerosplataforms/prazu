@@ -371,10 +371,12 @@ async def enviar_briefing_todos() -> int:
     agora_utc = datetime.now(timezone.utc)
     agora_br = agora_utc - timedelta(hours=3)
     hora_atual = agora_br.strftime("%H:00")
+    log.info(f"enviar_briefing_todos: hora BRT={hora_atual}")
     advogados = await db.listar_advogados_ativos()
     enviados = 0
     for adv in advogados:
-        if not adv.get("whatsapp") or not adv.get("zapi_confirmado"): continue
+        phone = adv.get("whatsapp_notificacao") or adv.get("whatsapp")
+        if not phone or not adv.get("zapi_confirmado"): continue
         if not await db.pode_usar(adv["id"]): continue
         horario = adv.get("horario_briefing") or "07:00"
         if horario[:2] + ":00" != hora_atual:
@@ -384,12 +386,12 @@ async def enviar_briefing_todos() -> int:
             if dia_semana >= 5:
                 continue
         try:
-            phone = adv.get("whatsapp_notificacao") or adv["whatsapp"]
             await _enviar_resumo(phone, adv)
             enviados += 1
             await asyncio.sleep(0.5)
         except Exception as e:
             log.error(f"Erro briefing {adv['nome']}: {e}")
+    log.info(f"enviar_briefing_todos: {enviados} enviados")
     return enviados
 
 
@@ -413,7 +415,8 @@ async def monitorar_djen_todos() -> int:
     advogados = await db.listar_advogados_ativos()
     notificados = 0; agora = datetime.now(timezone.utc)
     for adv in advogados:
-        if not adv.get("whatsapp") or not adv.get("zapi_confirmado"): continue
+        phone = adv.get("whatsapp_notificacao") or adv.get("whatsapp")
+        if not phone or not adv.get("zapi_confirmado"): continue
         ultima = adv.get("ultima_busca_djen")
         if ultima:
             if hasattr(ultima, "tzinfo") and ultima.tzinfo is None:
