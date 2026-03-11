@@ -23,8 +23,9 @@ def _clear(phone): _estados.pop(phone, None)
 async def processar_mensagem_zapi(payload: dict):
     if payload.get("type") != "ReceivedCallback": return
     phone = payload.get("phone", "").replace("+", "").replace("-", "").replace(" ", "")
-    msg = payload.get("message", {})
-    texto = (msg.get("text") or msg.get("body") or msg.get("caption") or "").strip()
+    # Z-API: texto em payload.text.message (não payload.message)
+    msg_obj = payload.get("text") or payload.get("message") or {}
+    texto = (msg_obj.get("message") or msg_obj.get("text") or msg_obj.get("body") or msg_obj.get("caption") or "").strip()
     if not phone or not texto: return
     log.info(f"WhatsApp de {phone}: {texto[:50]}")
     adv = await db.buscar_por_whatsapp(phone)
@@ -258,17 +259,23 @@ async def _handle_conversa(phone, adv, texto):
         await db.atualizar_comarca(adv["id"], nova)
         await _zapi_client.enviar(phone, f"✅ Comarca atualizada para *{nova}*")
     else:
-        await _zapi_client.enviar(phone,
-            "👋 Olá! Sou o assistente automático da *Prazu*.\n\n"
-            "Por aqui, eu envio seus *resumos de prazos* e *alertas* nos horários que você configurou.\n\n"
-            "Comandos que eu entendo:\n"
-            "• *prazos* — ver resumo dos seus prazos\n"
-            "• *buscar* — buscar novas publicações no DJEN\n\n"
-            "Para gerenciar seus processos, configurações ou falar com nosso suporte, acesse:\n"
-            "🌐 *prazu.com.br*\n\n"
-            "Precisa de ajuda humana? Chame nosso suporte:\n"
-            "💬 wa.me/5511916990578"
-        )
+        await _zapi_client.enviar(phone, "🤔 Processando...")
+        try:
+            processos = await db.listar_processos_com_prazos(adv["id"])
+            from ia import responder_pergunta
+            loop = asyncio.get_event_loop()
+            resp = await loop.run_in_executor(
+                None, responder_pergunta, texto, adv.get("nome", ""),
+                processos, adv.get("comarca", "") or "Belo Horizonte"
+            )
+            await _zapi_client.enviar(phone, resp)
+        except Exception as e:
+            log.error(f"Erro IA {phone}: {e}", exc_info=True)
+            await _zapi_client.enviar(phone,
+                "Não consegui processar sua pergunta agora.\n\n"
+                "Comandos: *prazos* (resumo) ou *buscar* (DJEN).\n"
+                "Suporte: wa.me/5511916990578"
+            )
 
 
 async def _enviar_resumo(phone, adv):

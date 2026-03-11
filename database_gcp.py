@@ -209,7 +209,10 @@ async def buscar_por_email(email: str) -> Optional[dict]:
 
 async def buscar_por_whatsapp(whatsapp: str) -> Optional[dict]:
     async with _pool.acquire() as conn:
-        return _row(await conn.fetchrow("SELECT * FROM advogados WHERE whatsapp = $1", whatsapp))
+        return _row(await conn.fetchrow(
+            "SELECT * FROM advogados WHERE whatsapp = $1 OR whatsapp_notificacao = $1",
+            whatsapp,
+        ))
 
 
 async def buscar_por_oab(numero: str, seccional: str) -> Optional[dict]:
