@@ -1,51 +1,70 @@
 """
-web/email_sender.py — Prazu Fase 2
-Envia e-mails transacionais (códigos de verificação).
-Configure EMAIL_PROVIDER no .env: "smtp" ou "sendgrid"
+web/email_sender.py — Prazu
+Envia e-mails transacionais via Resend (fallback SMTP).
 """
 
 import os, logging, asyncio
 log = logging.getLogger(__name__)
 
-EMAIL_PROVIDER  = os.getenv("EMAIL_PROVIDER", "smtp")
-EMAIL_FROM      = os.getenv("EMAIL_FROM", "noreply@prazu.com.br")
+RESEND_API_KEY = os.getenv("RESEND_API_KEY", "")
+EMAIL_FROM     = os.getenv("EMAIL_FROM", "noreply@prazu.com.br")
 EMAIL_FROM_NAME = os.getenv("EMAIL_FROM_NAME", "Prazu")
-SENDGRID_KEY    = os.getenv("SENDGRID_API_KEY", "")
-SMTP_HOST       = os.getenv("SMTP_HOST", "smtp.gmail.com")
-SMTP_PORT       = int(os.getenv("SMTP_PORT", "587"))
-SMTP_USER       = os.getenv("SMTP_USER", "")
-SMTP_PASS       = os.getenv("SMTP_PASS", "")
+
+SMTP_HOST = os.getenv("SMTP_HOST", "smtp.gmail.com")
+SMTP_PORT = int(os.getenv("SMTP_PORT", "587"))
+SMTP_USER = os.getenv("SMTP_USER", "")
+SMTP_PASS = os.getenv("SMTP_PASS", "")
 
 
 async def enviar_codigo(destinatario: str, codigo: str, motivo: str = "verificação"):
     assunto = f"Seu código Prazu: {codigo}"
     html = f"""
-    <div style="font-family:sans-serif;max-width:480px;margin:0 auto">
-      <h2 style="color:#1D4ED8;font-size:1.4rem">prazu</h2>
-      <p>Código para <strong>{motivo}</strong>:</p>
+    <div style="font-family:'Segoe UI',sans-serif;max-width:480px;margin:0 auto;padding:2rem;background:#f8faff;border-radius:12px">
+      <h2 style="color:#2563EB;font-size:1.4rem;margin:0 0 1rem">prazu</h2>
+      <p style="color:#1a2340;font-size:0.95rem;margin:0 0 0.5rem">Código para <strong>{motivo}</strong>:</p>
       <div style="font-size:2.5rem;font-weight:800;letter-spacing:.3em;
-                  background:#EFF4FF;padding:1.25rem;text-align:center;
-                  border-radius:10px;color:#1D4ED8;margin:1.25rem 0">
+                  background:#fff;padding:1.25rem;text-align:center;
+                  border-radius:10px;color:#2563EB;margin:1.25rem 0;
+                  border:2px solid #e5e9f2">
         {codigo}
       </div>
-      <p style="color:#64748B;font-size:.85rem">
+      <p style="color:#64748B;font-size:.85rem;margin:0">
         Expira em 10 minutos.<br>Se não foi você, ignore este e-mail.
+      </p>
+      <hr style="border:none;border-top:1px solid #e5e9f2;margin:1.5rem 0 1rem">
+      <p style="color:#94a3b8;font-size:.75rem;margin:0">
+        Prazu — Monitoramento de prazos processuais<br>
+        <a href="https://prazu.com.br" style="color:#2563EB;text-decoration:none">prazu.com.br</a>
       </p>
     </div>
     """
     loop = asyncio.get_event_loop()
-    if EMAIL_PROVIDER == "sendgrid" and SENDGRID_KEY:
-        await loop.run_in_executor(None, _sendgrid, destinatario, assunto, html)
-    else:
+    if RESEND_API_KEY:
+        await loop.run_in_executor(None, _resend, destinatario, assunto, html)
+    elif SMTP_USER:
         await loop.run_in_executor(None, _smtp, destinatario, assunto, html)
+    else:
+        log.error(f"Nenhum provedor de email configurado. Código {codigo} para {destinatario} não enviado.")
 
 
-def _sendgrid(para, assunto, html):
-    import sendgrid
-    from sendgrid.helpers.mail import Mail
-    sg = sendgrid.SendGridAPIClient(api_key=SENDGRID_KEY)
-    r = sg.send(Mail(from_email=(EMAIL_FROM, EMAIL_FROM_NAME), to_emails=para, subject=assunto, html_content=html))
-    log.info(f"SendGrid → {para}: {r.status_code}")
+def _resend(para, assunto, html):
+    import requests
+    r = requests.post(
+        "https://api.resend.com/emails",
+        headers={"Authorization": f"Bearer {RESEND_API_KEY}", "Content-Type": "application/json"},
+        json={
+            "from": f"{EMAIL_FROM_NAME} <{EMAIL_FROM}>",
+            "to": [para],
+            "subject": assunto,
+            "html": html,
+        },
+        timeout=10,
+    )
+    if r.status_code in (200, 201):
+        log.info(f"Resend → {para}: OK ({r.json().get('id','')})")
+    else:
+        log.error(f"Resend → {para}: ERRO {r.status_code} {r.text}")
+        raise Exception(f"Resend error: {r.status_code}")
 
 
 def _smtp(para, assunto, html):
