@@ -267,7 +267,7 @@ async def _handle_conversa(phone, adv, texto):
             "Para gerenciar seus processos, configurações ou falar com nosso suporte, acesse:\n"
             "🌐 *prazu.com.br*\n\n"
             "Precisa de ajuda humana? Chame nosso suporte:\n"
-            "💬 wa.me/5531999537005"
+            "💬 wa.me/5511916990578"
         )
 
 

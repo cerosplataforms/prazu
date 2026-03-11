@@ -135,7 +135,7 @@ async def pagina_privacidade(request: Request):
 
 @app.get("/assinar")
 async def assinar():
-    return RedirectResponse("https://wa.me/5531999537005?text=Quero+assinar+o+Prazu", status_code=302)
+    return RedirectResponse("https://wa.me/5511916990578?text=Quero+assinar+o+Prazu", status_code=302)
 
 @app.get("/logout", response_class=HTMLResponse)
 async def logout(request: Request):
