@@ -258,16 +258,17 @@ async def _handle_conversa(phone, adv, texto):
         await db.atualizar_comarca(adv["id"], nova)
         await _zapi_client.enviar(phone, f"✅ Comarca atualizada para *{nova}*")
     else:
-        await _zapi_client.enviar(phone, "🤔 Processando...")
-        try:
-            processos = await db.listar_processos_com_prazos(adv["id"])
-            from ia import responder_pergunta
-            loop = asyncio.get_event_loop()
-            resp = await loop.run_in_executor(None, responder_pergunta, texto, adv["nome"], processos, adv.get("comarca", ""))
-            await _zapi_client.enviar(phone, resp)
-        except Exception as e:
-            log.error(f"Erro IA {phone}: {e}")
-            await _zapi_client.enviar(phone, "Não consegui processar sua pergunta agora. Tente novamente.")
+        await _zapi_client.enviar(phone,
+            "👋 Olá! Sou o assistente automático da *Prazu*.\n\n"
+            "Por aqui, eu envio seus *resumos de prazos* e *alertas* nos horários que você configurou.\n\n"
+            "Comandos que eu entendo:\n"
+            "• *prazos* — ver resumo dos seus prazos\n"
+            "• *buscar* — buscar novas publicações no DJEN\n\n"
+            "Para gerenciar seus processos, configurações ou falar com nosso suporte, acesse:\n"
+            "🌐 *prazu.com.br*\n\n"
+            "Precisa de ajuda humana? Chame nosso suporte:\n"
+            "💬 wa.me/5531999537005"
+        )
 
 
 async def _enviar_resumo(phone, adv):
