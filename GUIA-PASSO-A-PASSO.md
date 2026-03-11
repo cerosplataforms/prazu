@@ -1,5 +1,7 @@
 # 🤖 PrazorBot — Guia Passo a Passo
 
+> **⚠️ Documentação legada (bot Telegram).** O Prazu atual é app web + WhatsApp. Veja [README.md](README.md) e [SETUP.md](SETUP.md).
+
 ## Seu bot já está criado! Agora é só instalar e rodar.
 
 **O que você já tem:**

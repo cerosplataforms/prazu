@@ -1,5 +1,7 @@
 # 🤖 PrazoBot — Guia Completo Para Iniciantes
 
+> **⚠️ Documentação legada (bot Telegram).** O Prazu atual é app web + WhatsApp. Veja [README.md](README.md) e [SETUP.md](SETUP.md).
+
 ## Passo a passo para rodar seu bot do ZERO, mesmo sem saber programar.
 
 ---

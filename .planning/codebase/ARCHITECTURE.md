@@ -1,117 +1,55 @@
-# Architecture
+# Architecture — Prazu
 
-**Analysis Date:** 2026-03-06
+**Atualizado:** março 2026
 
-## Pattern Overview
+## Visão geral
 
-**Overall:** Aplicação monolítica em Python com bot Telegram como orquestrador, módulos funcionais e SQLite como persistência.
+Aplicação web monolítica em Python: FastAPI como entry point, PostgreSQL para persistência, Z-API para WhatsApp. Deploy no Google Cloud Run.
 
-**Key Characteristics:**
-- Entry point único: `bot.py` (long polling)
-- Scripts auxiliares: `scheduler.py`, `atualizar.py`
-- Sem camada de serviços; lógica espalhada em módulos
-- Banco por arquivo; `Database` e `CalendarStore` separados
+## Camadas
 
-## Layers
+**Web / API:**
+- Entry point: `web/app.py` (FastAPI, Uvicorn)
+- Rotas: páginas HTML, API auth, onboarding, configurações, webhook, jobs
+- Auth: JWT em cookie `prazu_token`, dependência `advogado_logado`
+- Usado por: usuário via browser e webhook Z-API
 
-**Bot / UI:**
-- Purpose: Handler de comandos, callbacks e mensagens do Telegram
-- Location: `bot.py`
-- Contains: Handlers assíncronos, teclados inline, fluxo de onboarding
-- Depends on: `database`, `ia`, `prazos_calc`, `djen`, `datajud`, `cal_forense`
-- Used by: Usuário final via Telegram
+**Lógica de negócio:**
+- `web/onboarding.py` — DJEN, briefing, mensagens WhatsApp
+- `prazos_calc.py` — Cálculo de prazos CPC
+- `ia.py` — Briefings e resumos (Gemini)
+- `cal_forense/` — Resolução de feriados por comarca
 
-**Business Logic:**
-- Purpose: Cálculo de prazos, resolução de dias úteis, briefing
-- Location: `prazos_calc.py`, `ia.py`, `cal_forense/`
-- Contains: Funções puras e classes (CalendarResolver, CalendarStore)
-- Depends on: `cal_forense`, `database` (para `ia` buscar processos)
-- Used by: `bot.py`, `scheduler.py`
+**Dados e integrações:**
+- `database_gcp.py` — PostgreSQL async (asyncpg)
+- `djen.py` — API DJEN
+- `datajud.py` — API DataJud CNJ
+- `web/email_sender.py` — Resend
+- `web/zapi.py` — Z-API WhatsApp
 
-**Data / Integrations:**
-- Purpose: Persistência e APIs externas
-- Location: `database.py`, `djen.py`, `datajud.py`
-- Contains: Classe `Database`, funções de consulta DJEN/DataJud
-- Depends on: `requests`, `sqlite3`
-- Used by: `bot.py`, `scheduler.py`, `atualizar.py`
+## Fluxo de dados
 
-**Feriados:**
-- Purpose: Dados de feriados nacionais, estaduais, municipais
-- Location: `feriados_br.py`, `feriados_mg.py`, `cal_forense/calendar_loader.py`
-- Contains: Constantes e funções de carga para banco/SQLite
-- Depends on: `database` (feriados_br, feriados_mg), `CalendarStore` (loader)
-- Used by: `database`, `prazos_calc` (via CalendarResolver/Store)
+**Cadastro → Dashboard:**
+1. `/cadastro` → POST `/api/auth/cadastro` → JWT
+2. `/onboarding` (OAB, WhatsApp, preferências) → POST `/api/onboarding/salvar`
+3. Background: `_buscar_djen` (30 dias) → DataJud → `criar_ou_atualizar_processo` → `criar_prazo_processo`
+4. 2 min depois: `enviar_boas_vindas` + `_enviar_resumo` via WhatsApp
+5. Redirect para `/dashboard`
 
-## Data Flow
+**Briefing diário:**
+1. Cloud Scheduler → POST `/jobs/briefing`
+2. `enviar_briefing_todos` filtra por `horario_briefing` e dia da semana
+3. Para cada advogado: `_enviar_resumo` (Gemini ou fallback simples)
+4. Z-API envia mensagem para `whatsapp_notificacao`
 
-**Busca de processos (comando /buscar):**
+**Webhook WhatsApp:**
+1. Z-API envia POST `/webhook/zapi`
+2. `processar_mensagem_zapi` → onboarding (novo) ou `_handle_conversa` (cadastrado)
+3. Comandos: `prazos`/`resumo` → resumo; `buscar` → DJEN; outros → resposta padrão
 
-1. Advogado informa OAB/UF no onboarding
-2. `consultar_djen_por_oab` em `djen.py` chama API DJEN → publicações
-3. Extração de números CNJ únicos das publicações
-4. Para cada CNJ: `consultar_processo` em `datajud.py` → dados do DataJud
-5. `Database.criar_processo` salva em `prazobot.db`
-6. `calcular_prazo_completo` calcula vencimentos com feriados da comarca do processo
+## Banco de dados
 
-**Briefing diário (scheduler):**
-
-1. Cron executa `scheduler.py` no horário configurado
-2. `db.listar_advogados_ativos()` → advogados com `horario_briefing` = hora atual
-3. `db.listar_processos_com_prazos(adv_id)` → processos + prazos + andamentos
-4. `gerar_briefing()` em `ia.py` → Groq LLM
-5. `bot.send_message()` envia para cada advogado
-
-**State Management:**
-- Estado em SQLite (`prazobot.db`). Sem Redis ou cache distribuído
-- Estado de conversa no `context.user_data` do python-telegram-bot
-
-## Key Abstractions
-
-**Database:**
-- Purpose: CRUD de advogados, processos, prazos, andamentos, comunicacoes_djen, feriados
-- Location: `database.py`
-- Pattern: Classe com métodos que abrem/fecham conexão por operação
-
-**CalendarStore + CalendarResolver:**
-- Purpose: Fonte de feriados e decisão de dia útil forense
-- Location: `cal_forense/calendar_store.py`, `cal_forense/calendar_resolver.py`
-- Pattern: Store consulta SQLite; Resolver usa Store e aplica recesso, fim de semana, feriados
-
-**prazos_calc:**
-- Purpose: Cálculo CPC-compliant (arts. 216, 219, 220, 224)
-- Location: `prazos_calc.py`
-- Pattern: Funções que delegam dia útil ao `CalendarResolver`
-- Comarca do processo (CPC art. 216): `comarca_processo` vem da comarca onde o processo tramita; `bot.py` extrai via `_resolver_comarca_processo` (CNJ + vara) e passa para `calcular_prazo_completo`
-
-## Entry Points
-
-**bot.py:**
-- Triggers: Execução direta (`python bot.py`)
-- Responsabilidades: Polling Telegram, handlers, onboarding, comandos
-
-**scheduler.py:**
-- Triggers: Cron (ex.: a cada hora ou no horário dos briefings)
-- Responsabilidades: Enviar briefing para advogados no horário configurado
-
-**atualizar.py:**
-- Triggers: Cron (ex.: diariamente às 3h)
-- Responsabilidades: Atualizar andamentos via DataJud para todos os processos ativos
-
-## Error Handling
-
-**Strategy:** Try/except genérico em pontos críticos; logs com `logger.error`
-
-**Patterns:**
-- `ia.py`: catch Exception → fallback com mensagem amigável
-- `djen.py`, `datajud.py`: RequestException / Timeout → log e retorno vazio ou None
-- `bot.py`: `_send()` tenta `reply_text` e fallback em caso de exceção
-
-## Cross-Cutting Concerns
-
-**Logging:** `logging` padrão, nível via `LOG_LEVEL`
-**Validation:** Parsing manual (regex, strptime); sem Pydantic ou similar
-**Authentication:** Nenhuma; identidade por Telegram chat_id
-
----
-
-*Architecture analysis: 2026-03-06*
+- **PostgreSQL** (Cloud SQL em prod)
+- Tabelas principais: advogados, processos, prazos, comunicacoes_djen, sessions, whatsapp_events
+- Schema: `migrate_fase2.sql`
+- Calendário forense: SQLite local `cal_forense/calendar_v2.db` (copiado na imagem)

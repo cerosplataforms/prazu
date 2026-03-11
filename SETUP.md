@@ -1,227 +1,149 @@
-# PrazoBot MVP — Guia de Setup
+# Prazu — Guia de Setup
 
-## 🚀 Setup Rápido (na sua máquina)
+## Desenvolvimento local
 
-### 1. Criar o Bot no Telegram
+### 1. Pré-requisitos
 
-1. Abra o Telegram e procure **@BotFather**
-2. Envie `/newbot`
-3. Escolha um nome: `PrazoBot` (ou o que quiser)
-4. Escolha um username: `prazobot_adv_bot` (precisa terminar com `_bot`)
-5. Copie o **token** que ele vai te dar
+- Python 3.11+
+- PostgreSQL (local ou Cloud SQL Proxy)
+- Conta Z-API (WhatsApp)
+- Conta Resend (email)
+- API Key Gemini (Google AI)
 
-### 2. Instalar dependências
+### 2. Clonar e instalar
 
 ```bash
-# Clone ou copie os arquivos pra uma pasta
-cd prazo-bot
-
-# Crie um ambiente virtual (recomendado)
+git clone https://github.com/cerosplataforms/prazu.git
+cd prazu
 python3 -m venv venv
-source venv/bin/activate   # Linux/Mac
-# venv\Scripts\activate    # Windows
-
-# Instale as dependências
+source venv/bin/activate  # Linux/Mac
 pip install -r requirements.txt
 ```
 
-### 3. Configurar o .env
+### 3. Variáveis de ambiente (.env)
 
-```bash
-cp .env.example .env
-nano .env   # ou abra no editor de sua preferência
+Crie um arquivo `.env` na raiz:
+
+```env
+# Banco (local)
+ENVIRONMENT=development
+DB_HOST=localhost
+DB_PORT=5432
+DB_NAME=prazu
+DB_USER=prazu_user
+DB_PASSWORD=sua_senha
+
+# Auth
+JWT_SECRET=uma-chave-secreta-forte
+
+# WhatsApp (Z-API)
+ZAPI_INSTANCE_ID=seu_instance_id
+ZAPI_TOKEN=seu_token
+ZAPI_CLIENT_TOKEN=seu_client_token
+
+# Email (Resend)
+RESEND_API_KEY=re_xxxxx
+EMAIL_FROM=noreply@prazu.com.br
+EMAIL_FROM_NAME=Prazu
+
+# IA
+GEMINI_API_KEY=sua_chave_gemini
+
+# Jobs (para testar localmente)
+SCHEDULER_SECRET=um_secret_qualquer
 ```
 
-Preencha:
-- `TELEGRAM_TOKEN` — o token do BotFather
-- `ZAPIA_API_KEY` — sua chave da ZAP IA
-- `ZAPIA_BASE_URL` — URL da API da ZAP IA (verifique na documentação deles)
-- `ZAPIA_MODEL` — o modelo que sua chave permite usar
+### 4. Banco de dados
 
-> **⚠️ IMPORTANTE sobre a ZAP IA:**
-> A ZAP IA pode usar diferentes formatos de API. O código está preparado
-> para APIs compatíveis com o formato OpenAI. Se a ZAP IA usar outro formato,
-> você precisará ajustar o arquivo `ia.py`. Verifique na documentação deles:
-> - Qual a URL base da API
-> - Qual o formato de autenticação (Bearer token, API key header, etc)
-> - Quais modelos estão disponíveis
-
-### 4. Rodar o bot
+Execute as migrações:
 
 ```bash
-python bot.py
+psql -U prazu_user -d prazu -f migrate_fase2.sql
 ```
 
-Pronto! Agora vá no Telegram, procure seu bot e envie `/start`.
-
-### 5. Configurar o Briefing Automático (Cron)
-
-O scheduler precisa rodar a cada hora pra checar quem deve receber briefing:
+Ou use Cloud SQL Proxy se for conectar ao banco remoto:
 
 ```bash
-# Edite o crontab
-crontab -e
-
-# Adicione esta linha (roda a cada hora cheia):
-0 * * * * cd /caminho/para/prazo-bot && /caminho/para/venv/bin/python scheduler.py >> /var/log/prazobot.log 2>&1
+cloud_sql_proxy -instances=prazu-prod:southamerica-east1:prazu-db=tcp:5433
+# DB_HOST=127.0.0.1 DB_PORT=5433
 ```
 
-Para testar o envio manual:
+### 5. Rodar o servidor
+
 ```bash
-python scheduler.py --force
+uvicorn web.app:app --reload --port 8080
 ```
+
+Acesse: http://localhost:8080
 
 ---
 
-## 🖥️ Deploy na VPS (Hetzner/Contabo/DigitalOcean)
+## Deploy (Cloud Run)
 
-### 1. Criar a VPS
-
-- Ubuntu 22.04 ou 24.04
-- Plano mais barato (2 vCPU, 2-4GB RAM é mais que suficiente)
-- Hetzner: ~€4/mês | Contabo: ~€5/mês
-
-### 2. Setup inicial na VPS
+### Dev
 
 ```bash
-# Conecte via SSH
-ssh root@seu-ip
-
-# Atualize
-apt update && apt upgrade -y
-
-# Instale Python
-apt install python3 python3-pip python3-venv git -y
-
-# Crie um usuário pro bot (boa prática)
-adduser prazobot
-su - prazobot
-
-# Clone/copie o projeto
-mkdir prazo-bot && cd prazo-bot
-# (copie os arquivos via scp ou git)
-
-# Setup do ambiente
-python3 -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
-
-# Configure o .env
-cp .env.example .env
-nano .env
+./deploy.sh dev
 ```
 
-### 3. Rodar como serviço (systemd)
+- Branch `dev`
+- Commit automático se houver mudanças
+- Build → Cloud Run `prazu-dev`
+- URL: https://prazu-dev-710127610365.southamerica-east1.run.app
 
-Crie o arquivo de serviço:
+### Prod
 
 ```bash
-sudo nano /etc/systemd/system/prazobot.service
+./deploy.sh prod
 ```
 
-Conteúdo:
+- Merge `dev` → `master`
+- Confirmação digitando `PRODUÇÃO`
+- Build → Cloud Run `prazu`
+- URL: https://prazu-710127610365.southamerica-east1.run.app
 
-```ini
-[Unit]
-Description=PrazoBot Telegram
-After=network.target
+### Variáveis no Cloud Run
 
-[Service]
-Type=simple
-User=prazobot
-WorkingDirectory=/home/prazobot/prazo-bot
-ExecStart=/home/prazobot/prazo-bot/venv/bin/python bot.py
-Restart=always
-RestartSec=10
-Environment=PYTHONUNBUFFERED=1
-
-[Install]
-WantedBy=multi-user.target
-```
-
-Ative:
+As variáveis são configuradas no console ou via `gcloud run services update`:
 
 ```bash
-sudo systemctl daemon-reload
-sudo systemctl enable prazobot
-sudo systemctl start prazobot
-
-# Ver logs:
-sudo journalctl -u prazobot -f
+gcloud run services update prazu --region southamerica-east1 --project prazu-prod \
+  --update-env-vars="RESEND_API_KEY=re_xxx,EMAIL_FROM=noreply@prazu.com.br"
 ```
 
-### 4. Configurar o Cron na VPS
-
-```bash
-crontab -e
-
-# Briefing a cada hora
-0 * * * * cd /home/prazobot/prazo-bot && /home/prazobot/prazo-bot/venv/bin/python scheduler.py >> /home/prazobot/prazo-bot/scheduler.log 2>&1
-```
+Secrets (DB_PASSWORD, JWT_SECRET, GEMINI_API_KEY) vêm do Secret Manager.
 
 ---
 
-## 📁 Estrutura do Projeto
+## Webhook Z-API
 
-```
-prazo-bot/
-├── bot.py              # Bot Telegram principal
-├── ia.py               # Integração com ZAP IA
-├── database.py         # Banco de dados SQLite
-├── scheduler.py        # Envio automático dos briefings
-├── requirements.txt    # Dependências Python
-├── .env.example        # Template de configuração
-├── .env                # Suas configurações (NÃO commitar)
-├── prazobot.db         # Banco SQLite (criado automaticamente)
-└── SETUP.md            # Este arquivo
-```
+Para o bot responder no WhatsApp, configure o webhook da Z-API:
+
+- **URL:** `https://prazu-710127610365.southamerica-east1.run.app/webhook/zapi`
+- **Eventos:** mensagens recebidas (ReceivedCallback)
+- **Secret:** opcional, use `ZAPI_WEBHOOK_SECRET` se quiser validar
 
 ---
 
-## 🧪 Testando
+## Cloud Scheduler (jobs)
 
-1. Abra o bot no Telegram → `/start`
-2. Cadastre-se com nome e OAB
-3. Use `/adicionar` para cadastrar um processo de teste
-4. Adicione um prazo que vence hoje
-5. Use `/briefing` para testar o briefing
-6. Faça perguntas: "Quais meus prazos dessa semana?"
-7. Rode `python scheduler.py --force` para testar o envio automático
+Jobs configurados no GCP:
+
+| Job | Cron | Função |
+|-----|------|--------|
+| briefing-diario | 0 6-22 * * * (horário cheio) | Envia briefing por horário do usuário |
+| expirar-trials | diário | Marca trials vencidos |
+| djen | periódico | Monitora DJEN para todos |
+| lembrete-trial | diário | Lembrete antes de expirar |
+
+Header: `X-Scheduler-Secret` com valor de `SCHEDULER_SECRET`.
 
 ---
 
-## 🔧 Ajustes na ZAP IA
+## Testes
 
-Se a ZAP IA tiver um formato diferente do OpenAI, edite `ia.py`:
-
-```python
-# Se a ZAP IA usar requests direto em vez do SDK OpenAI:
-import requests
-
-def chamar_zapia(prompt):
-    response = requests.post(
-        "https://URL-DA-ZAPIA/chat",
-        headers={
-            "Authorization": f"Bearer {ZAPIA_API_KEY}",
-            "Content-Type": "application/json"
-        },
-        json={
-            "messages": [{"role": "user", "content": prompt}],
-            "model": "modelo-disponivel"
-        }
-    )
-    return response.json()["choices"][0]["message"]["content"]
+```bash
+python test_prazobot.py
 ```
 
-Verifique a documentação da ZAP IA para o formato correto.
-
----
-
-## 📊 Próximos Passos (depois de validar)
-
-- [ ] Integrar consulta automática aos tribunais (DataJud, ESAJ)
-- [ ] Adicionar monitoramento de publicações (DJE)
-- [ ] Migrar para WhatsApp (API Business)
-- [ ] Landing page para captação
-- [ ] Sistema de pagamentos
-- [ ] Dashboard web
+Testes focados em `prazos_calc.py` e funcionalidades de banco.

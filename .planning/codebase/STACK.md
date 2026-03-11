@@ -1,66 +1,54 @@
-# Technology Stack
+# Technology Stack — Prazu
 
-**Analysis Date:** 2026-03-06
+**Atualizado:** março 2026
 
-## Languages
+## Linguagens
 
-**Primary:**
-- Python 3 — Runtime principal. Código em `bot.py`, `database.py`, `prazos_calc.py`, `djen.py`, `datajud.py`, `ia.py`, `scheduler.py`, `atualizar.py`, `feriados_br.py`, `feriados_mg.py`, `test_prazobot.py` e pacote `cal_forense/`.
+- **Python 3.11** — Runtime principal
+- **SQL** — PostgreSQL (asyncpg), schemas em `migrate_fase2.sql`
+- **HTML/CSS/JS** — Templates Jinja2 em `web/templates/`
 
-**Secondary:**
-- SQL — Schemas e queries em `database.py` (SQLite). Definições em `cal_forense/calendar_store.py`.
+## Frameworks e bibliotecas
 
-## Runtime
+| Categoria | Tecnologia |
+|-----------|------------|
+| Web | FastAPI 0.111+, Uvicorn |
+| Templates | Jinja2 3.1+ |
+| Banco | asyncpg 0.29+ |
+| Auth | python-jose (JWT), bcrypt |
+| HTTP | httpx, requests |
+| IA | google-generativeai (Gemini 2.0 Flash) |
+| Env | python-dotenv |
 
-**Environment:**
-- Python 3.14 (venv detectado)
+## Infraestrutura
 
-**Package Manager:**
-- pip
-- Lockfile: ausente (apenas `requirements.txt`)
+| Camada | Tecnologia |
+|--------|------------|
+| Compute | Google Cloud Run |
+| Banco | Cloud SQL (PostgreSQL 15) |
+| Build | Cloud Build, Docker |
+| Secrets | Google Secret Manager |
+| Scheduler | Cloud Scheduler |
+| Storage | Google Container Registry |
 
-## Frameworks
+## Integrações externas
 
-**Core:**
-- python-telegram-bot 21.3 — Bot Telegram (comandos, callbacks, handlers)
-- APScheduler 3.10.4 — Agendamento (não usado ativamente; scheduler usa cron manual)
+| Serviço | Uso |
+|---------|-----|
+| Z-API | WhatsApp (envio e webhook) |
+| Resend | Emails transacionais |
+| DJEN | comunicaapi.pje.jus.br |
+| DataJud | api-publica.datajud.cnj.jus.br |
+| Gemini | google-generativeai |
 
-**AI/LLM:**
-- openai (compatível Groq) — Chat completions via `base_url="https://api.groq.com/openai/v1"`
-- groq >= 0.4.0 — Cliente Groq (Llama 3.3 70B)
+## Configuração
 
-**Build/Dev:**
-- python-dotenv 1.0.1 — Carga de variáveis `.env`
+- **.env** — Variáveis locais (não versionado)
+- **Cloud Run** — Env vars e Secret Manager em produção
+- **deploy.sh** — Script de deploy dev/prod
 
-## Key Dependencies
+## Plano de execução
 
-**Critical:**
-- python-telegram-bot 21.3 — Interface com usuários
-- requests >= 2.31.0 — HTTP para DJEN, DataJud
-- httpx >= 0.25.0 — HTTP alternativo (possivelmente para Groq)
-
-**Infrastructure:**
-- sqlite3 (stdlib) — Bancos `prazobot.db`, `calendar_v2.db`, `calendar.db`
-
-## Configuration
-
-**Environment:**
-- Arquivo `.env` (não versionado). Template em `.env.example`
-- Variáveis: `TELEGRAM_TOKEN`, `GROQ_API_KEY`, `GEMINI_API_KEY`, `LOG_LEVEL`
-
-**Build:**
-- Nenhum build step. Execução direta: `python bot.py`, `python scheduler.py`, `python atualizar.py`
-
-## Platform Requirements
-
-**Development:**
-- Python 3.10+
-- Acesso à internet (APIs DJEN, DataJud, Groq, Telegram)
-
-**Production:**
-- Servidor Linux/Mac com cron para `scheduler.py` e `atualizar.py`
-- SQLite (arquivos locais)
-
----
-
-*Stack analysis: 2026-03-06*
+- `python web/app.py` via Uvicorn
+- Workers: 1 (Cloud Run)
+- Porta: 8080 (PORT env)
