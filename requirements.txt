@@ -29,3 +29,4 @@ google-cloud-secret-manager>=2.20.0
 
 # ── Utilitários ─────────────────────────────────────────────────────────────
 python-dotenv>=1.0.0
+posthog

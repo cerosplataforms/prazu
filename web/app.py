@@ -17,6 +17,11 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, EmailStr
 
 import database_gcp as db
+
+# ── PostHog Analytics ────────────────────────────────────────────────────────
+import posthog
+posthog.api_key = os.getenv("POSTHOG_API_KEY", "phc_b5QNBhNd37836VpfFn91Qjtvs6AJY1Mu1XTEEkT7Bxk")
+posthog.host = os.getenv("POSTHOG_HOST", "https://us.i.posthog.com")
 from web.auth import criar_token_acesso, verificar_token, TOKEN_COOKIE
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s — %(message)s")
